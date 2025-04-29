@@ -1,0 +1,49 @@
+# 依存関係ディレクトリ
+node_modules
+.pnp
+.pnp.js
+
+# ビルド出力
+**/dist
+**/build
+.next/
+out/
+
+# キャッシュ
+.turbo
+.cache
+**/.vite
+
+# ログファイル
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 環境変数ファイル
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# テスト関連
+/coverage
+
+# OS固有のファイル
+.DS_Store
+*.pem
+
+# エディタ設定
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
