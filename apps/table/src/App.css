@@ -42,3 +42,32 @@
 .read-the-docs {
   color: #888;
 }
+
+/* テーブルオーダーシステム カスタムスタイル */
+.order-system-logo {
+  max-width: 150px;
+  margin: 0 auto;
+}
+
+/* モバイル対応のスタイル */
+@media (max-width: 640px) {
+  .main-container {
+    padding: 1rem;
+  }
+}
+
+/* アニメーション */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
