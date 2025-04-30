@@ -3,19 +3,32 @@ import "./App.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CategorySelection from "./components/CategorySelection";
+import MenuList from "./components/MenuList";
+import MenuDetail from "./components/MenuDetail";
 
 // 画面の状態を表す型
-type AppScreen = "home" | "category" | "menu";
+type AppScreen = "home" | "category" | "menu" | "menu-detail" | "cart";
+
+// カートアイテムの型定義
+interface CartItem {
+  menuItem: any;
+  options: any[];
+  toppings: any[];
+  notes: string;
+  quantity: number;
+}
 
 function App() {
   // モックとしてテーブル番号を固定値とします
   const tableNumber = "test";
   // 現在表示している画面の状態
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("home");
-  // 選択されたカテゴリID (今後のメニュー表示機能のために保持)
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null
-  );
+  // 選択されたカテゴリID (メニュー表示機能で使用)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(1);
+  // 選択されたメニューID (メニュー詳細画面で使用)
+  const [selectedMenuId, setSelectedMenuId] = useState<number>(0);
+  // カートアイテム
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   // ホーム画面から注文開始ボタンが押された時
   const handleStartOrder = (e: React.FormEvent) => {
@@ -27,10 +40,40 @@ function App() {
   // カテゴリが選択された時
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
-    // 将来的にはメニュー画面に遷移する
-    console.log(`カテゴリID: ${categoryId} が選択されました`);
-    // TODO: 選択されたカテゴリIDを使用してメニュー一覧を表示する機能を今後実装
-    // setCurrentScreen("menu");
+    // メニュー画面に遷移
+    setCurrentScreen("menu");
+  };
+
+  // メニューが選択された時
+  const handleMenuSelect = (menuId: number) => {
+    setSelectedMenuId(menuId);
+    // メニュー詳細画面に遷移
+    setCurrentScreen("menu-detail");
+  };
+
+  // カートに追加された時
+  const handleAddToCart = (
+    menuItem: any,
+    options: any[],
+    toppings: any[],
+    notes: string
+  ) => {
+    // カートに新しいアイテムを追加
+    const newCartItem: CartItem = {
+      menuItem,
+      options,
+      toppings,
+      notes,
+      quantity: 1, // 簡易実装のため固定
+    };
+
+    setCartItems([...cartItems, newCartItem]);
+
+    // メニュー一覧画面に戻る
+    setCurrentScreen("menu");
+
+    // 仮の成功メッセージ
+    alert("カートに追加しました");
   };
 
   // 戻るボタンがクリックされた時
@@ -39,6 +82,8 @@ function App() {
       setCurrentScreen("home");
     } else if (currentScreen === "menu") {
       setCurrentScreen("category");
+    } else if (currentScreen === "menu-detail") {
+      setCurrentScreen("menu");
     }
   };
 
@@ -72,6 +117,24 @@ function App() {
           <CategorySelection
             onSelectCategory={handleCategorySelect}
             onBack={handleBack}
+          />
+        );
+
+      case "menu":
+        return (
+          <MenuList
+            initialCategoryId={selectedCategoryId}
+            onBack={handleBack}
+            onSelectMenu={handleMenuSelect}
+          />
+        );
+
+      case "menu-detail":
+        return (
+          <MenuDetail
+            menuId={selectedMenuId}
+            onBack={handleBack}
+            onAddToCart={handleAddToCart}
           />
         );
 
