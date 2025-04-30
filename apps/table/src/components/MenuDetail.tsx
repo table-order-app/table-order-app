@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { mockMenuItems } from "./MenuList";
+import { MenuItem, Option, Topping } from "../types";
 
 interface MenuDetailProps {
   menuId: number;
   onBack: () => void;
   onAddToCart: (
-    menuItem: any,
-    options: any[],
-    toppings: any[],
-    notes: string
+    menuItem: MenuItem,
+    options: Option[],
+    toppings: Topping[],
+    notes: string,
+    quantity: number
   ) => void;
 }
 
@@ -17,7 +19,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
   onBack,
   onAddToCart,
 }) => {
-  const [menuItem, setMenuItem] = useState<any | null>(null);
+  const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
   const [notes, setNotes] = useState<string>("");
@@ -80,7 +82,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
 
     // オプションの金額を追加
     options.forEach((optionId) => {
-      const option = menuItem.options.find((opt: any) => opt.id === optionId);
+      const option = menuItem.options.find((opt) => opt.id === optionId);
       if (option) {
         price += option.price;
       }
@@ -88,9 +90,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
 
     // トッピングの金額を追加
     toppings.forEach((toppingId) => {
-      const topping = menuItem.toppings.find(
-        (top: any) => top.id === toppingId
-      );
+      const topping = menuItem.toppings.find((top) => top.id === toppingId);
       if (topping) {
         price += topping.price;
       }
@@ -108,7 +108,29 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
       setQuantity(newQuantity);
 
       if (menuItem) {
-        calculateTotalPrice(selectedOptions, selectedToppings);
+        // 新しい数量で価格を再計算
+        let price = menuItem.price;
+
+        // オプションの金額を追加
+        selectedOptions.forEach((optionId) => {
+          const option = menuItem.options.find((opt) => opt.id === optionId);
+          if (option) {
+            price += option.price;
+          }
+        });
+
+        // トッピングの金額を追加
+        selectedToppings.forEach((toppingId) => {
+          const topping = menuItem.toppings.find((top) => top.id === toppingId);
+          if (topping) {
+            price += topping.price;
+          }
+        });
+
+        // 数量を掛ける
+        price *= newQuantity;
+
+        setTotalPrice(price);
       }
     }
   };
@@ -118,18 +140,20 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
     if (!menuItem) return;
 
     const selectedOptionDetails = selectedOptions
-      .map((optionId) =>
-        menuItem.options.find((opt: any) => opt.id === optionId)
-      )
-      .filter(Boolean);
+      .map((optionId) => menuItem.options.find((opt) => opt.id === optionId))
+      .filter(Boolean) as Option[];
 
     const selectedToppingDetails = selectedToppings
-      .map((toppingId) =>
-        menuItem.toppings.find((top: any) => top.id === toppingId)
-      )
-      .filter(Boolean);
+      .map((toppingId) => menuItem.toppings.find((top) => top.id === toppingId))
+      .filter(Boolean) as Topping[];
 
-    onAddToCart(menuItem, selectedOptionDetails, selectedToppingDetails, notes);
+    onAddToCart(
+      menuItem,
+      selectedOptionDetails,
+      selectedToppingDetails,
+      notes,
+      quantity
+    );
   };
 
   if (!menuItem) {
@@ -189,7 +213,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
           <div className="mb-6">
             <h4 className="font-medium text-gray-700 mb-2">オプション</h4>
             <div className="space-y-2 pl-2">
-              {menuItem.options.map((option: any) => (
+              {menuItem.options.map((option) => (
                 <div key={option.id} className="flex items-center">
                   <input
                     type="radio"
@@ -217,7 +241,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
           <div className="mb-6">
             <h4 className="font-medium text-gray-700 mb-2">トッピング</h4>
             <div className="space-y-2 pl-2">
-              {menuItem.toppings.map((topping: any) => (
+              {menuItem.toppings.map((topping) => (
                 <div key={topping.id} className="flex items-center">
                   <input
                     type="checkbox"

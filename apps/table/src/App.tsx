@@ -5,18 +5,11 @@ import Footer from "./components/Footer";
 import CategorySelection from "./components/CategorySelection";
 import MenuList from "./components/MenuList";
 import MenuDetail from "./components/MenuDetail";
+import Cart from "./components/Cart";
+import { CartItem, MenuItem, Option, Topping } from "./types";
 
 // 画面の状態を表す型
 type AppScreen = "home" | "category" | "menu" | "menu-detail" | "cart";
-
-// カートアイテムの型定義
-interface CartItem {
-  menuItem: any;
-  options: any[];
-  toppings: any[];
-  notes: string;
-  quantity: number;
-}
 
 function App() {
   // モックとしてテーブル番号を固定値とします
@@ -29,6 +22,8 @@ function App() {
   const [selectedMenuId, setSelectedMenuId] = useState<number>(0);
   // カートアイテム
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  // カートの表示状態
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
   // ホーム画面から注文開始ボタンが押された時
   const handleStartOrder = (e: React.FormEvent) => {
@@ -51,12 +46,23 @@ function App() {
     setCurrentScreen("menu-detail");
   };
 
+  // カートを開く
+  const handleOpenCart = () => {
+    setIsCartOpen(true);
+  };
+
+  // カートを閉じる
+  const handleCloseCart = () => {
+    setIsCartOpen(false);
+  };
+
   // カートに追加された時
   const handleAddToCart = (
-    menuItem: any,
-    options: any[],
-    toppings: any[],
-    notes: string
+    menuItem: MenuItem,
+    options: Option[],
+    toppings: Topping[],
+    notes: string,
+    quantity: number
   ) => {
     // カートに新しいアイテムを追加
     const newCartItem: CartItem = {
@@ -64,7 +70,7 @@ function App() {
       options,
       toppings,
       notes,
-      quantity: 1, // 簡易実装のため固定
+      quantity, // MenuDetailから指定された数量を使用
     };
 
     setCartItems([...cartItems, newCartItem]);
@@ -72,8 +78,37 @@ function App() {
     // メニュー一覧画面に戻る
     setCurrentScreen("menu");
 
-    // 仮の成功メッセージ
-    alert("カートに追加しました");
+    // 成功メッセージとカートを開く
+    setTimeout(() => {
+      setIsCartOpen(true);
+    }, 300);
+  };
+
+  // カート内の商品数量を更新
+  const handleUpdateCartItemQuantity = (index: number, newQuantity: number) => {
+    if (newQuantity < 1 || newQuantity > 10) return;
+
+    const updatedCartItems = [...cartItems];
+    updatedCartItems[index].quantity = newQuantity;
+    setCartItems(updatedCartItems);
+  };
+
+  // カートから商品を削除
+  const handleRemoveCartItem = (index: number) => {
+    const updatedCartItems = [...cartItems];
+    updatedCartItems.splice(index, 1);
+    setCartItems(updatedCartItems);
+  };
+
+  // 注文確定処理
+  const handleConfirmOrder = () => {
+    // TODO: 本来はここでサーバーに注文を送信する処理を実装
+    alert("注文を確定しました。ありがとうございます！");
+    // 注文確定後、カートをクリアしてカートを閉じる
+    setCartItems([]);
+    setIsCartOpen(false);
+    // ホーム画面に戻る
+    setCurrentScreen("home");
   };
 
   // 戻るボタンがクリックされた時
@@ -126,6 +161,8 @@ function App() {
             initialCategoryId={selectedCategoryId}
             onBack={handleBack}
             onSelectMenu={handleMenuSelect}
+            onOpenCart={handleOpenCart}
+            cartItemCount={cartItems.length}
           />
         );
 
@@ -152,6 +189,18 @@ function App() {
       </main>
 
       <Footer />
+
+      {/* カート表示（モーダル） */}
+      {isCartOpen && (
+        <Cart
+          cartItems={cartItems}
+          onClose={handleCloseCart}
+          onUpdateQuantity={handleUpdateCartItemQuantity}
+          onRemoveItem={handleRemoveCartItem}
+          onOrder={handleConfirmOrder}
+          tableNumber={tableNumber}
+        />
+      )}
     </div>
   );
 }
