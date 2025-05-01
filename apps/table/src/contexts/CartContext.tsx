@@ -6,7 +6,8 @@ import React, {
   useCallback,
 } from "react";
 import { CartItem, MenuItem, Option, Topping } from "../types";
-import { BUSINESS_CONFIG, UI_CONFIG } from "../config";
+import { BUSINESS_CONFIG } from "../config";
+import { useToast } from "./ToastContext";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -43,6 +44,7 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const { showToast } = useToast();
 
   // カートに商品を追加
   const addToCart = useCallback(
@@ -63,12 +65,15 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       setCartItems((prevItems) => [...prevItems, newCartItem]);
 
-      // 成功メッセージとカートを開く
-      setTimeout(() => {
-        setIsCartOpen(true);
-      }, UI_CONFIG.CART_ANIMATION_DURATION);
+      // トースト通知を表示
+      showToast(`${menuItem.name}をカートに追加しました`, "success");
+
+      // カートアニメーション後に自動的にカートを開く設定を削除（トースト通知だけ表示）
+      // setTimeout(() => {
+      //   setIsCartOpen(true);
+      // }, UI_CONFIG.CART_ANIMATION_DURATION);
     },
-    []
+    [showToast]
   );
 
   // カート内の商品数量を更新
@@ -90,13 +95,26 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   );
 
   // カートから商品を削除
-  const removeCartItem = useCallback((index: number) => {
-    setCartItems((prevItems) => {
-      const updatedItems = [...prevItems];
-      updatedItems.splice(index, 1);
-      return updatedItems;
-    });
-  }, []);
+  const removeCartItem = useCallback(
+    (index: number) => {
+      setCartItems((prevItems) => {
+        const updatedItems = [...prevItems];
+        const removedItem = updatedItems[index];
+        updatedItems.splice(index, 1);
+
+        // 削除時のトースト通知
+        if (removedItem) {
+          showToast(
+            `${removedItem.menuItem.name}をカートから削除しました`,
+            "info"
+          );
+        }
+
+        return updatedItems;
+      });
+    },
+    [showToast]
+  );
 
   // カートをクリア
   const clearCart = useCallback(() => {

@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Cart from "./components/Cart";
 import { CartProvider, useCart } from "./contexts/CartContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import { routeConfig } from "./routes";
 import { UI_CONFIG } from "./config";
 
@@ -62,21 +63,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <Router>
-      <CartProvider>
-        <Routes>
-          {routeConfig.map((route) => (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                <Layout>
-                  <route.component />
-                </Layout>
-              }
-            />
-          ))}
-        </Routes>
-      </CartProvider>
+      <ToastProvider>
+        <CartProvider>
+          <Routes>
+            {routeConfig.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  <Layout>
+                    <route.component />
+                  </Layout>
+                }
+              />
+            ))}
+          </Routes>
+        </CartProvider>
+      </ToastProvider>
     </Router>
   );
 }
