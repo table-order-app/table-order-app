@@ -16,7 +16,6 @@ const CartContainer: React.FC = () => {
     updateCartItemQuantity,
     removeCartItem,
     clearCart,
-    getTotalPrice,
   } = useCart();
 
   const handleCloseCart = () => {
@@ -63,7 +62,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <Router>
-      <CartProvider tableNumber={UI_CONFIG.TABLE_NUMBER}>
+      <CartProvider>
         <Routes>
           {routeConfig.map((route) => (
             <Route

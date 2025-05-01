@@ -1,5 +1,4 @@
 import React from "react";
-import { UI_CONFIG } from "../config";
 
 interface LoadingSpinnerProps {
   size?: "small" | "medium" | "large";
@@ -24,7 +23,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   const spinner = (
     <div className="flex flex-col items-center justify-center">
       <div
-        className={`${spinnerSizes[size]} border-4 border-t-${UI_CONFIG.PRIMARY_COLOR.replace("#", "")} border-gray-200 rounded-full animate-spin`}
+        className={`${spinnerSizes[size]} border-4 border-t-[#e0815e] border-gray-200 rounded-full animate-spin`}
       ></div>
       {text && <p className="mt-2 text-gray-600">{text}</p>}
     </div>

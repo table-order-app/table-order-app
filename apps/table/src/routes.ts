@@ -12,12 +12,6 @@ interface RouteDefinition {
   exact?: boolean;
 }
 
-// ルートパラメータの型
-interface RouteParams {
-  categoryId?: number;
-  menuId?: number;
-}
-
 // アプリケーションのすべてのルートを定義
 export const ROUTES = {
   // 基本ルート

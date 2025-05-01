@@ -38,13 +38,9 @@ export const useCart = () => {
 
 interface CartProviderProps {
   children: ReactNode;
-  tableNumber: string;
 }
 
-export const CartProvider: React.FC<CartProviderProps> = ({
-  children,
-  tableNumber,
-}) => {
+export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
