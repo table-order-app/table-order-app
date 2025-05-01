@@ -1,31 +1,62 @@
 // アプリケーションのルート定義
+import { ComponentType } from "react";
+import HomePage from "./pages/HomePage";
+import CategoryPage from "./pages/CategoryPage";
+import MenuListPage from "./pages/MenuListPage";
+import MenuDetailPage from "./pages/MenuDetailPage";
 
-export const routes = {
+// ルート定義の型
+interface RouteDefinition {
+  path: string;
+  component: ComponentType;
+  exact?: boolean;
+}
+
+// ルートパラメータの型
+interface RouteParams {
+  categoryId?: number;
+  menuId?: number;
+}
+
+// アプリケーションのすべてのルートを定義
+export const ROUTES = {
   // 基本ルート
-  home: "/",
-  categories: "/categories",
+  HOME: {
+    path: "/",
+    component: HomePage,
+    exact: true,
+  } as RouteDefinition,
 
-  // パラメータを含むルート (関数として定義)
-  menuList: (categoryId: string | number = ":categoryId") =>
-    `/menus/${categoryId}`,
-  menuDetail: (menuId: string | number = ":menuId") => `/menu-detail/${menuId}`,
+  CATEGORIES: {
+    path: "/categories",
+    component: CategoryPage,
+    exact: true,
+  } as RouteDefinition,
+
+  // パラメータを含むルート
+  MENU_LIST: {
+    path: "/menus/:categoryId",
+    component: MenuListPage,
+    exact: true,
+  } as RouteDefinition,
+
+  MENU_DETAIL: {
+    path: "/menu-detail/:menuId",
+    component: MenuDetailPage,
+    exact: true,
+  } as RouteDefinition,
 };
 
 // タイプセーフなナビゲーション用ヘルパー関数
 export const getPath = {
   // 静的ルート
-  home: () => routes.home,
-  categories: () => routes.categories,
+  home: () => ROUTES.HOME.path,
+  categories: () => ROUTES.CATEGORIES.path,
 
   // 動的ルート
-  menuList: (categoryId: number) => routes.menuList(categoryId),
-  menuDetail: (menuId: number) => routes.menuDetail(menuId),
+  menuList: (categoryId: number) => `/menus/${categoryId}`,
+  menuDetail: (menuId: number) => `/menu-detail/${menuId}`,
 };
 
-// ルートパターン (React Router のルートマッチングで使用)
-export const routePatterns = {
-  home: routes.home,
-  categories: routes.categories,
-  menuList: routes.menuList(), // パラメータプレースホルダーを含むパターン
-  menuDetail: routes.menuDetail(), // パラメータプレースホルダーを含むパターン
-};
+// ルート設定の配列（App.tsxで使用）
+export const routeConfig = Object.values(ROUTES);
