@@ -13,4 +13,13 @@ module.exports = {
       // アプリ固有の拡張（必要に応じて）
     },
   },
+  // Cloudflare Pages用に動的に生成されるクラスをセーフリストに追加
+  safelist: [
+    "border-t-[#e0815e]",
+    "bg-[#e0815e]",
+    "hover:bg-[#d3704f]",
+    "text-[#e0815e]",
+    "border-[#e0815e]",
+    "bg-[#fffafa]",
+  ],
 };
