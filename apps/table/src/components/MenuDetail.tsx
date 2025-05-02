@@ -44,16 +44,22 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
   }, [menuId]);
 
   // オプションの選択が変更されたとき
-  const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const optionId = parseInt(e.target.value);
+  const handleOptionClick = (optionId: number) => {
+    if (!menuItem?.options) return;
 
-    if (menuItem?.options) {
-      // ラジオボタン式の選択（オプションは1つだけ選べる）
-      setSelectedOptions([optionId]);
+    let newSelectedOptions: number[];
 
-      // 価格を再計算
-      calculateTotalPrice([optionId], selectedToppings);
+    // 選択済みのオプションをクリックした場合は選択解除
+    if (selectedOptions.includes(optionId)) {
+      newSelectedOptions = [];
+    } else {
+      // 新しいオプションを選択（1つだけ選択可能）
+      newSelectedOptions = [optionId];
     }
+
+    setSelectedOptions(newSelectedOptions);
+    // 価格を再計算
+    calculateTotalPrice(newSelectedOptions, selectedToppings);
   };
 
   // トッピングの選択が変更されたとき
@@ -211,26 +217,23 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
         {/* オプション選択 */}
         {menuItem.options && menuItem.options.length > 0 && (
           <div className="mb-6">
-            <h4 className="font-medium text-gray-700 mb-2">オプション</h4>
-            <div className="space-y-2 pl-2">
+            <h4 className="font-medium text-gray-700 mb-3">オプション</h4>
+            <div className="flex flex-wrap gap-2">
               {menuItem.options.map((option) => (
-                <div key={option.id} className="flex items-center">
-                  <input
-                    type="radio"
-                    id={`option-${option.id}`}
-                    name="menuOption"
-                    value={option.id}
-                    checked={selectedOptions.includes(option.id)}
-                    onChange={handleOptionChange}
-                    className="mr-2"
-                  />
-                  <label htmlFor={`option-${option.id}`} className="flex-grow">
-                    {option.name}
-                  </label>
-                  <span className="text-gray-600 text-sm">
-                    {option.price > 0 ? `+¥${option.price}` : ""}
-                  </span>
-                </div>
+                <button
+                  key={option.id}
+                  onClick={() => handleOptionClick(option.id)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+                    selectedOptions.includes(option.id)
+                      ? "bg-[#e0815e] text-white border-[#e0815e]"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  {option.name}
+                  {option.price > 0 && (
+                    <span className="ml-1">{`+¥${option.price}`}</span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
