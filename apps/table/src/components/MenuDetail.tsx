@@ -4,7 +4,6 @@ import { MenuItem, Option, Topping } from "../types";
 
 interface MenuDetailProps {
   menuId: number;
-  onBack: () => void;
   onAddToCart: (
     menuItem: MenuItem,
     options: Option[],
@@ -14,11 +13,7 @@ interface MenuDetailProps {
   ) => void;
 }
 
-const MenuDetail: React.FC<MenuDetailProps> = ({
-  menuId,
-  onBack,
-  onAddToCart,
-}) => {
+const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
@@ -167,27 +162,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({
   }
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden">
-      <div className="sticky top-0 bg-[#e0815e] text-white p-3 z-10 flex items-center">
-        <button onClick={onBack} className="text-white mr-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <h2 className="text-lg font-medium flex-grow">{menuItem.name}</h2>
-      </div>
-
+    <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden pt-20">
       <div className="p-4">
         {/* メニュー画像 */}
         <div className="flex justify-center mb-4">

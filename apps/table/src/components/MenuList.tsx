@@ -328,18 +328,12 @@ export const mockMenuItems = [
 
 interface MenuListProps {
   initialCategoryId: number;
-  onBack: () => void;
   onSelectMenu: (menuId: number) => void;
-  onOpenCart: () => void;
-  cartItemCount: number;
 }
 
 const MenuList: React.FC<MenuListProps> = ({
   initialCategoryId,
-  onBack,
   onSelectMenu,
-  onOpenCart,
-  cartItemCount,
 }) => {
   // 選択されているカテゴリID
   const [selectedCategoryId, setSelectedCategoryId] =
@@ -358,44 +352,8 @@ const MenuList: React.FC<MenuListProps> = ({
 
   return (
     <div className="w-full max-w-5xl">
-      {/* 戻るボタンとカテゴリ選択とカートボタン */}
-      <div className="mb-4 px-2 flex justify-between items-center">
-        <button
-          onClick={onBack}
-          className="text-[#e0815e] px-3 py-1.5 rounded-md hover:bg-[#e0815e10] transition-colors text-sm"
-        >
-          ← 戻る
-        </button>
-
-        <button
-          onClick={onOpenCart}
-          className="relative p-2 text-gray-700 hover:text-[#e0815e] transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-
-          {cartItemCount > 0 && (
-            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-[#e0815e] rounded-full">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
-      </div>
-
       {/* カテゴリー横スクロール */}
-      <div className="sticky top-0 bg-[#fffafa] pt-2 pb-3 z-10 shadow-sm">
+      <div className="sticky top-20 bg-[#fffafa] pt-2 pb-3 z-10 shadow-sm">
         <div className="overflow-x-auto hide-scrollbar">
           <div className="flex space-x-1 px-2">
             {mockCategories.map((category) => (
@@ -458,34 +416,6 @@ const MenuList: React.FC<MenuListProps> = ({
           </div>
         ))}
       </div>
-
-      {/* 固定のカートボタン（モバイル用） */}
-      {cartItemCount > 0 && (
-        <div className="fixed bottom-4 right-4 md:hidden">
-          <button
-            onClick={onOpenCart}
-            className="bg-[#e0815e] text-white p-4 rounded-full shadow-lg hover:bg-[#d3704f] transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <span className="absolute -top-1 -right-1 bg-white text-[#e0815e] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-              {cartItemCount}
-            </span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

@@ -9,11 +9,6 @@ const MenuDetailPage: React.FC = () => {
   const { menuId } = useParams<{ menuId: string }>();
   const { addToCart } = useCart();
 
-  const handleBack = () => {
-    // メニュー一覧ページに戻る（履歴を使って戻るので、カテゴリIDは保持される）
-    navigate(-1);
-  };
-
   const handleAddToCart = (
     menuItem: MenuItem,
     options: Option[],
@@ -31,13 +26,7 @@ const MenuDetailPage: React.FC = () => {
   // menuIdがstring型で渡ってくるので数値に変換
   const menuIdNum = menuId ? parseInt(menuId) : 0;
 
-  return (
-    <MenuDetail
-      menuId={menuIdNum}
-      onBack={handleBack}
-      onAddToCart={handleAddToCart}
-    />
-  );
+  return <MenuDetail menuId={menuIdNum} onAddToCart={handleAddToCart} />;
 };
 
 export default MenuDetailPage;

@@ -1,7 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import "./App.css";
+import React, { useState, useEffect } from "react";
 import Header from "./components/Header";
-import Footer from "./components/Footer";
 import Cart from "./components/Cart";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -48,13 +53,40 @@ const CartContainer: React.FC = () => {
 
 // メインレイアウトコンポーネント
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const [headerTitle, setHeaderTitle] = useState<string | null>(null);
+  const [showBackButton, setShowBackButton] = useState(false);
+
+  // パスに基づいてヘッダー表示を設定
+  useEffect(() => {
+    const currentPath = location.pathname;
+    // メニュー一覧画面
+    if (currentPath.includes("/categories/")) {
+      setHeaderTitle("メニュー");
+      setShowBackButton(true);
+    }
+    // メニュー詳細画面
+    else if (currentPath.includes("/menu/")) {
+      setHeaderTitle("メニュー詳細");
+      setShowBackButton(true);
+    }
+    // ホーム画面
+    else {
+      setHeaderTitle(null);
+      setShowBackButton(false);
+    }
+  }, [location]);
+
   return (
     <div className="min-h-screen bg-[#fffafa] flex flex-col">
-      <Header tableNumber={UI_CONFIG.TABLE_NUMBER} />
-      <main className="flex-grow flex flex-col items-center justify-center p-4 fade-in">
+      <Header
+        tableNumber={UI_CONFIG.TABLE_NUMBER}
+        showBackButton={showBackButton}
+        title={headerTitle || undefined}
+      />
+      <main className="flex-grow flex flex-col items-center justify-start pt-20 p-4 fade-in">
         {children}
       </main>
-      <Footer />
       <CartContainer />
     </div>
   );
