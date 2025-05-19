@@ -1,3 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ブラウザのデフォルトマージンとパディングを削除 */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* コンテンツが画面幅いっぱいになるようにする */
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* すべてのコンテナが完全な幅を使用するように */
+.full-width-container {
+  width: 100%;
+  max-width: 100%;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
