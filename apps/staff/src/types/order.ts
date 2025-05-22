@@ -1,5 +1,10 @@
-// 注文状態の型定義
-export type OrderStatus = "in-progress" | "completed" | "cancelled";
+// 注文ステータスの型定義
+export type OrderStatus =
+  | "new"
+  | "in-progress"
+  | "ready"
+  | "delivered"
+  | "cancelled";
 
 // 注文アイテムの型定義
 export interface OrderItem {
@@ -30,14 +35,14 @@ export interface Order {
   updatedAt: Date;
 }
 
-// 進捗データの型定義
+// テーブル進捗データの型定義
 export interface ProgressData {
   tableId: string;
   tableNumber: number;
   area: string;
   totalItems: number;
-  completedItems: number;
-  inProgressItems: number;
-  cancelledItems: number;
+  completedItems: number; // 提供済み
+  readyItems: number; // 提供準備完了
+  pendingItems: number; // 調理中・未着手
   startTime: Date;
 }

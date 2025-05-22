@@ -38,7 +38,7 @@ const DashboardPage = () => {
           onClick={() => handleNavigation(getPath.tables())}
         />
 
-        <Card
+        {/* <Card
           title="売上レポート"
           description="日次、月次の売上データを確認できます。"
           buttonLabel="レポート表示"
@@ -53,7 +53,7 @@ const DashboardPage = () => {
           buttonVariant="secondary"
           isClickable={true}
           onClick={() => handleNavigation(getPath.settings())}
-        />
+        /> */}
       </div>
     </div>
   );

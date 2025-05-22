@@ -1,16 +1,16 @@
 import React, { useEffect, useRef } from "react";
 
 interface PieChartProps {
-  completed: number; // 調理完了
-  inProgress: number; // 調理中
-  cancelled?: number; // キャンセル
-  total: number; // 合計
+  completed: number; // 提供済み
+  ready: number; // 提供準備完了
+  pending: number; // 調理中・未着手
+  total: number;
 }
 
 const PieChart: React.FC<PieChartProps> = ({
   completed,
-  inProgress,
-  cancelled = 0,
+  ready,
+  pending,
   total,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,9 +39,9 @@ const PieChart: React.FC<PieChartProps> = ({
 
     // カラーパレット
     const colors = {
-      completed: "#10B981", // グリーン (調理完了)
-      inProgress: "#F59E0B", // オレンジ (調理中)
-      cancelled: "#EF4444", // レッド (キャンセル)
+      completed: "#9CA3AF", // グレー (提供済み)
+      ready: "#10B981", // グリーン (提供待ち)
+      pending: "#3B82F6", // ブルー (調理中・未着手)
       empty: "#E5E7EB", // ライトグレー (空)
     };
 
@@ -60,8 +60,8 @@ const PieChart: React.FC<PieChartProps> = ({
     // 各ステータスの割合を計算
     const segments = [
       { name: "completed", value: completed, color: colors.completed },
-      { name: "inProgress", value: inProgress, color: colors.inProgress },
-      { name: "cancelled", value: cancelled, color: colors.cancelled },
+      { name: "ready", value: ready, color: colors.ready },
+      { name: "pending", value: pending, color: colors.pending },
     ].filter((segment) => segment.value > 0);
 
     // 円グラフを描画
@@ -84,7 +84,7 @@ const PieChart: React.FC<PieChartProps> = ({
     ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
     ctx.fillStyle = "#FFFFFF";
     ctx.fill();
-  }, [completed, inProgress, cancelled, total]);
+  }, [completed, ready, pending, total]);
 
   return <canvas ref={canvasRef} className="w-28 h-28"></canvas>;
 };
