@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getTableOrders } from "../services/orderService";
 import { UI_CONFIG } from "../config";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -30,7 +30,6 @@ interface Order {
 
 const OrderConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartItem, MenuItem, Option, Topping } from "../types";
-import { BUSINESS_CONFIG } from "../config";
+import { BUSINESS_CONFIG, UI_CONFIG } from "../config";
 import { useToast } from "./ToastContext";
 import { getPath } from "../routes";
 
@@ -159,7 +159,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setIsSubmitting(true);
     try {
       const { createOrder } = await import('../services/orderService');
-      const tableId = parseInt(BUSINESS_CONFIG.TABLE_NUMBER) || 1;
+      const tableId = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
       const response = await createOrder(tableId, cartItems);
       
       if (response.success) {

@@ -1,7 +1,7 @@
 import { post, get } from "../utils/api";
 import { CartItem } from "../types";
 
-interface OrderRequest {
+export interface OrderRequest {
   tableId: number;
   items: Array<{
     menuItemId: number;

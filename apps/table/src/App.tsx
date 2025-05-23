@@ -21,7 +21,6 @@ const CartContainer: React.FC = () => {
     setIsCartOpen,
     updateCartItemQuantity,
     removeCartItem,
-    clearCart,
     submitOrder,
     isSubmitting,
   } = useCart();
