@@ -39,5 +39,6 @@ export interface ProgressData {
   completedItems: number;
   inProgressItems: number;
   cancelledItems: number;
+  pendingItems?: number; // 未着手アイテム数（オプショナル）
   startTime: Date;
 }
