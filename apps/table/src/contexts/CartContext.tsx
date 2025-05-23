@@ -5,9 +5,11 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { CartItem, MenuItem, Option, Topping } from "../types";
-import { BUSINESS_CONFIG } from "../config";
+import { BUSINESS_CONFIG, UI_CONFIG } from "../config";
 import { useToast } from "./ToastContext";
+import { getPath } from "../routes";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -48,6 +50,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   // カートに商品を追加
   const addToCart = useCallback(
@@ -156,12 +159,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setIsSubmitting(true);
     try {
       const { createOrder } = await import('../services/orderService');
-      const tableId = parseInt(BUSINESS_CONFIG.TABLE_NUMBER) || 1;
+      const tableId = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
       const response = await createOrder(tableId, cartItems);
       
       if (response.success) {
         showToast('注文を確定しました。ありがとうございます！', 'success');
         clearCart();
+        navigate(getPath.orderConfirmation());
         return true;
       } else {
         showToast(`注文の確定に失敗しました: ${response.error}`, 'error');
@@ -174,7 +178,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [cartItems, clearCart, showToast]);
+  }, [cartItems, clearCart, showToast, navigate]);
 
   const value = {
     cartItems,

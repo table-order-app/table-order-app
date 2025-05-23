@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import CategoryPage from "./pages/CategoryPage";
 import MenuListPage from "./pages/MenuListPage";
 import MenuDetailPage from "./pages/MenuDetailPage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -39,6 +40,12 @@ export const ROUTES = {
     component: MenuDetailPage,
     exact: true,
   } as RouteDefinition,
+
+  ORDER_CONFIRMATION: {
+    path: "/order-confirmation",
+    component: OrderConfirmationPage,
+    exact: true,
+  } as RouteDefinition,
 };
 
 // タイプセーフなナビゲーション用ヘルパー関数
@@ -46,6 +53,7 @@ export const getPath = {
   // 静的ルート
   home: () => ROUTES.HOME.path,
   categories: () => ROUTES.CATEGORIES.path,
+  orderConfirmation: () => ROUTES.ORDER_CONFIRMATION.path,
 
   // 動的ルート
   menuList: (categoryId: number) => `/menus/${categoryId}`,
