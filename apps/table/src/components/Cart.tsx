@@ -8,6 +8,7 @@ interface CartProps {
   onRemoveItem: (index: number) => void;
   onOrder: () => void;
   tableNumber: string;
+  isSubmitting?: boolean;
 }
 
 const Cart: React.FC<CartProps> = ({
@@ -17,6 +18,7 @@ const Cart: React.FC<CartProps> = ({
   onRemoveItem,
   onOrder,
   tableNumber,
+  isSubmitting = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -287,9 +289,12 @@ const Cart: React.FC<CartProps> = ({
 
             <button
               onClick={onOrder}
-              className="w-full bg-[#e0815e] text-white py-4 rounded-xl font-medium hover:bg-[#d3704f] transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              disabled={isSubmitting}
+              className={`w-full bg-[#e0815e] text-white py-4 rounded-xl font-medium transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+                isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-[#d3704f]"
+              }`}
             >
-              注文を確定する
+              {isSubmitting ? "注文処理中..." : "注文を確定する"}
             </button>
           </div>
         </div>

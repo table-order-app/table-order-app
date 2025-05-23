@@ -22,18 +22,21 @@ const CartContainer: React.FC = () => {
     updateCartItemQuantity,
     removeCartItem,
     clearCart,
+    submitOrder,
+    isSubmitting,
   } = useCart();
 
   const handleCloseCart = () => {
     setIsCartOpen(false);
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     // 注文確定処理
-    alert("注文を確定しました。ありがとうございます！");
-    // カートをクリアして閉じる
-    clearCart();
-    setIsCartOpen(false);
+    const success = await submitOrder();
+    if (success) {
+      // カートをクリアして閉じる（submitOrder内で既にclearCartが呼ばれている）
+      setIsCartOpen(false);
+    }
   };
 
   // カートが表示されていない場合は何も表示しない
@@ -47,6 +50,7 @@ const CartContainer: React.FC = () => {
       onRemoveItem={removeCartItem}
       onOrder={handleConfirmOrder}
       tableNumber={UI_CONFIG.TABLE_NUMBER}
+      isSubmitting={isSubmitting}
     />
   );
 };

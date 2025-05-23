@@ -25,6 +25,8 @@ interface CartContextType {
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItemCount: () => number;
+  submitOrder: () => Promise<boolean>;
+  isSubmitting: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -44,6 +46,7 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { showToast } = useToast();
 
   // カートに商品を追加
@@ -147,6 +150,32 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   }, [cartItems]);
 
+  const submitOrder = useCallback(async () => {
+    if (cartItems.length === 0) return false;
+    
+    setIsSubmitting(true);
+    try {
+      const { createOrder } = await import('../services/orderService');
+      const tableId = parseInt(BUSINESS_CONFIG.TABLE_NUMBER) || 1;
+      const response = await createOrder(tableId, cartItems);
+      
+      if (response.success) {
+        showToast('注文を確定しました。ありがとうございます！', 'success');
+        clearCart();
+        return true;
+      } else {
+        showToast(`注文の確定に失敗しました: ${response.error}`, 'error');
+        return false;
+      }
+    } catch (error) {
+      showToast('注文の確定に失敗しました。', 'error');
+      console.error('Order submission error:', error);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [cartItems, clearCart, showToast]);
+
   const value = {
     cartItems,
     isCartOpen,
@@ -157,6 +186,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     clearCart,
     getTotalPrice,
     getTotalItemCount,
+    submitOrder,
+    isSubmitting,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
