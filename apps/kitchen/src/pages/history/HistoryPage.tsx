@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order } from "../../types/order";
-import { getCompletedOrders } from "../../services/orderService";
 import { getPath } from "../../routes";
 
 const sampleOrders: Order[] = [
