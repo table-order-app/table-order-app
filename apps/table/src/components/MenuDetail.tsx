@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { mockMenuItems } from "./MenuList";
 import { MenuItem, Option, Topping } from "../types";
+import { getMenuItem } from "../services/menuService";
 
 interface MenuDetailProps {
   menuId: number;
@@ -23,19 +23,28 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
 
   useEffect(() => {
     // メニューIDからメニュー情報を取得
-    const item = mockMenuItems.find((item) => item.id === menuId);
-    if (item) {
-      setMenuItem(item);
-      setTotalPrice(item.price);
+    async function fetchMenuItem() {
+      try {
+        const response = await getMenuItem(menuId);
+        if (response.success && response.data) {
+          const item = response.data;
+          setMenuItem(item);
+          setTotalPrice(item.price);
 
-      // もし必須オプションがあればデフォルト選択する
-      if (item.options && item.options.length > 0) {
-        const defaultOption = item.options.find((option) => option.price === 0);
-        if (defaultOption) {
-          setSelectedOptions([defaultOption.id]);
+          // もし必須オプションがあればデフォルト選択する
+          if (item.options && item.options.length > 0) {
+            const defaultOption = item.options.find((option) => option.price === 0);
+            if (defaultOption) {
+              setSelectedOptions([defaultOption.id]);
+            }
+          }
         }
+      } catch (err) {
+        console.error("Error fetching menu item:", err);
       }
     }
+
+    fetchMenuItem();
   }, [menuId]);
 
   // オプションの選択が変更されたとき
