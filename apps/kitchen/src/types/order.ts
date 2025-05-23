@@ -1,5 +1,5 @@
 // 注文状態の型定義
-export type OrderStatus = "in-progress" | "completed" | "cancelled";
+export type OrderStatus = "new" | "in-progress" | "ready" | "completed" | "delivered" | "cancelled";
 
 // 注文アイテムの型定義
 export interface OrderItem {

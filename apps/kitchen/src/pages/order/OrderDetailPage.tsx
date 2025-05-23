@@ -101,6 +101,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 3,
     inProgressItems: 1,
     pendingItems: 1,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 25 * 60000), // 25分前
   },
   {
@@ -111,6 +112,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 1,
     inProgressItems: 2,
     pendingItems: 1,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 15 * 60000), // 15分前
   },
   {
@@ -121,6 +123,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 5,
     inProgressItems: 3,
     pendingItems: 0,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 40 * 60000), // 40分前
   },
 ];
@@ -129,6 +132,7 @@ const statusLabels: Record<OrderStatus, string> = {
   new: "新規注文",
   "in-progress": "調理中",
   ready: "提供準備完了",
+  completed: "完了",
   delivered: "提供済み",
   cancelled: "キャンセル",
 };
@@ -137,6 +141,7 @@ const statusColors: Record<OrderStatus, string> = {
   new: "bg-yellow-100 text-yellow-800",
   "in-progress": "bg-blue-100 text-blue-800",
   ready: "bg-green-100 text-green-800",
+  completed: "bg-green-100 text-green-800",
   delivered: "bg-gray-100 text-gray-800",
   cancelled: "bg-red-100 text-red-800",
 };

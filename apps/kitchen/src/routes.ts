@@ -46,6 +46,7 @@ export const getPath = {
   dashboard: () => ROUTES.DASHBOARD.path,
   progress: () => ROUTES.PROGRESS.path,
   history: () => ROUTES.HISTORY.path,
+  orderDetail: (orderId: string) => `/order/${orderId}`,
 };
 
 // ルート設定の配列（App.tsxで使用）
