@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1748012640499,
+      "tag": "0000_dear_the_twelve",
+      "breakpoints": true
+    }
+  ]
+}
