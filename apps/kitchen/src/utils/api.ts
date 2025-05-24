@@ -72,6 +72,19 @@ export function put<T>(
 }
 
 /**
+ * PATCHリクエスト
+ */
+export function patch<T>(
+  endpoint: string,
+  data: any
+): Promise<ApiResponse<T>> {
+  return fetchApi<T>(endpoint, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
  * DELETEリクエスト
  */
 export function del<T>(endpoint: string): Promise<ApiResponse<T>> {

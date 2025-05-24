@@ -1,322 +1,66 @@
-import { useState, useEffect } from "react";
-import { Order, ProgressData } from "../../types/order";
+import { useState, useEffect, useCallback } from "react";
+import { Order, ProgressData, OrderItem, Table } from "../../types/order";
 import PieChart from "../../components/ui/PieChart";
+import { getOrders, updateOrderItemStatus, ApiOrder } from "../../services/orderService";
 
-// サンプルデータ（実際はAPIから取得）
-const sampleOrders: Order[] = [
-  {
-    id: "order1",
-    tableId: "table1",
-    table: { id: "table1", number: 1, area: "メインフロア" },
-    items: [
-      {
-        id: "item1",
-        name: "シーザーサラダ",
-        quantity: 2,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-      },
-      {
-        id: "item2",
-        name: "マルゲリータピザ",
-        quantity: 1,
-        notes: "チーズ多めで",
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 8 * 60000), // 8分前
-      },
-      {
-        id: "item3",
-        name: "スパークリングワイン",
-        quantity: 2,
-        status: "completed",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-    ],
-    totalItems: 5,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 25 * 60000), // 25分前
-    updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-  },
-  {
-    id: "order2",
-    tableId: "table2",
-    table: { id: "table2", number: 3, area: "テラス" },
-    items: [
-      {
-        id: "item4",
-        name: "カルボナーラ",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 12 * 60000), // 12分前
-      },
-      {
-        id: "item5",
-        name: "ガーリックブレッド",
-        quantity: 1,
-        status: "completed",
-        updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-      },
-      {
-        id: "item6",
-        name: "ティラミス",
-        quantity: 2,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-      },
-    ],
-    totalItems: 4,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 15 * 60000), // 15分前
-    updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-  },
-  {
-    id: "order3",
-    tableId: "table3",
-    table: { id: "table3", number: 5, area: "個室" },
-    items: [
-      {
-        id: "item7",
-        name: "ステーキセット",
-        quantity: 3,
-        notes: "ミディアムレア",
-        status: "completed",
-        updatedAt: new Date(Date.now() - 20 * 60000), // 20分前
-      },
-      {
-        id: "item8",
-        name: "シーフードパスタ",
-        quantity: 2,
-        status: "completed",
-        updatedAt: new Date(Date.now() - 18 * 60000), // 18分前
-      },
-      {
-        id: "item9",
-        name: "アイスクリーム",
-        quantity: 3,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-      },
-    ],
-    totalItems: 8,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 40 * 60000), // 40分前
-    updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-  },
-  {
-    id: "order4",
-    tableId: "table4",
-    table: { id: "table4", number: 7, area: "メインフロア" },
-    items: [
-      {
-        id: "item10",
-        name: "ハンバーガー",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 4 * 60000), // 4分前
-      },
-      {
-        id: "item11",
-        name: "フライドポテト",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-      {
-        id: "item12",
-        name: "コーラ",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-    ],
-    totalItems: 3,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 5 * 60000), // 5分前
-    updatedAt: new Date(Date.now() - 4 * 60000), // 4分前
-  },
-];
+// API data transformation functions
+const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {
+  const transformedItems: OrderItem[] = apiOrder.items.map(item => ({
+    id: item.id.toString(),
+    name: item.name,
+    quantity: item.quantity,
+    notes: item.notes || undefined,
+    status: mapApiStatusToOrderStatus(item.status),
+    updatedAt: new Date(item.updatedAt),
+  }));
 
-// サンプル進捗データ（実際はAPIから取得）
-const sampleProgressData: ProgressData[] = [
-  {
-    tableId: "table1",
-    tableNumber: 1,
-    area: "メインフロア",
-    totalItems: 5,
-    completedItems: 2,
-    inProgressItems: 3,
-    cancelledItems: 0,
-    startTime: new Date(Date.now() - 25 * 60000), // 25分前
-  },
-  {
-    tableId: "table2",
-    tableNumber: 3,
-    area: "テラス",
-    totalItems: 4,
-    completedItems: 1,
-    inProgressItems: 3,
-    cancelledItems: 0,
-    startTime: new Date(Date.now() - 15 * 60000), // 15分前
-  },
-  {
-    tableId: "table3",
-    tableNumber: 5,
-    area: "個室",
-    totalItems: 8,
-    completedItems: 5,
-    inProgressItems: 3,
-    cancelledItems: 0,
-    startTime: new Date(Date.now() - 40 * 60000), // 40分前
-  },
-  {
-    tableId: "table4",
-    tableNumber: 7,
-    area: "メインフロア",
-    totalItems: 3,
-    completedItems: 0,
-    inProgressItems: 3,
-    cancelledItems: 0,
-    startTime: new Date(Date.now() - 5 * 60000), // 5分前
-  },
-];
+  const transformedTable: Table = {
+    id: apiOrder.table.id.toString(),
+    number: apiOrder.table.number,
+    area: apiOrder.table.area,
+  };
+
+  return {
+    id: apiOrder.id.toString(),
+    tableId: apiOrder.tableId.toString(),
+    table: transformedTable,
+    items: transformedItems,
+    totalItems: apiOrder.totalItems,
+    status: mapApiStatusToOrderStatus(apiOrder.status),
+    createdAt: new Date(apiOrder.createdAt),
+    updatedAt: new Date(apiOrder.updatedAt),
+  };
+};
+
+const mapApiStatusToOrderStatus = (apiStatus: string) => {
+  switch (apiStatus) {
+    case 'new':
+      return 'new' as const;
+    case 'in-progress':
+      return 'in-progress' as const;
+    case 'ready':
+      return 'ready' as const;
+    case 'completed':
+      return 'completed' as const;
+    case 'delivered':
+      return 'delivered' as const;
+    case 'cancelled':
+      return 'cancelled' as const;
+    default:
+      return 'new' as const;
+  }
+};
+
 
 const DashboardPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // 実際はAPIからデータを取得
-    setOrders(sampleOrders);
-
-    // 注文データから進捗データを計算
-    const initialProgressData = calculateProgressData(
-      sampleOrders,
-      sampleProgressData
-    );
-    setProgressData(initialProgressData);
-
-    // 最初のテーブルを自動選択
-    if (initialProgressData.length > 0) {
-      handleProgressSelect(initialProgressData[0]);
-    }
-
-    // ポーリングで最新のデータを取得
-    const intervalId = setInterval(() => {
-      // 実際の実装ではここでAPIを呼び出す
-      console.log("データを更新中...");
-      // 最新の注文データから進捗を計算
-      // setOrders(newOrdersFromAPI);
-      // updateProgressDataFromOrders(newOrdersFromAPI);
-    }, 10000);
-
-    // クリーンアップ
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // キャンセル処理
-  const handleCancelItem = (orderId: string, itemId: string) => {
-    // 注文アイテムをキャンセルに更新
-    setOrders((prevOrders) => {
-      const updatedOrders = prevOrders.map((order) => {
-        if (order.id !== orderId) return order;
-
-        const updatedItems = order.items.map((item) => {
-          if (item.id !== itemId) return item;
-          return {
-            ...item,
-            status: "cancelled" as const, // 調理中 → キャンセル
-            updatedAt: new Date(),
-          };
-        });
-
-        // すべてのアイテムがキャンセルされたかチェック
-        const allCancelled = updatedItems.every(
-          (item) => item.status === "cancelled"
-        );
-
-        // 一部がキャンセルされ、残りが完了している場合
-        const allCompletedOrCancelled = updatedItems.every(
-          (item) => item.status === "completed" || item.status === "cancelled"
-        );
-
-        let newStatus = order.status;
-        if (allCancelled) {
-          newStatus = "cancelled";
-        } else if (allCompletedOrCancelled) {
-          newStatus = "completed";
-        }
-
-        return {
-          ...order,
-          items: updatedItems,
-          status: newStatus,
-          updatedAt: new Date(),
-        };
-      });
-
-      // 選択中の注文も更新
-      if (selectedOrder && selectedOrder.id === orderId) {
-        const updatedOrder = updatedOrders.find(
-          (order) => order.id === orderId
-        );
-        if (updatedOrder) {
-          setSelectedOrder(updatedOrder);
-        }
-      }
-
-      // 進捗データを更新する
-      updateProgressDataFromOrders(updatedOrders);
-
-      return updatedOrders;
-    });
-  };
-
-  // 初期進捗データの計算
-  const calculateProgressData = (
-    ordersData: Order[],
-    baseProgressData: ProgressData[]
-  ): ProgressData[] => {
-    return baseProgressData.map((data) => {
-      const tableOrders = ordersData.filter(
-        (order) => order.tableId === data.tableId
-      );
-
-      if (tableOrders.length === 0) return data;
-
-      // 各ステータスのアイテム数を集計
-      let totalItems = 0;
-      let completedItems = 0;
-      let inProgressItems = 0;
-      let cancelledItems = 0;
-
-      tableOrders.forEach((order) => {
-        order.items.forEach((item) => {
-          totalItems += item.quantity;
-
-          if (item.status === "completed") {
-            completedItems += item.quantity;
-          } else if (item.status === "in-progress") {
-            inProgressItems += item.quantity;
-          } else if (item.status === "cancelled") {
-            cancelledItems += item.quantity;
-          }
-        });
-      });
-
-      return {
-        ...data,
-        totalItems,
-        completedItems,
-        inProgressItems,
-        cancelledItems,
-      };
-    });
-  };
-
-  // テーブル進捗状況をタップした時の処理
-  const handleProgressSelect = (progress: ProgressData) => {
+  const handleProgressSelect = useCallback((progress: ProgressData) => {
     setSelectedTable(progress.tableId);
 
     // そのテーブルの注文を探す
@@ -326,92 +70,222 @@ const DashboardPage = () => {
     if (tableOrder) {
       setSelectedOrder(tableOrder);
     }
+  }, [orders]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getOrders();
+        
+        if (response.success && response.data) {
+          const transformedOrders = response.data.map(transformApiOrderToOrder);
+          setOrders(transformedOrders);
+          
+          // 注文データから進捗データを計算
+          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
+          setProgressData(calculatedProgressData);
+
+          // 最初のテーブルを自動選択
+          if (calculatedProgressData.length > 0) {
+            handleProgressSelect(calculatedProgressData[0]);
+          }
+        } else {
+          setError(response.error || "注文データの取得に失敗しました");
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        setError("注文データの取得中にエラーが発生しました");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+
+    // ポーリングで最新のデータを取得
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 30000); // 30秒ごとに更新
+
+    // クリーンアップ
+    return () => clearInterval(intervalId);
+  }, [handleProgressSelect]);
+
+  // キャンセル処理
+  const handleCancelItem = async (orderId: string, itemId: string) => {
+    try {
+      const response = await updateOrderItemStatus(Number(itemId), "cancelled");
+      
+      if (response.success) {
+        // ローカル状態を更新
+        setOrders((prevOrders) => {
+          const updatedOrders = prevOrders.map((order) => {
+            if (order.id !== orderId) return order;
+
+            const updatedItems = order.items.map((item) => {
+              if (item.id !== itemId) return item;
+              return {
+                ...item,
+                status: "cancelled" as const,
+                updatedAt: new Date(),
+              };
+            });
+
+            // すべてのアイテムがキャンセルされたかチェック
+            const allCancelled = updatedItems.every(
+              (item) => item.status === "cancelled"
+            );
+
+            // 一部がキャンセルされ、残りが完了している場合
+            const allCompletedOrCancelled = updatedItems.every(
+              (item) => item.status === "completed" || item.status === "cancelled"
+            );
+
+            let newStatus = order.status;
+            if (allCancelled) {
+              newStatus = "cancelled";
+            } else if (allCompletedOrCancelled) {
+              newStatus = "completed";
+            }
+
+            return {
+              ...order,
+              items: updatedItems,
+              status: newStatus,
+              updatedAt: new Date(),
+            };
+          });
+
+          // 選択中の注文も更新
+          if (selectedOrder && selectedOrder.id === orderId) {
+            const updatedOrder = updatedOrders.find(
+              (order) => order.id === orderId
+            );
+            if (updatedOrder) {
+              setSelectedOrder(updatedOrder);
+            }
+          }
+
+          // 進捗データを更新する
+          updateProgressDataFromOrders(updatedOrders);
+
+          return updatedOrders;
+        });
+      } else {
+        console.error("Failed to cancel item:", response.error);
+      }
+    } catch (error) {
+      console.error("Error cancelling item:", error);
+    }
   };
 
-  // 調理完了処理
-  const handleCompleteItem = (orderId: string, itemId: string) => {
-    // 調理中のアイテムを調理完了に更新
-    setOrders((prevOrders) => {
-      const updatedOrders = prevOrders.map((order) => {
-        if (order.id !== orderId) return order;
+  // 注文データから進捗データを計算
+  const calculateProgressDataFromOrders = (ordersData: Order[]): ProgressData[] => {
+    const progressMap = new Map<string, ProgressData>();
 
-        const updatedItems = order.items.map((item) => {
-          if (item.id !== itemId) return item;
-          return {
-            ...item,
-            status: "completed" as const, // 調理中 → 調理完了
-            updatedAt: new Date(),
-          };
+    ordersData.forEach((order) => {
+      if (!progressMap.has(order.tableId)) {
+        progressMap.set(order.tableId, {
+          tableId: order.tableId,
+          tableNumber: order.table.number,
+          area: order.table.area,
+          totalItems: 0,
+          completedItems: 0,
+          inProgressItems: 0,
+          cancelledItems: 0,
+          startTime: order.createdAt,
         });
-
-        // 全てのアイテムが調理完了かチェック
-        const allCompleted = updatedItems.every(
-          (item) => item.status === "completed"
-        );
-
-        return {
-          ...order,
-          items: updatedItems,
-          status: allCompleted ? "completed" : order.status,
-          updatedAt: new Date(),
-        };
-      });
-
-      // 選択中の注文も更新
-      if (selectedOrder && selectedOrder.id === orderId) {
-        const updatedOrder = updatedOrders.find(
-          (order) => order.id === orderId
-        );
-        if (updatedOrder) {
-          setSelectedOrder(updatedOrder);
-        }
       }
 
-      // 進捗データを更新する
-      updateProgressDataFromOrders(updatedOrders);
+      const progressData = progressMap.get(order.tableId)!;
+      
+      // より古い注文があればstartTimeを更新
+      if (order.createdAt < progressData.startTime) {
+        progressData.startTime = order.createdAt;
+      }
 
-      return updatedOrders;
+      // 各アイテムの状態を集計
+      order.items.forEach((item) => {
+        progressData.totalItems += item.quantity;
+
+        if (item.status === "completed" || item.status === "ready") {
+          progressData.completedItems += item.quantity;
+        } else if (item.status === "in-progress") {
+          progressData.inProgressItems += item.quantity;
+        } else if (item.status === "cancelled") {
+          progressData.cancelledItems += item.quantity;
+        } else {
+          // new status is treated as in-progress
+          progressData.inProgressItems += item.quantity;
+        }
+      });
     });
+
+    return Array.from(progressMap.values());
+  };
+
+
+  // 調理完了処理
+  const handleCompleteItem = async (orderId: string, itemId: string) => {
+    try {
+      const response = await updateOrderItemStatus(Number(itemId), "ready");
+      
+      if (response.success) {
+        // ローカル状態を更新
+        setOrders((prevOrders) => {
+          const updatedOrders = prevOrders.map((order) => {
+            if (order.id !== orderId) return order;
+
+            const updatedItems = order.items.map((item) => {
+              if (item.id !== itemId) return item;
+              return {
+                ...item,
+                status: "completed" as const, // UIでは完了として表示
+                updatedAt: new Date(),
+              };
+            });
+
+            // 全てのアイテムが調理完了かチェック
+            const allCompleted = updatedItems.every(
+              (item) => item.status === "completed"
+            );
+
+            return {
+              ...order,
+              items: updatedItems,
+              status: allCompleted ? "completed" : order.status,
+              updatedAt: new Date(),
+            };
+          });
+
+          // 選択中の注文も更新
+          if (selectedOrder && selectedOrder.id === orderId) {
+            const updatedOrder = updatedOrders.find(
+              (order) => order.id === orderId
+            );
+            if (updatedOrder) {
+              setSelectedOrder(updatedOrder);
+            }
+          }
+
+          // 進捗データを更新する
+          updateProgressDataFromOrders(updatedOrders);
+
+          return updatedOrders;
+        });
+      } else {
+        console.error("Failed to complete item:", response.error);
+      }
+    } catch (error) {
+      console.error("Error completing item:", error);
+    }
   };
 
   // 進捗データの更新（Ordersから直接計算）
   const updateProgressDataFromOrders = (currentOrders: Order[]) => {
-    const updatedProgressData = progressData.map((data) => {
-      const tableOrders = currentOrders.filter(
-        (order) => order.tableId === data.tableId
-      );
-
-      if (tableOrders.length === 0) return data;
-
-      // 各ステータスのアイテム数を集計
-      let totalItems = 0;
-      let completedItems = 0;
-      let inProgressItems = 0;
-      let cancelledItems = 0;
-
-      tableOrders.forEach((order) => {
-        order.items.forEach((item) => {
-          totalItems += item.quantity;
-
-          if (item.status === "completed") {
-            completedItems += item.quantity;
-          } else if (item.status === "in-progress") {
-            inProgressItems += item.quantity;
-          } else if (item.status === "cancelled") {
-            cancelledItems += item.quantity;
-          }
-        });
-      });
-
-      return {
-        ...data,
-        totalItems,
-        completedItems,
-        inProgressItems,
-        cancelledItems,
-      };
-    });
-
+    const updatedProgressData = calculateProgressDataFromOrders(currentOrders);
     setProgressData(updatedProgressData);
   };
 
@@ -441,6 +315,43 @@ const DashboardPage = () => {
     return `${hours}時間${mins}分`;
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full w-full">
+        <div className="flex items-center p-4 bg-white shadow z-10">
+          <h1 className="text-2xl font-bold">キッチンモニター</h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">データを読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full w-full">
+        <div className="flex items-center p-4 bg-white shadow z-10">
+          <h1 className="text-2xl font-bold">キッチンモニター</h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-red-600 font-medium">{error}</p>
+            <p className="text-gray-600 mt-2">しばらく待ってから再度お試しください</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex items-center p-4 bg-white shadow z-10">
@@ -452,8 +363,18 @@ const DashboardPage = () => {
         <div className="w-2/3 overflow-y-auto border-r border-gray-200">
           <div className="p-4">
             <h2 className="text-xl font-semibold mb-4">テーブル別進捗状況</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {progressData.map((data) => (
+            {progressData.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-gray-600">現在進行中の注文はありません</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {progressData.map((data) => (
                 <div
                   key={data.tableId}
                   className={`bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow ${selectedTable === data.tableId ? "border-2 border-primary" : ""}`}
@@ -522,8 +443,9 @@ const DashboardPage = () => {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
