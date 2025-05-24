@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateMenuItem, deleteMenuItem } from "../../services/menuService";
+import { updateMenuItem, deleteMenuItem, createMenuItem, createCategory } from "../../services/menuService";
 
 // メニューアイテムの型定義
 type MenuItem = {
@@ -71,6 +71,8 @@ const MenuPage = () => {
   ]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editFormData, setEditFormData] = useState<MenuItem>({
@@ -80,6 +82,18 @@ const MenuPage = () => {
     price: 0,
     category: "",
     available: true,
+  });
+  
+  const [addFormData, setAddFormData] = useState<Omit<MenuItem, "id">>({
+    name: "",
+    description: "",
+    price: 0,
+    category: categories.length > 0 ? categories[0].id : "",
+    available: true,
+  });
+  
+  const [addCategoryData, setAddCategoryData] = useState<Omit<Category, "id">>({
+    name: "",
   });
 
   // 選択中のカテゴリ
@@ -165,6 +179,81 @@ const MenuPage = () => {
       console.error("メニュー項目の削除に失敗しました", error);
     }
   };
+  
+  const handleAddCategoryInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddCategoryData({
+      ...addCategoryData,
+      [name]: value,
+    });
+  };
+  
+  const handleAddCategory = async () => {
+    try {
+      
+      const newId = `cat${Date.now()}`;
+      
+      const newCategory = {
+        id: newId,
+        name: addCategoryData.name,
+      };
+      
+      setCategories([...categories, newCategory]);
+      
+      setAddCategoryData({ name: "" });
+      setIsAddCategoryModalOpen(false);
+    } catch (error) {
+      console.error("カテゴリの追加に失敗しました", error);
+    }
+  };
+  
+  const handleAddItemInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setAddFormData({
+        ...addFormData,
+        [name]: checked,
+      });
+    } else if (name === 'price') {
+      setAddFormData({
+        ...addFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
+    } else {
+      setAddFormData({
+        ...addFormData,
+        [name]: value,
+      });
+    }
+  };
+  
+  const handleAddItem = async () => {
+    try {
+      // const result = await createMenuItem(addFormData);
+      
+      const newId = `item${Date.now()}`;
+      
+      const newItem = {
+        id: newId,
+        ...addFormData,
+      };
+      
+      setMenuItems([...menuItems, newItem]);
+      
+      setAddFormData({
+        name: "",
+        description: "",
+        price: 0,
+        category: categories.length > 0 ? categories[0].id : "",
+        available: true,
+      });
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("メニュー項目の追加に失敗しました", error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -180,7 +269,11 @@ const MenuPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">カテゴリ</h3>
-          <Button label="カテゴリ追加" variant="secondary" />
+          <Button 
+            label="カテゴリ追加" 
+            variant="secondary" 
+            onClick={() => setIsAddCategoryModalOpen(true)}
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -214,7 +307,10 @@ const MenuPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">メニュー一覧</h3>
-          <Button label="メニュー追加" />
+          <Button 
+            label="メニュー追加" 
+            onClick={() => setIsAddModalOpen(true)}
+          />
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -419,6 +515,148 @@ const MenuPage = () => {
           title="メニュー項目の削除"
           message={`「${selectedItem?.name}」を削除してもよろしいですか？この操作は元に戻せません。`}
         />
+      )}
+
+      {/* メニュー追加モーダル */}
+      {isAddModalOpen && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="メニュー項目の追加"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleAddItem(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  名前
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={addFormData.name}
+                  onChange={handleAddItemInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  説明
+                </label>
+                <textarea
+                  name="description"
+                  value={addFormData.description}
+                  onChange={handleAddItemInputChange}
+                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  価格
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={addFormData.price}
+                  onChange={handleAddItemInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  カテゴリ
+                </label>
+                <select
+                  name="category"
+                  value={addFormData.category}
+                  onChange={handleAddItemInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="available"
+                  checked={addFormData.available}
+                  onChange={(e) => 
+                    setAddFormData({
+                      ...addFormData,
+                      available: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">
+                  提供中
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddItem}
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* カテゴリ追加モーダル */}
+      {isAddCategoryModalOpen && (
+        <Modal
+          isOpen={isAddCategoryModalOpen}
+          onClose={() => setIsAddCategoryModalOpen(false)}
+          title="カテゴリの追加"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleAddCategory(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  カテゴリ名
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={addCategoryData.name}
+                  onChange={handleAddCategoryInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddCategoryModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddCategory}
+              />
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );
