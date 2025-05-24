@@ -2,6 +2,9 @@ import { Button } from "@table-order-system/ui";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
+import { Modal } from "../../components/Modal";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { updateMenuItem, deleteMenuItem } from "../../services/menuService";
 
 // メニューアイテムの型定義
 type MenuItem = {
@@ -32,7 +35,7 @@ const MenuPage = () => {
   ]);
 
   // サンプルメニューデータ
-  const [menuItems] = useState<MenuItem[]>([
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([
     {
       id: "item1",
       name: "シーザーサラダ",
@@ -67,6 +70,18 @@ const MenuPage = () => {
     },
   ]);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [editFormData, setEditFormData] = useState<MenuItem>({
+    id: "",
+    name: "",
+    description: "",
+    price: 0,
+    category: "",
+    available: true,
+  });
+
   // 選択中のカテゴリ
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -84,6 +99,71 @@ const MenuPage = () => {
   // ダッシュボードに戻る
   const handleBack = () => {
     navigate(getPath.dashboard());
+  };
+
+  const handleOpenEditModal = (item: MenuItem) => {
+    setSelectedItem(item);
+    setEditFormData({ ...item });
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (item: MenuItem) => {
+    setSelectedItem(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditFormData({
+        ...editFormData,
+        [name]: checked,
+      });
+    } else if (name === 'price') {
+      setEditFormData({
+        ...editFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleEditItem = async () => {
+    try {
+      await updateMenuItem(parseInt(editFormData.id), editFormData);
+      
+      const updatedItems = menuItems.map((item) => 
+        item.id === editFormData.id ? editFormData : item
+      );
+      setMenuItems(updatedItems);
+      
+      setIsEditModalOpen(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("メニュー項目の更新に失敗しました", error);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      await deleteMenuItem(parseInt(selectedItem.id));
+      
+      const updatedItems = menuItems.filter((item) => item.id !== selectedItem.id);
+      setMenuItems(updatedItems);
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("メニュー項目の削除に失敗しました", error);
+    }
   };
 
   return (
@@ -197,10 +277,16 @@ const MenuPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-primary hover:text-primary-dark mr-3">
+                      <button 
+                        className="text-primary hover:text-primary-dark mr-3"
+                        onClick={() => handleOpenEditModal(item)}
+                      >
                         編集
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleOpenDeleteDialog(item)}
+                      >
                         削除
                       </button>
                     </td>
@@ -220,6 +306,120 @@ const MenuPage = () => {
           </table>
         </div>
       </div>
+
+      {/* 編集モーダル */}
+      {isEditModalOpen && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="メニュー項目の編集"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleEditItem(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  名前
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editFormData.name}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  説明
+                </label>
+                <textarea
+                  name="description"
+                  value={editFormData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  価格
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={editFormData.price}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  カテゴリ
+                </label>
+                <select
+                  name="category"
+                  value={editFormData.category}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="available"
+                  checked={editFormData.available}
+                  onChange={(e) => 
+                    setEditFormData({
+                      ...editFormData,
+                      available: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">
+                  提供中
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(false)}
+              />
+              <Button
+                label="保存"
+                onClick={handleEditItem}
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {isDeleteDialogOpen && (
+        <ConfirmDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          onConfirm={handleDeleteItem}
+          title="メニュー項目の削除"
+          message={`「${selectedItem?.name}」を削除してもよろしいですか？この操作は元に戻せません。`}
+        />
+      )}
     </div>
   );
 };

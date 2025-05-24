@@ -2,6 +2,9 @@ import { Button } from "@table-order-system/ui";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
+import { Modal } from "../../components/Modal";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { updateTable, deleteTable } from "../../services/tableService";
 
 // テーブルの型定義
 type Table = {
@@ -31,7 +34,7 @@ const TablesPage = () => {
   ]);
 
   // サンプルテーブルデータ
-  const [tables] = useState<Table[]>([
+  const [tables, setTables] = useState<Table[]>([
     {
       id: "table1",
       number: 1,
@@ -115,10 +118,86 @@ const TablesPage = () => {
     navigate(getPath.dashboard());
   };
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [editFormData, setEditFormData] = useState<Table>({
+    id: "",
+    number: 0,
+    capacity: 0,
+    area: "",
+    status: "available",
+  });
+
   // QRコードの生成または表示
   const handleShowQR = (tableId: string) => {
     alert(`QRコードを表示: ${tableId}`);
     // 実際の実装ではモーダルウィンドウなどでQRコードを表示する
+  };
+
+  const handleOpenEditModal = (table: Table) => {
+    setSelectedTable(table);
+    setEditFormData({ ...table });
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (table: Table) => {
+    setSelectedTable(table);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditFormData({
+        ...editFormData,
+        [name]: checked,
+      });
+    } else if (name === 'number' || name === 'capacity') {
+      setEditFormData({
+        ...editFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleEditTable = async () => {
+    try {
+      await updateTable(parseInt(editFormData.id), editFormData);
+      
+      const updatedTables = tables.map((table) => 
+        table.id === editFormData.id ? editFormData : table
+      );
+      setTables(updatedTables);
+      
+      setIsEditModalOpen(false);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error("テーブルの更新に失敗しました", error);
+    }
+  };
+
+  const handleDeleteTable = async () => {
+    if (!selectedTable) return;
+    
+    try {
+      await deleteTable(parseInt(selectedTable.id));
+      
+      const updatedTables = tables.filter((table) => table.id !== selectedTable.id);
+      setTables(updatedTables);
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error("テーブルの削除に失敗しました", error);
+    }
   };
 
   return (
@@ -233,10 +312,16 @@ const TablesPage = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-primary hover:text-primary-dark mr-3">
+                      <button 
+                        className="text-primary hover:text-primary-dark mr-3"
+                        onClick={() => handleOpenEditModal(table)}
+                      >
                         編集
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleOpenDeleteDialog(table)}
+                      >
                         削除
                       </button>
                     </td>
@@ -288,6 +373,120 @@ const TablesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 編集モーダル */}
+      {isEditModalOpen && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="テーブル情報の編集"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleEditTable(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  テーブル番号
+                </label>
+                <input
+                  type="number"
+                  name="number"
+                  value={editFormData.number}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  収容人数
+                </label>
+                <input
+                  type="number"
+                  name="capacity"
+                  value={editFormData.capacity}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  エリア
+                </label>
+                <select
+                  name="area"
+                  value={editFormData.area}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  状態
+                </label>
+                <select
+                  name="status"
+                  value={editFormData.status}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  <option value="available">利用可能</option>
+                  <option value="occupied">使用中</option>
+                  <option value="reserved">予約済み</option>
+                  <option value="maintenance">メンテナンス中</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  QRコードURL
+                </label>
+                <input
+                  type="text"
+                  name="qrCode"
+                  value={editFormData.qrCode || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(false)}
+              />
+              <Button
+                label="保存"
+                onClick={handleEditTable}
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {isDeleteDialogOpen && (
+        <ConfirmDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          onConfirm={handleDeleteTable}
+          title="テーブルの削除"
+          message={`テーブル番号「${selectedTable?.number}」を削除してもよろしいですか？この操作は元に戻せません。`}
+        />
+      )}
     </div>
   );
 };
