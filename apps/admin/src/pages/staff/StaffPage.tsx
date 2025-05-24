@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateStaffMember, deleteStaffMember } from "../../services/staffService";
+import { updateStaffMember, deleteStaffMember, createStaffMember } from "../../services/staffService";
 
 // スタッフの型定義
 type Staff = {
@@ -84,6 +84,8 @@ const StaffPage = () => {
   };
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [editFormData, setEditFormData] = useState<Staff>({
@@ -93,6 +95,18 @@ const StaffPage = () => {
     email: "",
     phone: "",
     isActive: true,
+  });
+  
+  const [addFormData, setAddFormData] = useState<Omit<Staff, "id">>({
+    name: "",
+    role: roles.length > 0 ? roles[0].id : "",
+    email: "",
+    phone: "",
+    isActive: true,
+  });
+  
+  const [addRoleData, setAddRoleData] = useState<Omit<Role, "id">>({
+    name: "",
   });
 
   // ダッシュボードに戻る
@@ -159,6 +173,76 @@ const StaffPage = () => {
       console.error("スタッフの削除に失敗しました", error);
     }
   };
+  
+  const handleAddRoleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddRoleData({
+      ...addRoleData,
+      [name]: value,
+    });
+  };
+  
+  const handleAddRole = async () => {
+    try {
+      
+      const newId = `role${Date.now()}`;
+      
+      const newRole = {
+        id: newId,
+        name: addRoleData.name,
+      };
+      
+      setRoles([...roles, newRole]);
+      
+      setAddRoleData({ name: "" });
+      setIsAddRoleModalOpen(false);
+    } catch (error) {
+      console.error("役割の追加に失敗しました", error);
+    }
+  };
+  
+  const handleAddStaffInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setAddFormData({
+        ...addFormData,
+        [name]: checked,
+      });
+    } else {
+      setAddFormData({
+        ...addFormData,
+        [name]: value,
+      });
+    }
+  };
+  
+  const handleAddStaff = async () => {
+    try {
+      // const result = await createStaffMember(addFormData);
+      
+      const newId = `staff${Date.now()}`;
+      
+      const newStaff = {
+        id: newId,
+        ...addFormData,
+      };
+      
+      setStaffList([...staffList, newStaff]);
+      
+      setAddFormData({
+        name: "",
+        role: roles.length > 0 ? roles[0].id : "",
+        email: "",
+        phone: "",
+        isActive: true,
+      });
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("スタッフの追加に失敗しました", error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -174,7 +258,11 @@ const StaffPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">役割別フィルター</h3>
-          <Button label="役割追加" variant="secondary" />
+          <Button 
+            label="役割追加" 
+            variant="secondary" 
+            onClick={() => setIsAddRoleModalOpen(true)}
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -208,7 +296,10 @@ const StaffPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">スタッフ一覧</h3>
-          <Button label="スタッフ追加" />
+          <Button 
+            label="スタッフ追加" 
+            onClick={() => setIsAddModalOpen(true)}
+          />
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -410,6 +501,149 @@ const StaffPage = () => {
           title="スタッフの削除"
           message={`「${selectedStaff?.name}」を削除してもよろしいですか？この操作は元に戻せません。`}
         />
+      )}
+
+      {/* スタッフ追加モーダル */}
+      {isAddModalOpen && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="スタッフの追加"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleAddStaff(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  名前
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={addFormData.name}
+                  onChange={handleAddStaffInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  役割
+                </label>
+                <select
+                  name="role"
+                  value={addFormData.role}
+                  onChange={handleAddStaffInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  メールアドレス
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={addFormData.email}
+                  onChange={handleAddStaffInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  電話番号
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={addFormData.phone}
+                  onChange={handleAddStaffInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={addFormData.isActive}
+                  onChange={(e) => 
+                    setAddFormData({
+                      ...addFormData,
+                      isActive: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">
+                  在籍中
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddStaff}
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 役割追加モーダル */}
+      {isAddRoleModalOpen && (
+        <Modal
+          isOpen={isAddRoleModalOpen}
+          onClose={() => setIsAddRoleModalOpen(false)}
+          title="役割の追加"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleAddRole(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  役割名
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={addRoleData.name}
+                  onChange={handleAddRoleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddRoleModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddRole}
+              />
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

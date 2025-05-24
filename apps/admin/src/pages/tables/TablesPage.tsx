@@ -13,7 +13,6 @@ type Table = {
   capacity: number;
   area: string;
   status: "available" | "occupied" | "reserved" | "maintenance";
-  qrCode?: string;
 };
 
 // エリアの型定義
@@ -26,7 +25,7 @@ const TablesPage = () => {
   const navigate = useNavigate();
 
   // サンプルエリアデータ
-  const [areas] = useState<Area[]>([
+  const [areas, setAreas] = useState<Area[]>([
     { id: "area1", name: "メインフロア" },
     { id: "area2", name: "テラス" },
     { id: "area3", name: "個室" },
@@ -41,7 +40,6 @@ const TablesPage = () => {
       capacity: 4,
       area: "area1",
       status: "available",
-      qrCode: "https://example.com/qr/table1",
     },
     {
       id: "table2",
@@ -49,7 +47,6 @@ const TablesPage = () => {
       capacity: 2,
       area: "area1",
       status: "occupied",
-      qrCode: "https://example.com/qr/table2",
     },
     {
       id: "table3",
@@ -57,7 +54,6 @@ const TablesPage = () => {
       capacity: 6,
       area: "area2",
       status: "available",
-      qrCode: "https://example.com/qr/table3",
     },
     {
       id: "table4",
@@ -65,7 +61,6 @@ const TablesPage = () => {
       capacity: 8,
       area: "area3",
       status: "reserved",
-      qrCode: "https://example.com/qr/table4",
     },
     {
       id: "table5",
@@ -73,7 +68,6 @@ const TablesPage = () => {
       capacity: 1,
       area: "area4",
       status: "maintenance",
-      qrCode: "https://example.com/qr/table5",
     },
   ]);
 
@@ -119,6 +113,8 @@ const TablesPage = () => {
   };
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddAreaModalOpen, setIsAddAreaModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editFormData, setEditFormData] = useState<Table>({
@@ -128,11 +124,84 @@ const TablesPage = () => {
     area: "",
     status: "available",
   });
+  
+  const [addFormData, setAddFormData] = useState<Omit<Table, "id">>({
+    number: 0,
+    capacity: 0,
+    area: areas.length > 0 ? areas[0].id : "",
+    status: "available",
+  });
+  
+  const [addAreaData, setAddAreaData] = useState<Omit<Area, "id">>({
+    name: "",
+  });
 
-  // QRコードの生成または表示
-  const handleShowQR = (tableId: string) => {
-    alert(`QRコードを表示: ${tableId}`);
-    // 実際の実装ではモーダルウィンドウなどでQRコードを表示する
+  const handleAddAreaInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddAreaData({
+      ...addAreaData,
+      [name]: value,
+    });
+  };
+  
+  const handleAddArea = async () => {
+    try {
+      
+      const newId = `area${Date.now()}`;
+      
+      const newArea = {
+        id: newId,
+        name: addAreaData.name,
+      };
+      
+      setAreas([...areas, newArea]);
+      
+      setAddAreaData({ name: "" });
+      setIsAddAreaModalOpen(false);
+    } catch (error) {
+      console.error("エリアの追加に失敗しました", error);
+    }
+  };
+  
+  const handleAddTableInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'number' || name === 'capacity') {
+      setAddFormData({
+        ...addFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
+    } else {
+      setAddFormData({
+        ...addFormData,
+        [name]: value,
+      });
+    }
+  };
+  
+  const handleAddTable = async () => {
+    try {
+      // const result = await createTable(addFormData);
+      
+      const newId = `table${Date.now()}`;
+      
+      const newTable = {
+        id: newId,
+        ...addFormData,
+      };
+      
+      setTables([...tables, newTable]);
+      
+      setAddFormData({
+        number: 0,
+        capacity: 0,
+        area: areas.length > 0 ? areas[0].id : "",
+        status: "available",
+      });
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("テーブルの追加に失敗しました", error);
+    }
   };
 
   const handleOpenEditModal = (table: Table) => {
@@ -214,7 +283,11 @@ const TablesPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">エリア別フィルター</h3>
-          <Button label="エリア追加" variant="secondary" />
+          <Button 
+            label="エリア追加" 
+            variant="secondary" 
+            onClick={() => setIsAddAreaModalOpen(true)}
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -248,7 +321,10 @@ const TablesPage = () => {
       <div className="bg-white rounded-lg shadow-md p-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">テーブル一覧</h3>
-          <Button label="テーブル追加" />
+          <Button 
+            label="テーブル追加" 
+            onClick={() => setIsAddModalOpen(true)}
+          />
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -267,9 +343,7 @@ const TablesPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   状態
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  QRコード
-                </th>
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
@@ -303,14 +377,7 @@ const TablesPage = () => {
                         {getStatusDisplay(table.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        className="text-blue-600 hover:text-blue-900"
-                        onClick={() => handleShowQR(table.id)}
-                      >
-                        QRコード表示
-                      </button>
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 
                         className="text-primary hover:text-primary-dark mr-3"
@@ -330,7 +397,7 @@ const TablesPage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     表示するテーブルがありません
@@ -381,7 +448,7 @@ const TablesPage = () => {
           onClose={() => setIsEditModalOpen(false)}
           title="テーブル情報の編集"
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleEditTable(); }}>
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleEditTable(); }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -448,18 +515,7 @@ const TablesPage = () => {
                 </select>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  QRコードURL
-                </label>
-                <input
-                  type="text"
-                  name="qrCode"
-                  value={editFormData.qrCode || ""}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
+
             </div>
             
             <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
@@ -486,6 +542,135 @@ const TablesPage = () => {
           title="テーブルの削除"
           message={`テーブル番号「${selectedTable?.number}」を削除してもよろしいですか？この操作は元に戻せません。`}
         />
+      )}
+
+      {/* テーブル追加モーダル */}
+      {isAddModalOpen && (
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="テーブルの追加"
+        >
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddTable(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  テーブル番号
+                </label>
+                <input
+                  type="number"
+                  name="number"
+                  value={addFormData.number}
+                  onChange={handleAddTableInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  収容人数
+                </label>
+                <input
+                  type="number"
+                  name="capacity"
+                  value={addFormData.capacity}
+                  onChange={handleAddTableInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  エリア
+                </label>
+                <select
+                  name="area"
+                  value={addFormData.area}
+                  onChange={handleAddTableInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  状態
+                </label>
+                <select
+                  name="status"
+                  value={addFormData.status}
+                  onChange={handleAddTableInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  <option value="available">利用可能</option>
+                  <option value="occupied">使用中</option>
+                  <option value="reserved">予約済み</option>
+                  <option value="maintenance">メンテナンス中</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddTable}
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* エリア追加モーダル */}
+      {isAddAreaModalOpen && (
+        <Modal
+          isOpen={isAddAreaModalOpen}
+          onClose={() => setIsAddAreaModalOpen(false)}
+          title="エリアの追加"
+        >
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddArea(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  エリア名
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={addAreaData.name}
+                  onChange={handleAddAreaInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsAddAreaModalOpen(false)}
+              />
+              <Button
+                label="追加"
+                onClick={handleAddArea}
+              />
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );
