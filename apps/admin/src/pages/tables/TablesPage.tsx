@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateTable, deleteTable, createTable } from "../../services/tableService";
+import { updateTable, deleteTable } from "../../services/tableService";
 
 // テーブルの型定義
 type Table = {
@@ -13,7 +13,6 @@ type Table = {
   capacity: number;
   area: string;
   status: "available" | "occupied" | "reserved" | "maintenance";
-  qrCode?: string;
 };
 
 // エリアの型定義
@@ -41,7 +40,6 @@ const TablesPage = () => {
       capacity: 4,
       area: "area1",
       status: "available",
-      qrCode: "https://example.com/qr/table1",
     },
     {
       id: "table2",
@@ -49,7 +47,6 @@ const TablesPage = () => {
       capacity: 2,
       area: "area1",
       status: "occupied",
-      qrCode: "https://example.com/qr/table2",
     },
     {
       id: "table3",
@@ -57,7 +54,6 @@ const TablesPage = () => {
       capacity: 6,
       area: "area2",
       status: "available",
-      qrCode: "https://example.com/qr/table3",
     },
     {
       id: "table4",
@@ -65,7 +61,6 @@ const TablesPage = () => {
       capacity: 8,
       area: "area3",
       status: "reserved",
-      qrCode: "https://example.com/qr/table4",
     },
     {
       id: "table5",
@@ -73,7 +68,6 @@ const TablesPage = () => {
       capacity: 1,
       area: "area4",
       status: "maintenance",
-      qrCode: "https://example.com/qr/table5",
     },
   ]);
 
@@ -170,7 +164,7 @@ const TablesPage = () => {
   };
   
   const handleAddTableInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     
     if (name === 'number' || name === 'capacity') {
       setAddFormData({
@@ -454,7 +448,7 @@ const TablesPage = () => {
           onClose={() => setIsEditModalOpen(false)}
           title="テーブル情報の編集"
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleEditTable(); }}>
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleEditTable(); }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -557,7 +551,7 @@ const TablesPage = () => {
           onClose={() => setIsAddModalOpen(false)}
           title="テーブルの追加"
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleAddTable(); }}>
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddTable(); }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -647,7 +641,7 @@ const TablesPage = () => {
           onClose={() => setIsAddAreaModalOpen(false)}
           title="エリアの追加"
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleAddArea(); }}>
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddArea(); }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
