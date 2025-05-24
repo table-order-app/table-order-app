@@ -1,74 +1,43 @@
 import { Button } from "@table-order-system/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateMenuItem, deleteMenuItem, createMenuItem, createCategory } from "../../services/menuService";
+import { getCategories, getMenuItems, updateMenuItem, deleteMenuItem, createMenuItem, createCategory } from "../../services/menuService";
 
 // メニューアイテムの型定義
 type MenuItem = {
-  id: string;
+  id: number;
   name: string;
   description: string;
   price: number;
-  category: string;
-  imageUrl?: string;
+  categoryId: number;
+  image?: string;
   available: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // カテゴリの型定義
 type Category = {
-  id: string;
+  id: number;
   name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 const MenuPage = () => {
   const navigate = useNavigate();
 
-  // サンプルカテゴリデータ
-  const [categories] = useState<Category[]>([
-    { id: "cat1", name: "前菜" },
-    { id: "cat2", name: "メイン" },
-    { id: "cat3", name: "デザート" },
-    { id: "cat4", name: "ドリンク" },
-  ]);
-
-  // サンプルメニューデータ
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    {
-      id: "item1",
-      name: "シーザーサラダ",
-      description: "新鮮なロメインレタスとクルトンのクラシックサラダ",
-      price: 800,
-      category: "cat1",
-      available: true,
-    },
-    {
-      id: "item2",
-      name: "トマトスープ",
-      description: "有機トマトから作った自家製スープ",
-      price: 600,
-      category: "cat1",
-      available: true,
-    },
-    {
-      id: "item3",
-      name: "ステーキセット",
-      description: "A5ランク和牛のステーキと季節の野菜添え",
-      price: 3500,
-      category: "cat2",
-      available: true,
-    },
-    {
-      id: "item4",
-      name: "パンナコッタ",
-      description: "なめらかなイタリアンデザート、季節のフルーツ添え",
-      price: 700,
-      category: "cat3",
-      available: true,
-    },
-  ]);
+  // カテゴリデータ（APIから取得）
+  const [categories, setCategories] = useState<Category[]>([]);
+  
+  // メニューデータ（APIから取得）
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -76,19 +45,19 @@ const MenuPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editFormData, setEditFormData] = useState<MenuItem>({
-    id: "",
+    id: 0,
     name: "",
     description: "",
     price: 0,
-    category: "",
+    categoryId: 0,
     available: true,
   });
   
-  const [addFormData, setAddFormData] = useState<Omit<MenuItem, "id">>({
+  const [addFormData, setAddFormData] = useState<Omit<MenuItem, "id" | "createdAt" | "updatedAt">>({
     name: "",
     description: "",
     price: 0,
-    category: categories.length > 0 ? categories[0].id : "",
+    categoryId: 0,
     available: true,
   });
   
@@ -97,15 +66,55 @@ const MenuPage = () => {
   });
 
   // 選択中のカテゴリ
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
+  // APIからカテゴリデータを取得
+  const fetchCategories = async () => {
+    try {
+      const response = await getCategories();
+      if (response.success) {
+        setCategories(response.data);
+      } else {
+        setError('カテゴリデータの取得に失敗しました');
+      }
+    } catch (err) {
+      setError('カテゴリデータの取得中にエラーが発生しました');
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  // APIからメニューデータを取得
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getMenuItems();
+      if (response.success) {
+        setMenuItems(response.data);
+      } else {
+        setError('メニューデータの取得に失敗しました');
+      }
+    } catch (err) {
+      setError('メニューデータの取得中にエラーが発生しました');
+      console.error('Error fetching menu items:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初回ロード時にデータを取得
+  useEffect(() => {
+    fetchCategories();
+    fetchMenuItems();
+  }, []);
 
   // フィルタリングされたメニューアイテム
   const filteredItems = selectedCategory
-    ? menuItems.filter((item) => item.category === selectedCategory)
+    ? menuItems.filter((item) => item.categoryId === selectedCategory)
     : menuItems;
 
   // カテゴリ名を取得する関数
-  const getCategoryName = (categoryId: string) => {
+  const getCategoryName = (categoryId: number) => {
     const category = categories.find((cat) => cat.id === categoryId);
     return category ? category.name : "不明なカテゴリ";
   };
@@ -140,6 +149,11 @@ const MenuPage = () => {
         ...editFormData,
         [name]: parseInt(value, 10) || 0,
       });
+    } else if (name === 'categoryId') {
+      setEditFormData({
+        ...editFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
     } else {
       setEditFormData({
         ...editFormData,
@@ -150,17 +164,20 @@ const MenuPage = () => {
 
   const handleEditItem = async () => {
     try {
-      await updateMenuItem(editFormData.id, editFormData);
+      const result = await updateMenuItem(editFormData.id.toString(), editFormData);
       
-      const updatedItems = menuItems.map((item) => 
-        item.id === editFormData.id ? editFormData : item
-      );
-      setMenuItems(updatedItems);
-      
-      setIsEditModalOpen(false);
-      setSelectedItem(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchMenuItems();
+        
+        setIsEditModalOpen(false);
+        setSelectedItem(null);
+      } else {
+        setError('メニュー項目の更新に失敗しました');
+      }
     } catch (error) {
       console.error("メニュー項目の更新に失敗しました", error);
+      setError('メニュー項目の更新中にエラーが発生しました');
     }
   };
 
@@ -168,15 +185,20 @@ const MenuPage = () => {
     if (!selectedItem) return;
     
     try {
-      await deleteMenuItem(selectedItem.id);
+      const result = await deleteMenuItem(selectedItem.id.toString());
       
-      const updatedItems = menuItems.filter((item) => item.id !== selectedItem.id);
-      setMenuItems(updatedItems);
-      
-      setIsDeleteDialogOpen(false);
-      setSelectedItem(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchMenuItems();
+        
+        setIsDeleteDialogOpen(false);
+        setSelectedItem(null);
+      } else {
+        setError('メニュー項目の削除に失敗しました');
+      }
     } catch (error) {
       console.error("メニュー項目の削除に失敗しました", error);
+      setError('メニュー項目の削除中にエラーが発生しました');
     }
   };
   
@@ -190,20 +212,20 @@ const MenuPage = () => {
   
   const handleAddCategory = async () => {
     try {
+      const result = await createCategory(addCategoryData);
       
-      const newId = `cat${Date.now()}`;
-      
-      const newCategory = {
-        id: newId,
-        name: addCategoryData.name,
-      };
-      
-      setCategories([...categories, newCategory]);
-      
-      setAddCategoryData({ name: "" });
-      setIsAddCategoryModalOpen(false);
+      if (result.success) {
+        // カテゴリデータを再取得
+        await fetchCategories();
+        
+        setAddCategoryData({ name: "" });
+        setIsAddCategoryModalOpen(false);
+      } else {
+        setError('カテゴリの追加に失敗しました');
+      }
     } catch (error) {
       console.error("カテゴリの追加に失敗しました", error);
+      setError('カテゴリの追加中にエラーが発生しました');
     }
   };
   
@@ -221,6 +243,11 @@ const MenuPage = () => {
         ...addFormData,
         [name]: parseInt(value, 10) || 0,
       });
+    } else if (name === 'categoryId') {
+      setAddFormData({
+        ...addFormData,
+        [name]: parseInt(value, 10) || 0,
+      });
     } else {
       setAddFormData({
         ...addFormData,
@@ -231,27 +258,26 @@ const MenuPage = () => {
   
   const handleAddItem = async () => {
     try {
-      // const result = await createMenuItem(addFormData);
+      const result = await createMenuItem(addFormData);
       
-      const newId = `item${Date.now()}`;
-      
-      const newItem = {
-        id: newId,
-        ...addFormData,
-      };
-      
-      setMenuItems([...menuItems, newItem]);
-      
-      setAddFormData({
-        name: "",
-        description: "",
-        price: 0,
-        category: categories.length > 0 ? categories[0].id : "",
-        available: true,
-      });
-      setIsAddModalOpen(false);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchMenuItems();
+        
+        setAddFormData({
+          name: "",
+          description: "",
+          price: 0,
+          categoryId: categories.length > 0 ? categories[0].id : 0,
+          available: true,
+        });
+        setIsAddModalOpen(false);
+      } else {
+        setError('メニュー項目の追加に失敗しました');
+      }
     } catch (error) {
       console.error("メニュー項目の追加に失敗しました", error);
+      setError('メニュー項目の追加中にエラーが発生しました');
     }
   };
 
@@ -313,6 +339,19 @@ const MenuPage = () => {
           />
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-4 p-4 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p className="mt-2">メニューデータを読み込み中...</p>
+          </div>
+        )}
+
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-auto divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -358,7 +397,7 @@ const MenuPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {getCategoryName(item.category)}
+                        {getCategoryName(item.categoryId)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -458,8 +497,8 @@ const MenuPage = () => {
                   カテゴリ
                 </label>
                 <select
-                  name="category"
-                  value={editFormData.category}
+                  name="categoryId"
+                  value={editFormData.categoryId}
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   required
@@ -572,8 +611,8 @@ const MenuPage = () => {
                   カテゴリ
                 </label>
                 <select
-                  name="category"
-                  value={addFormData.category}
+                  name="categoryId"
+                  value={addFormData.categoryId}
                   onChange={handleAddItemInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   required

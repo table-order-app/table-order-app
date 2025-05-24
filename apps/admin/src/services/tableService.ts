@@ -25,12 +25,12 @@ export async function createTable(data: any) {
  * テーブルを更新
  */
 export async function updateTable(id: string, data: any) {
-  return { success: true, data };
+  return put<any>(`/table/${id}`, data);
 }
 
 /**
  * テーブルを削除
  */
 export async function deleteTable(id: string) {
-  return { success: true };
+  return del<any>(`/table/${id}`);
 }

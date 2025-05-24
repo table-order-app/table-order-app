@@ -61,12 +61,12 @@ export async function createMenuItem(data: any) {
  * メニューを更新
  */
 export async function updateMenuItem(id: string, data: any) {
-  return { success: true, data };
+  return put<any>(`/menu/items/${id}`, data);
 }
 
 /**
  * メニューを削除
  */
 export async function deleteMenuItem(id: string) {
-  return { success: true };
+  return del<any>(`/menu/items/${id}`);
 }

@@ -8,6 +8,13 @@ export async function getStaffList() {
 }
 
 /**
+ * スタッフ一覧を取得 (別名)
+ */
+export async function getStaffMembers() {
+  return get<any[]>("/staff");
+}
+
+/**
  * スタッフ詳細を取得
  */
 export async function getStaffMember(id: number) {
@@ -25,12 +32,12 @@ export async function createStaffMember(data: any) {
  * スタッフを更新
  */
 export async function updateStaffMember(id: string, data: any) {
-  return { success: true, data };
+  return put<any>(`/staff/${id}`, data);
 }
 
 /**
  * スタッフを削除
  */
 export async function deleteStaffMember(id: string) {
-  return { success: true };
+  return del<any>(`/staff/${id}`);
 }

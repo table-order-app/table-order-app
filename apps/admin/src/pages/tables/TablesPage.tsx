@@ -1,18 +1,21 @@
 import { Button } from "@table-order-system/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateTable, deleteTable } from "../../services/tableService";
+import { getTables, createTable, updateTable, deleteTable } from "../../services/tableService";
 
 // テーブルの型定義
 type Table = {
-  id: string;
+  id: number;
   number: number;
   capacity: number;
   area: string;
   status: "available" | "occupied" | "reserved" | "maintenance";
+  qrCode?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // エリアの型定義
@@ -24,7 +27,7 @@ type Area = {
 const TablesPage = () => {
   const navigate = useNavigate();
 
-  // サンプルエリアデータ
+  // エリアデータ（固定値として保持）
   const [areas, setAreas] = useState<Area[]>([
     { id: "area1", name: "メインフロア" },
     { id: "area2", name: "テラス" },
@@ -32,44 +35,34 @@ const TablesPage = () => {
     { id: "area4", name: "カウンター" },
   ]);
 
-  // サンプルテーブルデータ
-  const [tables, setTables] = useState<Table[]>([
-    {
-      id: "table1",
-      number: 1,
-      capacity: 4,
-      area: "area1",
-      status: "available",
-    },
-    {
-      id: "table2",
-      number: 2,
-      capacity: 2,
-      area: "area1",
-      status: "occupied",
-    },
-    {
-      id: "table3",
-      number: 3,
-      capacity: 6,
-      area: "area2",
-      status: "available",
-    },
-    {
-      id: "table4",
-      number: 101,
-      capacity: 8,
-      area: "area3",
-      status: "reserved",
-    },
-    {
-      id: "table5",
-      number: 201,
-      capacity: 1,
-      area: "area4",
-      status: "maintenance",
-    },
-  ]);
+  // テーブルデータ（APIから取得）
+  const [tables, setTables] = useState<Table[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // APIからテーブルデータを取得
+  const fetchTables = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getTables();
+      if (response.success) {
+        setTables(response.data);
+      } else {
+        setError('テーブルデータの取得に失敗しました');
+      }
+    } catch (err) {
+      setError('テーブルデータの取得中にエラーが発生しました');
+      console.error('Error fetching tables:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初回ロード時にテーブルデータを取得
+  useEffect(() => {
+    fetchTables();
+  }, []);
 
   // 選択中のエリア
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
@@ -118,7 +111,7 @@ const TablesPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editFormData, setEditFormData] = useState<Table>({
-    id: "",
+    id: 0,
     number: 0,
     capacity: 0,
     area: "",
@@ -181,26 +174,25 @@ const TablesPage = () => {
   
   const handleAddTable = async () => {
     try {
-      // const result = await createTable(addFormData);
+      const result = await createTable(addFormData);
       
-      const newId = `table${Date.now()}`;
-      
-      const newTable = {
-        id: newId,
-        ...addFormData,
-      };
-      
-      setTables([...tables, newTable]);
-      
-      setAddFormData({
-        number: 0,
-        capacity: 0,
-        area: areas.length > 0 ? areas[0].id : "",
-        status: "available",
-      });
-      setIsAddModalOpen(false);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchTables();
+        
+        setAddFormData({
+          number: 0,
+          capacity: 0,
+          area: areas.length > 0 ? areas[0].id : "",
+          status: "available",
+        });
+        setIsAddModalOpen(false);
+      } else {
+        setError('テーブルの追加に失敗しました');
+      }
     } catch (error) {
       console.error("テーブルの追加に失敗しました", error);
+      setError('テーブルの追加中にエラーが発生しました');
     }
   };
 
@@ -239,17 +231,20 @@ const TablesPage = () => {
 
   const handleEditTable = async () => {
     try {
-      await updateTable(editFormData.id, editFormData);
+      const result = await updateTable(editFormData.id.toString(), editFormData);
       
-      const updatedTables = tables.map((table) => 
-        table.id === editFormData.id ? editFormData : table
-      );
-      setTables(updatedTables);
-      
-      setIsEditModalOpen(false);
-      setSelectedTable(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchTables();
+        
+        setIsEditModalOpen(false);
+        setSelectedTable(null);
+      } else {
+        setError('テーブルの更新に失敗しました');
+      }
     } catch (error) {
       console.error("テーブルの更新に失敗しました", error);
+      setError('テーブルの更新中にエラーが発生しました');
     }
   };
 
@@ -257,15 +252,20 @@ const TablesPage = () => {
     if (!selectedTable) return;
     
     try {
-      await deleteTable(selectedTable.id);
+      const result = await deleteTable(selectedTable.id.toString());
       
-      const updatedTables = tables.filter((table) => table.id !== selectedTable.id);
-      setTables(updatedTables);
-      
-      setIsDeleteDialogOpen(false);
-      setSelectedTable(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchTables();
+        
+        setIsDeleteDialogOpen(false);
+        setSelectedTable(null);
+      } else {
+        setError('テーブルの削除に失敗しました');
+      }
     } catch (error) {
       console.error("テーブルの削除に失敗しました", error);
+      setError('テーブルの削除中にエラーが発生しました');
     }
   };
 
@@ -326,6 +326,19 @@ const TablesPage = () => {
             onClick={() => setIsAddModalOpen(true)}
           />
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-4 p-4 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p className="mt-2">テーブルデータを読み込み中...</p>
+          </div>
+        )}
 
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-auto divide-y divide-gray-200">

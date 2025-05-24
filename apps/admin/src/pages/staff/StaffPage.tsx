@@ -1,76 +1,70 @@
 import { Button } from "@table-order-system/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { updateStaffMember, deleteStaffMember, createStaffMember } from "../../services/staffService";
+import { getStaffMembers, updateStaffMember, deleteStaffMember, createStaffMember } from "../../services/staffService";
 
 // スタッフの型定義
 type Staff = {
-  id: string;
+  id: number;
   name: string;
-  role: string;
+  role: "admin" | "manager" | "staff" | "kitchen";
   email: string;
-  phone: string;
-  isActive: boolean;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // 役割の型定義
 type Role = {
-  id: string;
+  id: "admin" | "manager" | "staff" | "kitchen";
   name: string;
 };
 
 const StaffPage = () => {
   const navigate = useNavigate();
 
-  // サンプル役割データ
+  // 役割データ（固定値）
   const [roles] = useState<Role[]>([
-    { id: "role1", name: "店長" },
-    { id: "role2", name: "ホールスタッフ" },
-    { id: "role3", name: "キッチンスタッフ" },
-    { id: "role4", name: "アルバイト" },
+    { id: "admin", name: "管理者" },
+    { id: "manager", name: "マネージャー" },
+    { id: "staff", name: "一般スタッフ" },
+    { id: "kitchen", name: "キッチンスタッフ" },
   ]);
 
-  // サンプルスタッフデータ
-  const [staffList, setStaffList] = useState<Staff[]>([
-    {
-      id: "staff1",
-      name: "山田太郎",
-      role: "role1",
-      email: "yamada@example.com",
-      phone: "090-1234-5678",
-      isActive: true,
-    },
-    {
-      id: "staff2",
-      name: "佐藤花子",
-      role: "role2",
-      email: "sato@example.com",
-      phone: "090-8765-4321",
-      isActive: true,
-    },
-    {
-      id: "staff3",
-      name: "鈴木一郎",
-      role: "role3",
-      email: "suzuki@example.com",
-      phone: "090-2468-1357",
-      isActive: true,
-    },
-    {
-      id: "staff4",
-      name: "高橋真理",
-      role: "role4",
-      email: "takahashi@example.com",
-      phone: "090-1357-2468",
-      isActive: false,
-    },
-  ]);
+  // スタッフデータ（APIから取得）
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 選択中の役割
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  // APIからスタッフデータを取得
+  const fetchStaff = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getStaffMembers();
+      if (response.success) {
+        setStaffList(response.data);
+      } else {
+        setError('スタッフデータの取得に失敗しました');
+      }
+    } catch (err) {
+      setError('スタッフデータの取得中にエラーが発生しました');
+      console.error('Error fetching staff:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初回ロード時にスタッフデータを取得
+  useEffect(() => {
+    fetchStaff();
+  }, []);
 
   // フィルタリングされたスタッフリスト
   const filteredStaff = selectedRole
@@ -89,12 +83,11 @@ const StaffPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [editFormData, setEditFormData] = useState<Staff>({
-    id: "",
+    id: 0,
     name: "",
-    role: "",
+    role: "staff",
     email: "",
-    phone: "",
-    isActive: true,
+    active: true,
   });
   
   const [addFormData, setAddFormData] = useState<Omit<Staff, "id">>({
@@ -144,17 +137,20 @@ const StaffPage = () => {
 
   const handleEditStaff = async () => {
     try {
-      await updateStaffMember(editFormData.id, editFormData);
+      const result = await updateStaffMember(editFormData.id.toString(), editFormData);
       
-      const updatedStaff = staffList.map((staff) => 
-        staff.id === editFormData.id ? editFormData : staff
-      );
-      setStaffList(updatedStaff);
-      
-      setIsEditModalOpen(false);
-      setSelectedStaff(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchStaff();
+        
+        setIsEditModalOpen(false);
+        setSelectedStaff(null);
+      } else {
+        setError('スタッフの更新に失敗しました');
+      }
     } catch (error) {
       console.error("スタッフの更新に失敗しました", error);
+      setError('スタッフの更新中にエラーが発生しました');
     }
   };
 
@@ -162,15 +158,20 @@ const StaffPage = () => {
     if (!selectedStaff) return;
     
     try {
-      await deleteStaffMember(selectedStaff.id);
+      const result = await deleteStaffMember(selectedStaff.id.toString());
       
-      const updatedStaff = staffList.filter((staff) => staff.id !== selectedStaff.id);
-      setStaffList(updatedStaff);
-      
-      setIsDeleteDialogOpen(false);
-      setSelectedStaff(null);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchStaff();
+        
+        setIsDeleteDialogOpen(false);
+        setSelectedStaff(null);
+      } else {
+        setError('スタッフの削除に失敗しました');
+      }
     } catch (error) {
       console.error("スタッフの削除に失敗しました", error);
+      setError('スタッフの削除中にエラーが発生しました');
     }
   };
   
@@ -184,15 +185,8 @@ const StaffPage = () => {
   
   const handleAddRole = async () => {
     try {
-      
-      const newId = `role${Date.now()}`;
-      
-      const newRole = {
-        id: newId,
-        name: addRoleData.name,
-      };
-      
-      setRoles([...roles, newRole]);
+      // 現在は役割は固定値として管理されているため、実装は不要
+      // 将来的に役割をDBで管理する場合はここで実装
       
       setAddRoleData({ name: "" });
       setIsAddRoleModalOpen(false);
@@ -220,27 +214,25 @@ const StaffPage = () => {
   
   const handleAddStaff = async () => {
     try {
-      // const result = await createStaffMember(addFormData);
+      const result = await createStaffMember(addFormData);
       
-      const newId = `staff${Date.now()}`;
-      
-      const newStaff = {
-        id: newId,
-        ...addFormData,
-      };
-      
-      setStaffList([...staffList, newStaff]);
-      
-      setAddFormData({
-        name: "",
-        role: roles.length > 0 ? roles[0].id : "",
-        email: "",
-        phone: "",
-        isActive: true,
-      });
-      setIsAddModalOpen(false);
+      if (result.success) {
+        // データを再取得してリストを更新
+        await fetchStaff();
+        
+        setAddFormData({
+          name: "",
+          role: "staff",
+          email: "",
+          active: true,
+        });
+        setIsAddModalOpen(false);
+      } else {
+        setError('スタッフの追加に失敗しました');
+      }
     } catch (error) {
       console.error("スタッフの追加に失敗しました", error);
+      setError('スタッフの追加中にエラーが発生しました');
     }
   };
 
@@ -302,6 +294,19 @@ const StaffPage = () => {
           />
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-4 p-4 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p className="mt-2">スタッフデータを読み込み中...</p>
+          </div>
+        )}
+
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-auto divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -344,17 +349,17 @@ const StaffPage = () => {
                       <div className="text-sm text-gray-900">{staff.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{staff.phone}</div>
+                      <div className="text-sm text-gray-900">-</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          staff.isActive
+                          staff.active
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {staff.isActive ? "在籍中" : "退職済み"}
+                        {staff.active ? "在籍中" : "退職済み"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -444,29 +449,15 @@ const StaffPage = () => {
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  電話番号
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={editFormData.phone}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  required
-                />
-              </div>
-              
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  name="isActive"
-                  checked={editFormData.isActive}
-                  onChange={(e) => 
+                  name="active"
+                  checked={editFormData.active}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                     setEditFormData({
                       ...editFormData,
-                      isActive: e.target.checked,
+                      active: e.target.checked,
                     })
                   }
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
@@ -559,29 +550,15 @@ const StaffPage = () => {
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  電話番号
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={addFormData.phone}
-                  onChange={handleAddStaffInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  required
-                />
-              </div>
-              
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  name="isActive"
-                  checked={addFormData.isActive}
-                  onChange={(e) => 
+                  name="active"
+                  checked={addFormData.active}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                     setAddFormData({
                       ...addFormData,
-                      isActive: e.target.checked,
+                      active: e.target.checked,
                     })
                   }
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
