@@ -2,6 +2,9 @@ import { Button } from "@table-order-system/ui";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
+import { Modal } from "../../components/Modal";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { updateStaffMember, deleteStaffMember } from "../../services/staffService";
 
 // スタッフの型定義
 type Staff = {
@@ -31,7 +34,7 @@ const StaffPage = () => {
   ]);
 
   // サンプルスタッフデータ
-  const [staffList] = useState<Staff[]>([
+  const [staffList, setStaffList] = useState<Staff[]>([
     {
       id: "staff1",
       name: "山田太郎",
@@ -80,9 +83,81 @@ const StaffPage = () => {
     return role ? role.name : "不明な役割";
   };
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [editFormData, setEditFormData] = useState<Staff>({
+    id: "",
+    name: "",
+    role: "",
+    email: "",
+    phone: "",
+    isActive: true,
+  });
+
   // ダッシュボードに戻る
   const handleBack = () => {
     navigate(getPath.dashboard());
+  };
+
+  const handleOpenEditModal = (staff: Staff) => {
+    setSelectedStaff(staff);
+    setEditFormData({ ...staff });
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (staff: Staff) => {
+    setSelectedStaff(staff);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditFormData({
+        ...editFormData,
+        [name]: checked,
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleEditStaff = async () => {
+    try {
+      await updateStaffMember(parseInt(editFormData.id), editFormData);
+      
+      const updatedStaff = staffList.map((staff) => 
+        staff.id === editFormData.id ? editFormData : staff
+      );
+      setStaffList(updatedStaff);
+      
+      setIsEditModalOpen(false);
+      setSelectedStaff(null);
+    } catch (error) {
+      console.error("スタッフの更新に失敗しました", error);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    if (!selectedStaff) return;
+    
+    try {
+      await deleteStaffMember(parseInt(selectedStaff.id));
+      
+      const updatedStaff = staffList.filter((staff) => staff.id !== selectedStaff.id);
+      setStaffList(updatedStaff);
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedStaff(null);
+    } catch (error) {
+      console.error("スタッフの削除に失敗しました", error);
+    }
   };
 
   return (
@@ -192,10 +267,16 @@ const StaffPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-primary hover:text-primary-dark mr-3">
+                      <button 
+                        className="text-primary hover:text-primary-dark mr-3"
+                        onClick={() => handleOpenEditModal(staff)}
+                      >
                         編集
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleOpenDeleteDialog(staff)}
+                      >
                         削除
                       </button>
                     </td>
@@ -215,6 +296,121 @@ const StaffPage = () => {
           </table>
         </div>
       </div>
+
+      {/* 編集モーダル */}
+      {isEditModalOpen && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="スタッフ情報の編集"
+        >
+          <form onSubmit={(e) => { e.preventDefault(); handleEditStaff(); }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  名前
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editFormData.name}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  役割
+                </label>
+                <select
+                  name="role"
+                  value={editFormData.role}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                >
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  メールアドレス
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  電話番号
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={editFormData.phone}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={editFormData.isActive}
+                  onChange={(e) => 
+                    setEditFormData({
+                      ...editFormData,
+                      isActive: e.target.checked,
+                    })
+                  }
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">
+                  在籍中
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-5 sm:mt-6 flex justify-end space-x-2">
+              <Button
+                label="キャンセル"
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(false)}
+              />
+              <Button
+                label="保存"
+                type="submit"
+              />
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {isDeleteDialogOpen && (
+        <ConfirmDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          onConfirm={handleDeleteStaff}
+          title="スタッフの削除"
+          message={`「${selectedStaff?.name}」を削除してもよろしいですか？この操作は元に戻せません。`}
+        />
+      )}
     </div>
   );
 };
