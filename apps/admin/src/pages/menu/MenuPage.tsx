@@ -136,7 +136,7 @@ const MenuPage = () => {
 
   const handleEditItem = async () => {
     try {
-      await updateMenuItem(parseInt(editFormData.id), editFormData);
+      await updateMenuItem(editFormData.id, editFormData);
       
       const updatedItems = menuItems.map((item) => 
         item.id === editFormData.id ? editFormData : item
@@ -154,7 +154,7 @@ const MenuPage = () => {
     if (!selectedItem) return;
     
     try {
-      await deleteMenuItem(parseInt(selectedItem.id));
+      await deleteMenuItem(selectedItem.id);
       
       const updatedItems = menuItems.filter((item) => item.id !== selectedItem.id);
       setMenuItems(updatedItems);

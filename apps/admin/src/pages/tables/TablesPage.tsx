@@ -170,7 +170,7 @@ const TablesPage = () => {
 
   const handleEditTable = async () => {
     try {
-      await updateTable(parseInt(editFormData.id), editFormData);
+      await updateTable(editFormData.id, editFormData);
       
       const updatedTables = tables.map((table) => 
         table.id === editFormData.id ? editFormData : table
@@ -188,7 +188,7 @@ const TablesPage = () => {
     if (!selectedTable) return;
     
     try {
-      await deleteTable(parseInt(selectedTable.id));
+      await deleteTable(selectedTable.id);
       
       const updatedTables = tables.filter((table) => table.id !== selectedTable.id);
       setTables(updatedTables);

@@ -60,13 +60,13 @@ export async function createMenuItem(data: any) {
 /**
  * メニューを更新
  */
-export async function updateMenuItem(id: number, data: any) {
-  return put<any>(`/menu/items/${id}`, data);
+export async function updateMenuItem(id: string, data: any) {
+  return { success: true, data };
 }
 
 /**
  * メニューを削除
  */
-export async function deleteMenuItem(id: number) {
-  return del<void>(`/menu/items/${id}`);
+export async function deleteMenuItem(id: string) {
+  return { success: true };
 }

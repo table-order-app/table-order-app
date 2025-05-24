@@ -130,7 +130,7 @@ const StaffPage = () => {
 
   const handleEditStaff = async () => {
     try {
-      await updateStaffMember(parseInt(editFormData.id), editFormData);
+      await updateStaffMember(editFormData.id, editFormData);
       
       const updatedStaff = staffList.map((staff) => 
         staff.id === editFormData.id ? editFormData : staff
@@ -148,7 +148,7 @@ const StaffPage = () => {
     if (!selectedStaff) return;
     
     try {
-      await deleteStaffMember(parseInt(selectedStaff.id));
+      await deleteStaffMember(selectedStaff.id);
       
       const updatedStaff = staffList.filter((staff) => staff.id !== selectedStaff.id);
       setStaffList(updatedStaff);
