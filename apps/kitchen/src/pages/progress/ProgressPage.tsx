@@ -14,6 +14,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 3,
     inProgressItems: 1,
     pendingItems: 1,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 25 * 60000), // 25分前
   },
   {
@@ -24,6 +25,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 1,
     inProgressItems: 2,
     pendingItems: 1,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 15 * 60000), // 15分前
   },
   {
@@ -34,6 +36,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 5,
     inProgressItems: 3,
     pendingItems: 0,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 40 * 60000), // 40分前
   },
   {
@@ -44,6 +47,7 @@ const sampleProgressData: ProgressData[] = [
     completedItems: 0,
     inProgressItems: 1,
     pendingItems: 2,
+    cancelledItems: 0,
     startTime: new Date(Date.now() - 5 * 60000), // 5分前
   },
 ];

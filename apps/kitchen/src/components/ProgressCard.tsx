@@ -68,7 +68,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ progressData }) => {
         <ProgressBar
           completed={completedItems}
           inProgress={inProgressItems}
-          pending={pendingItems}
+          pending={pendingItems || 0}
           total={totalItems}
         />
       </div>

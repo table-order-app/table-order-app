@@ -3,6 +3,7 @@ import { ComponentType } from "react";
 import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ProgressPage from "./pages/progress/ProgressPage";
+import HistoryPage from "./pages/history/HistoryPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -33,7 +34,7 @@ export const ROUTES = {
   // 履歴ページ
   HISTORY: {
     path: "/history",
-    component: DashboardPage, // 履歴ページはまだ未実装のため一時的にDashboardPageを使用
+    component: HistoryPage,
     layout: MainLayout,
     exact: true,
   } as RouteDefinition,
@@ -45,6 +46,7 @@ export const getPath = {
   dashboard: () => ROUTES.DASHBOARD.path,
   progress: () => ROUTES.PROGRESS.path,
   history: () => ROUTES.HISTORY.path,
+  orderDetail: (orderId: string) => `/order/${orderId}`,
 };
 
 // ルート設定の配列（App.tsxで使用）
