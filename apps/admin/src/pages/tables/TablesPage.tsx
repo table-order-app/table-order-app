@@ -470,7 +470,7 @@ const TablesPage = () => {
               />
               <Button
                 label="保存"
-                type="submit"
+                onClick={handleEditTable}
               />
             </div>
           </form>

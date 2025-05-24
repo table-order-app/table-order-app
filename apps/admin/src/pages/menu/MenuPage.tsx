@@ -403,7 +403,7 @@ const MenuPage = () => {
               />
               <Button
                 label="保存"
-                type="submit"
+                onClick={handleEditItem}
               />
             </div>
           </form>

@@ -394,7 +394,7 @@ const StaffPage = () => {
               />
               <Button
                 label="保存"
-                type="submit"
+                onClick={handleEditStaff}
               />
             </div>
           </form>
