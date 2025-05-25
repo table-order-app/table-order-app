@@ -5,29 +5,31 @@ import "./App.css";
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        {routeConfig.map((route) => {
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                route.layout ? (
-                  <route.layout>
-                    <route.component />
-                  </route.layout>
-                ) : (
-                  <MainLayout>
-                    <route.component />
-                  </MainLayout>
-                )
-              }
-            />
-          );
-        })}
-      </Routes>
-    </Router>
+    <div className="w-full h-full m-0 p-0 overflow-hidden">
+      <Router>
+        <Routes>
+          {routeConfig.map((route) => {
+            return (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  route.layout ? (
+                    <route.layout>
+                      <route.component />
+                    </route.layout>
+                  ) : (
+                    <MainLayout>
+                      <route.component />
+                    </MainLayout>
+                  )
+                }
+              />
+            );
+          })}
+        </Routes>
+      </Router>
+    </div>
   );
 };
 
