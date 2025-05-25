@@ -1,32 +1,69 @@
 import { get, post, put, del } from "../utils/api";
 
+// 型定義
+export interface MenuItem {
+  id: number;
+  categoryId: number;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  available: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  category?: Category;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateMenuItemData {
+  categoryId: number;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  available: boolean;
+}
+
+export interface UpdateMenuItemData {
+  categoryId?: number;
+  name?: string;
+  description?: string;
+  price?: number;
+  image?: string;
+  available?: boolean;
+}
+
+export interface CreateCategoryData {
+  name: string;
+  description?: string;
+}
+
 /**
  * カテゴリ一覧を取得
  */
 export async function getCategories() {
-  return get<Array<{ id: number; name: string; description?: string }>>(
-    "/menu/categories"
-  );
+  return get<Category[]>("/menu/categories");
 }
 
 /**
  * カテゴリを作成
  */
-export async function createCategory(data: { name: string; description?: string }) {
-  return post<{ id: number; name: string; description?: string }>(
-    "/menu/categories", 
-    data
-  );
+export async function createCategory(data: CreateCategoryData) {
+  return post<Category>("/menu/categories", data);
 }
 
 /**
  * カテゴリを更新
  */
-export async function updateCategory(id: number, data: { name: string; description?: string }) {
-  return put<{ id: number; name: string; description?: string }>(
-    `/menu/categories/${id}`, 
-    data
-  );
+export async function updateCategory(id: number, data: CreateCategoryData) {
+  return put<Category>(`/menu/categories/${id}`, data);
 }
 
 /**
@@ -40,33 +77,33 @@ export async function deleteCategory(id: number) {
  * メニュー一覧を取得
  */
 export async function getMenuItems() {
-  return get<any[]>("/menu/items");
+  return get<MenuItem[]>("/menu/items");
 }
 
 /**
  * メニュー詳細を取得
  */
 export async function getMenuItem(id: number) {
-  return get<any>(`/menu/items/${id}`);
+  return get<MenuItem>(`/menu/items/${id}`);
 }
 
 /**
  * メニューを作成
  */
-export async function createMenuItem(data: any) {
-  return post<any>("/menu/items", data);
+export async function createMenuItem(data: CreateMenuItemData) {
+  return post<MenuItem>("/menu/items", data);
 }
 
 /**
  * メニューを更新
  */
-export async function updateMenuItem(id: string, data: any) {
-  return put<any>(`/menu/items/${id}`, data);
+export async function updateMenuItem(id: string, data: UpdateMenuItemData) {
+  return put<MenuItem>(`/menu/items/${id}`, data);
 }
 
 /**
  * メニューを削除
  */
 export async function deleteMenuItem(id: string) {
-  return del<any>(`/menu/items/${id}`);
+  return del<void>(`/menu/items/${id}`);
 }

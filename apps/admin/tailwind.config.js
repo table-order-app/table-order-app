@@ -1,7 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-  // 共通設定をプリセットとして使用
-  presets: [require("../../packages/ui/tailwind.config.js")],
+export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -10,7 +8,11 @@ module.exports = {
   ],
   theme: {
     extend: {
-      // アプリ固有の拡張（必要に応じて）
+      colors: {
+        primary: "#0070f3",
+        secondary: "#7928ca",
+      },
     },
   },
+  plugins: [],
 };
