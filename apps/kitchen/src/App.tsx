@@ -4,30 +4,32 @@ import "./App.css";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {routeConfig.map((route) => {
-          const Component = route.component;
-          const Layout = route.layout;
+    <div className="w-full h-full m-0 p-0 overflow-hidden">
+      <Router>
+        <Routes>
+          {routeConfig.map((route) => {
+            const Component = route.component;
+            const Layout = route.layout;
 
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                Layout ? (
-                  <Layout>
+            return (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  Layout ? (
+                    <Layout>
+                      <Component />
+                    </Layout>
+                  ) : (
                     <Component />
-                  </Layout>
-                ) : (
-                  <Component />
-                )
-              }
-            />
-          );
-        })}
-      </Routes>
-    </Router>
+                  )
+                }
+              />
+            );
+          })}
+        </Routes>
+      </Router>
+    </div>
   );
 }
 

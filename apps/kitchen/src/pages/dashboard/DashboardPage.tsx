@@ -51,7 +51,6 @@ const mapApiStatusToOrderStatus = (apiStatus: string) => {
   }
 };
 
-
 const DashboardPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
@@ -62,24 +61,39 @@ const DashboardPage = () => {
 
   const handleProgressSelect = useCallback((progress: ProgressData) => {
     setSelectedTable(progress.tableId);
+  }, []);
 
-    // そのテーブルの注文を探す
-    const tableOrder = orders.find(
-      (order) => order.tableId === progress.tableId
-    );
-    if (tableOrder) {
-      setSelectedOrder(tableOrder);
+  // selectedTableが変更されたときに対応する注文を探す
+  useEffect(() => {
+    if (selectedTable) {
+      const tableOrder = orders.find(
+        (order) => order.tableId === selectedTable
+      );
+      setSelectedOrder(tableOrder || null);
     }
-  }, [orders]);
+  }, [selectedTable, orders]);
 
   useEffect(() => {
+    let isInitialFetch = true;
+    let currentSelectedTable = selectedTable;
+    
     const fetchOrders = async () => {
       try {
         setLoading(true);
         setError(null);
+        if (isInitialFetch) {
+          console.log("Fetching orders from API...");
+          console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api");
+        }
         const response = await getOrders();
+        if (isInitialFetch) {
+          console.log("API Response:", response);
+        }
         
         if (response.success && response.data) {
+          if (isInitialFetch) {
+            console.log("Orders data received:", response.data);
+          }
           const transformedOrders = response.data.map(transformApiOrderToOrder);
           setOrders(transformedOrders);
           
@@ -87,18 +101,26 @@ const DashboardPage = () => {
           const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
           setProgressData(calculatedProgressData);
 
-          // 最初のテーブルを自動選択
-          if (calculatedProgressData.length > 0) {
-            handleProgressSelect(calculatedProgressData[0]);
+          // 最初のテーブルを自動選択（初回のみ）
+          if (calculatedProgressData.length > 0 && !currentSelectedTable && isInitialFetch) {
+            const firstTableId = calculatedProgressData[0].tableId;
+            setSelectedTable(firstTableId);
+            currentSelectedTable = firstTableId;
           }
         } else {
+          if (isInitialFetch) {
+            console.error("API Error:", response.error);
+          }
           setError(response.error || "注文データの取得に失敗しました");
         }
       } catch (error) {
-        console.error("Error fetching orders:", error);
-        setError("注文データの取得中にエラーが発生しました");
+        if (isInitialFetch) {
+          console.error("Error fetching orders:", error);
+        }
+        setError(`注文データの取得中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setLoading(false);
+        isInitialFetch = false;
       }
     };
 
@@ -107,11 +129,12 @@ const DashboardPage = () => {
     // ポーリングで最新のデータを取得
     const intervalId = setInterval(() => {
       fetchOrders();
-    }, 30000); // 30秒ごとに更新
+    }, 10000); // 10秒ごとに更新
 
     // クリーンアップ
     return () => clearInterval(intervalId);
-  }, [handleProgressSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 初回のみ実行、selectedTableの変更は別のuseEffectで処理
 
   // キャンセル処理
   const handleCancelItem = async (orderId: string, itemId: string) => {
@@ -185,7 +208,26 @@ const DashboardPage = () => {
   const calculateProgressDataFromOrders = (ordersData: Order[]): ProgressData[] => {
     const progressMap = new Map<string, ProgressData>();
 
-    ordersData.forEach((order) => {
+    // キッチンで表示すべき注文のみをフィルタリング
+    // 【表示条件】
+    // 1. 注文ステータスが完了・キャンセル・配達済みでない
+    // 2. 調理が必要なアイテム（new, in-progress）が含まれている
+    const activeOrders = ordersData.filter((order) => {
+      // 完全に完了・キャンセル・配達済みの注文は除外
+      if (order.status === "completed" || order.status === "cancelled" || order.status === "delivered") {
+        return false;
+      }
+      
+      // 調理が必要なアイテムが含まれている注文のみ表示
+      const hasActiveItems = order.items.some((item) => 
+        item.status === "new" || 
+        item.status === "in-progress"
+      );
+      
+      return hasActiveItems;
+    });
+
+    activeOrders.forEach((order) => {
       if (!progressMap.has(order.tableId)) {
         progressMap.set(order.tableId, {
           tableId: order.tableId,
