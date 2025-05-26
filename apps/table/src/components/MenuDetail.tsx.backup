@@ -1,0 +1,386 @@
+import React, { useState, useEffect } from "react";
+import { MenuItem, Option, Topping } from "../types";
+import { getMenuItem } from "../services/menuService";
+
+interface MenuDetailProps {
+  menuId: number;
+  onAddToCart: (
+    menuItem: MenuItem,
+    options: Option[],
+    toppings: Topping[],
+    notes: string,
+    quantity: number
+  ) => void;
+}
+
+const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
+  const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+  const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
+  const [notes, setNotes] = useState<string>("");
+  const [quantity, setQuantity] = useState<number>(1);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+
+  useEffect(() => {
+    // メニューIDからメニュー情報を取得
+    async function fetchMenuItem() {
+      try {
+        const response = await getMenuItem(menuId);
+        if (response.success && response.data) {
+          const item = response.data;
+          setMenuItem(item);
+          setTotalPrice(item.price);
+
+          // もし必須オプションがあればデフォルト選択する
+          if (item.options && item.options.length > 0) {
+            const defaultOption = item.options.find((option) => option.price === 0);
+            if (defaultOption) {
+              setSelectedOptions([defaultOption.id]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching menu item:", err);
+      }
+    }
+
+    fetchMenuItem();
+  }, [menuId]);
+
+  // オプションの選択が変更されたとき
+  const handleOptionClick = (optionId: number) => {
+    if (!menuItem?.options) return;
+
+    let newSelectedOptions: number[];
+
+    // 選択済みのオプションをクリックした場合は選択解除
+    if (selectedOptions.includes(optionId)) {
+      newSelectedOptions = [];
+    } else {
+      // 新しいオプションを選択（1つだけ選択可能）
+      newSelectedOptions = [optionId];
+    }
+
+    setSelectedOptions(newSelectedOptions);
+    // 価格を再計算
+    calculateTotalPrice(newSelectedOptions, selectedToppings);
+  };
+
+  // トッピングの選択が変更されたとき
+  const handleToppingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const toppingId = parseInt(e.target.value);
+    const isChecked = e.target.checked;
+
+    let newSelectedToppings: number[];
+    if (isChecked) {
+      newSelectedToppings = [...selectedToppings, toppingId];
+    } else {
+      newSelectedToppings = selectedToppings.filter((id) => id !== toppingId);
+    }
+
+    setSelectedToppings(newSelectedToppings);
+
+    // 価格を再計算
+    calculateTotalPrice(selectedOptions, newSelectedToppings);
+  };
+
+  // 合計金額の計算
+  const calculateTotalPrice = (options: number[], toppings: number[]) => {
+    if (!menuItem) return;
+
+    let price = menuItem.price;
+
+    // オプションの金額を追加
+    options.forEach((optionId) => {
+      const option = menuItem.options.find((opt) => opt.id === optionId);
+      if (option) {
+        price += option.price;
+      }
+    });
+
+    // トッピングの金額を追加
+    toppings.forEach((toppingId) => {
+      const topping = menuItem.toppings.find((top) => top.id === toppingId);
+      if (topping) {
+        price += topping.price;
+      }
+    });
+
+    // 数量を掛ける
+    price *= quantity;
+
+    setTotalPrice(price);
+  };
+
+  // 数量を変更したとき
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity > 0 && newQuantity <= 10) {
+      setQuantity(newQuantity);
+
+      if (menuItem) {
+        // 新しい数量で価格を再計算
+        let price = menuItem.price;
+
+        // オプションの金額を追加
+        selectedOptions.forEach((optionId) => {
+          const option = menuItem.options.find((opt) => opt.id === optionId);
+          if (option) {
+            price += option.price;
+          }
+        });
+
+        // トッピングの金額を追加
+        selectedToppings.forEach((toppingId) => {
+          const topping = menuItem.toppings.find((top) => top.id === toppingId);
+          if (topping) {
+            price += topping.price;
+          }
+        });
+
+        // 数量を掛ける
+        price *= newQuantity;
+
+        setTotalPrice(price);
+      }
+    }
+  };
+
+  // カートに追加
+  const handleAddToCart = () => {
+    if (!menuItem) return;
+
+    const selectedOptionDetails = selectedOptions
+      .map((optionId) => menuItem.options.find((opt) => opt.id === optionId))
+      .filter(Boolean) as Option[];
+
+    const selectedToppingDetails = selectedToppings
+      .map((toppingId) => menuItem.toppings.find((top) => top.id === toppingId))
+      .filter(Boolean) as Topping[];
+
+    onAddToCart(
+      menuItem,
+      selectedOptionDetails,
+      selectedToppingDetails,
+      notes,
+      quantity
+    );
+  };
+
+  if (!menuItem) {
+    return (
+      <div className="w-full max-w-md mx-auto flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 text-center border border-orange-200/30">
+          <div className="text-6xl mb-4">😔</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">メニューが見つかりません</h3>
+          <p className="text-gray-600">指定されたメニューが存在しないか、読み込み中です</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-orange-200/30">
+          {/* メニュー画像セクション */}
+          <div className="relative bg-gradient-to-br from-orange-400 to-red-500 p-8 text-center">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative z-10">
+              <div className="w-32 h-32 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center text-6xl backdrop-blur-sm border border-white/30 shadow-xl">
+                {menuItem.image}
+              </div>
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  {menuItem.name}
+                </h3>
+                <div className="flex items-center justify-center space-x-4 mb-2">
+                  <span className="text-3xl font-bold text-orange-600">
+                    ¥{menuItem.price.toLocaleString()}
+                  </span>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    15-20分
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed">{menuItem.description}</p>
+                
+                {/* アレルゲン情報 */}
+                {menuItem.allergens && menuItem.allergens.length > 0 && (
+                  <div className="mt-3 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm font-medium text-yellow-800">
+                        アレルゲン: {menuItem.allergens.join(", ")}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* オプション・カスタマイズセクション */}
+          <div className="p-6 space-y-6">
+
+            {/* オプション選択 */}
+            {menuItem.options && menuItem.options.length > 0 && (
+              <div className="bg-gray-50 rounded-2xl p-5">
+                <div className="flex items-center mb-4">
+                  <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <h4 className="font-bold text-gray-800">オプションを選択</h4>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {menuItem.options.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => handleOptionClick(option.id)}
+                      className={`p-4 rounded-xl text-left font-medium transition-all duration-200 border-2 ${
+                        selectedOptions.includes(option.id)
+                          ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-500 shadow-lg transform scale-105"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:shadow-md"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{option.name}</span>
+                        <div className="flex items-center">
+                          {option.price > 0 && (
+                            <span className={`text-sm font-bold ${
+                              selectedOptions.includes(option.id) ? "text-white" : "text-orange-600"
+                            }`}>
+                              +¥{option.price.toLocaleString()}
+                            </span>
+                          )}
+                          {selectedOptions.includes(option.id) && (
+                            <svg className="w-5 h-5 ml-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* トッピング選択 */}
+            {menuItem.toppings && menuItem.toppings.length > 0 && (
+              <div className="bg-blue-50 rounded-2xl p-5">
+                <div className="flex items-center mb-4">
+                  <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h4 className="font-bold text-gray-800">トッピングを追加</h4>
+                  <span className="ml-2 text-sm text-gray-500">(複数選択可)</span>
+                </div>
+                <div className="space-y-3">
+                  {menuItem.toppings.map((topping) => (
+                    <div key={topping.id} className="bg-white rounded-xl p-4 border border-blue-100 hover:shadow-md transition-shadow duration-200">
+                      <label
+                        htmlFor={`topping-${topping.id}`}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`topping-${topping.id}`}
+                            value={topping.id}
+                            checked={selectedToppings.includes(topping.id)}
+                            onChange={handleToppingChange}
+                            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3"
+                          />
+                          <span className="font-medium text-gray-800">{topping.name}</span>
+                        </div>
+                        <span className="font-bold text-blue-600">+¥{topping.price.toLocaleString()}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ご要望欄 */}
+            <div className="bg-purple-50 rounded-2xl p-5">
+              <div className="flex items-center mb-4">
+                <svg className="w-5 h-5 text-purple-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <h4 className="font-bold text-gray-800">ご要望・備考</h4>
+              </div>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="例: 薄味にしてください、ソースは別添えで、アレルギー対応など"
+                className="w-full p-4 border border-purple-200 rounded-xl text-sm bg-white focus:border-purple-400 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-200 resize-none"
+                rows={4}
+              />
+            </div>
+
+            {/* 数量選択 */}
+            <div className="bg-green-50 rounded-2xl p-5">
+              <div className="flex items-center mb-4">
+                <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+                </svg>
+                <h4 className="font-bold text-gray-800">数量を選択</h4>
+              </div>
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={quantity <= 1}
+                  className="w-12 h-12 bg-white border-2 border-green-200 rounded-l-xl flex items-center justify-center font-bold text-green-600 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div className="w-20 h-12 bg-white border-t-2 border-b-2 border-green-200 flex items-center justify-center font-bold text-xl text-gray-800">
+                  {quantity}
+                </div>
+                <button
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={quantity >= 10}
+                  className="w-12 h-12 bg-white border-2 border-green-200 rounded-r-xl flex items-center justify-center font-bold text-green-600 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* 合計金額とカートに追加ボタン */}
+            <div className="sticky bottom-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-6 shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-white font-bold text-lg">合計金額</span>
+                <span className="text-3xl font-bold text-white">
+                  ¥{totalPrice.toLocaleString()}
+                </span>
+              </div>
+
+              <button
+                onClick={handleAddToCart}
+                className="group w-full bg-white text-orange-600 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center"
+              >
+                <svg className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                </svg>
+                カートに追加する
+                <svg className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MenuDetail;

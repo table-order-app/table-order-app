@@ -38,10 +38,14 @@ export async function createOrder(tableId: number, cartItems: CartItem[]) {
     }))
   }));
 
-  return post<any>("/order", {
+  const payload = {
     tableId,
     items: orderItems
-  });
+  };
+
+  console.log('Sending to API:', JSON.stringify(payload, null, 2));
+
+  return post<any>("/order", payload);
 }
 
 /**

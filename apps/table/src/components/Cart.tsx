@@ -159,14 +159,14 @@ const Cart: React.FC<CartProps> = ({
               {cartItems.map((item, index) => (
                 <div
                   key={index}
-                  className="p-5 hover:bg-gray-50 transition-colors"
+                  className="p-5 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-300 border-l-4 border-transparent hover:border-orange-400"
                 >
-                  <div className="flex mb-3">
-                    <div className="text-3xl mr-4 bg-gray-100 h-16 w-16 flex items-center justify-center rounded-xl">
+                  <div className="flex mb-4">
+                    <div className="text-3xl mr-4 bg-gradient-to-br from-orange-100 to-red-100 h-16 w-16 flex items-center justify-center rounded-2xl shadow-md">
                       {item.menuItem.image}
                     </div>
                     <div className="flex-grow">
-                      <h3 className="font-medium text-gray-800">
+                      <h3 className="font-bold text-gray-800 text-lg">
                         {item.menuItem.name}
                       </h3>
 
@@ -195,25 +195,25 @@ const Cart: React.FC<CartProps> = ({
                       )}
 
                       {/* 金額表示 */}
-                      <div className="text-[#e0815e] font-semibold mt-1">
-                        ¥{calculateItemPrice(item)}
+                      <div className="text-orange-600 font-bold text-xl mt-2 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                        ¥{calculateItemPrice(item).toLocaleString()}
                       </div>
                     </div>
                   </div>
 
                   {/* 数量変更と削除ボタン */}
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl p-1 shadow-md">
                       <button
                         onClick={() =>
                           onUpdateQuantity(index, item.quantity - 1)
                         }
-                        className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-xl transition-all duration-200 group"
                         disabled={item.quantity <= 1}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-gray-600"
+                          className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -221,24 +221,24 @@ const Cart: React.FC<CartProps> = ({
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             d="M20 12H4"
                           />
                         </svg>
                       </button>
-                      <div className="w-10 h-9 flex items-center justify-center font-medium text-gray-800">
+                      <div className="w-12 h-10 flex items-center justify-center font-bold text-lg text-gray-800 bg-white rounded-xl mx-1">
                         {item.quantity}
                       </div>
                       <button
                         onClick={() =>
                           onUpdateQuantity(index, item.quantity + 1)
                         }
-                        className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                        className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-xl transition-all duration-200 group"
                         disabled={item.quantity >= 10}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-gray-600"
+                          className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -246,7 +246,7 @@ const Cart: React.FC<CartProps> = ({
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             d="M12 4v16m8-8H4"
                           />
                         </svg>
@@ -255,11 +255,11 @@ const Cart: React.FC<CartProps> = ({
 
                     <button
                       onClick={() => onRemoveItem(index)}
-                      className="text-gray-400 hover:text-[#e0815e] transition-colors p-2 rounded-full hover:bg-gray-100"
+                      className="text-gray-400 hover:text-red-500 transition-all duration-200 p-3 rounded-xl hover:bg-red-50 group"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-6 w-6 group-hover:scale-110 transition-transform"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -279,22 +279,42 @@ const Cart: React.FC<CartProps> = ({
           </div>
 
           {/* 合計金額とオーダーボタン */}
-          <div className="p-5 border-t border-gray-100 bg-white sticky bottom-0">
-            <div className="flex justify-between items-center mb-5">
-              <span className="text-gray-700 font-medium">合計</span>
-              <span className="text-2xl font-bold text-[#e0815e]">
-                ¥{calculateTotal()}
+          <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-orange-50 to-red-50 sticky bottom-0">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-gray-700 font-bold text-lg">合計金額</span>
+              <span className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                ¥{calculateTotal().toLocaleString()}
               </span>
             </div>
 
             <button
               onClick={onOrder}
               disabled={isSubmitting}
-              className={`w-full bg-[#e0815e] text-white py-4 rounded-xl font-medium transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
-                isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-[#d3704f]"
+              className={`group w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-5 rounded-2xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 ${
+                isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:from-orange-600 hover:to-red-600"
               }`}
             >
-              {isSubmitting ? "注文処理中..." : "注文を確定する"}
+              <div className="flex items-center justify-center">
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    注文処理中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                    </svg>
+                    注文を確定する
+                    <svg className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </>
+                )}
+              </div>
             </button>
           </div>
         </div>

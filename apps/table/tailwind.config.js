@@ -1,12 +1,9 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  // 共通設定をプリセットとして使用
-  presets: [require("../../packages/ui/tailwind.config.js")],
+import { Config } from 'tailwindcss';
+
+const config: Config = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    // 共通UIパッケージも検出対象に含める
-    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -100,3 +97,5 @@ module.exports = {
     "bg-yellow-500",
   ],
 };
+
+export default config;

@@ -64,12 +64,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const currentPath = location.pathname;
     // メニュー一覧画面
-    if (currentPath.includes("/categories/")) {
+    if (currentPath.includes("/menus/")) {
       setHeaderTitle("メニュー");
       setShowBackButton(true);
     }
+    // カテゴリ画面
+    else if (currentPath.includes("/categories")) {
+      setHeaderTitle("カテゴリ");
+      setShowBackButton(true);
+    }
     // メニュー詳細画面
-    else if (currentPath.includes("/menu/")) {
+    else if (currentPath.includes("/menu-detail/")) {
       setHeaderTitle("メニュー詳細");
       setShowBackButton(true);
     }
@@ -81,7 +86,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [location]);
 
   return (
-    <div className="min-h-screen bg-[#fffafa] flex flex-col">
+    <div className="min-h-screen bg-orange-50 flex flex-col">
       <Header
         tableNumber={UI_CONFIG.TABLE_NUMBER}
         showBackButton={showBackButton}

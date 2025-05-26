@@ -297,6 +297,8 @@ const MenuPage = () => {
   };
   
   const handleAddItem = async () => {
+    console.log('handleAddItem called with data:', addFormData);
+    
     // バリデーション
     if (!addFormData.name.trim()) {
       setError('メニュー名を入力してください');
@@ -323,7 +325,9 @@ const MenuPage = () => {
         available: addFormData.available
       };
       
+      console.log('Sending data to API:', createData);
       const result = await createMenuItem(createData);
+      console.log('API result:', result);
       
       if (result.success) {
         // データを再取得してリストを更新
@@ -597,21 +601,16 @@ const MenuPage = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   価格 <span className="text-red-500">*</span>
                 </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">¥</span>
-                  </div>
-                  <input
-                    type="number"
-                    name="price"
-                    value={editFormData.price || 0}
-                    onChange={handleInputChange}
-                    className="form-input pl-7"
-                    placeholder="0"
-                    min="0"
-                    required
-                  />
-                </div>
+                <input
+                  type="number"
+                  name="price"
+                  value={editFormData.price || ""}
+                  onChange={handleInputChange}
+                  className="form-input mt-1"
+                  placeholder="価格を入力"
+                  min="0"
+                  required
+                />
               </div>
             </div>
             
@@ -728,21 +727,16 @@ const MenuPage = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   価格 <span className="text-red-500">*</span>
                 </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">¥</span>
-                  </div>
-                  <input
-                    type="number"
-                    name="price"
-                    value={addFormData.price || 0}
-                    onChange={handleAddItemInputChange}
-                    className="form-input pl-7"
-                    placeholder="0"
-                    min="0"
-                    required
-                  />
-                </div>
+                <input
+                  type="number"
+                  name="price"
+                  value={addFormData.price || ""}
+                  onChange={handleAddItemInputChange}
+                  className="form-input mt-1"
+                  placeholder="価格を入力"
+                  min="0"
+                  required
+                />
               </div>
             </div>
             

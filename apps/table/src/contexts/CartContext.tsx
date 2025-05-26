@@ -73,11 +73,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       // トースト通知を表示
       showToast(`${menuItem.name}をカートに追加しました`, "success");
-
-      // カートアニメーション後に自動的にカートを開く設定を削除（トースト通知だけ表示）
-      // setTimeout(() => {
-      //   setIsCartOpen(true);
-      // }, UI_CONFIG.CART_ANIMATION_DURATION);
     },
     [showToast]
   );
@@ -155,25 +150,32 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const submitOrder = useCallback(async () => {
     if (cartItems.length === 0) return false;
-    
+
     setIsSubmitting(true);
     try {
-      const { createOrder } = await import('../services/orderService');
-      const tableId = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
+      const { createOrder } = await import("../services/orderService");
+      const tableId = parseInt(UI_CONFIG.TABLE_NUMBER) || 2; // テーブル2を使用（実在するテーブル）
+
+      console.log("Submitting order with:");
+      console.log("- tableId:", tableId);
+      console.log("- cartItems:", cartItems);
+
       const response = await createOrder(tableId, cartItems);
-      
+
+      console.log("API Response:", response);
+
       if (response.success) {
-        showToast('注文を確定しました。ありがとうございます！', 'success');
+        showToast("注文を確定しました。ありがとうございます！", "success");
         clearCart();
         navigate(getPath.orderConfirmation());
         return true;
       } else {
-        showToast(`注文の確定に失敗しました: ${response.error}`, 'error');
+        showToast(`注文の確定に失敗しました: ${response.error}`, "error");
         return false;
       }
     } catch (error) {
-      showToast('注文の確定に失敗しました。', 'error');
-      console.error('Order submission error:', error);
+      showToast("注文の確定に失敗しました。", "error");
+      console.error("Order submission error:", error);
       return false;
     } finally {
       setIsSubmitting(false);

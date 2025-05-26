@@ -17,9 +17,9 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
-  const [notes, setNotes] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [totalPrice, setTotalPrice] = useState<number>(0);
+
 
   useEffect(() => {
     // メニューIDからメニュー情報を取得
@@ -161,7 +161,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
       menuItem,
       selectedOptionDetails,
       selectedToppingDetails,
-      notes,
+      "", // ご要望欄は常に空文字列
       quantity
     );
   };
@@ -183,8 +183,8 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
           <h3 className="text-xl font-bold mb-1 text-gray-800">
             {menuItem.name}
           </h3>
-          <p className="text-[#e0815e] font-semibold text-lg mb-2">
-            ¥{menuItem.price}
+          <p className="text-orange-500 font-semibold text-lg mb-2">
+            ¥{menuItem.price.toLocaleString()}
           </p>
           <p className="text-gray-600">{menuItem.description}</p>
 
@@ -209,8 +209,8 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
                   onClick={() => handleOptionClick(option.id)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
                     selectedOptions.includes(option.id)
-                      ? "bg-[#e0815e] text-white border-[#e0815e]"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      ? "bg-orange-500 text-white border-orange-500"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-orange-50"
                   }`}
                 >
                   {option.name}
@@ -251,39 +251,30 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
           </div>
         )}
 
-        {/* ご要望欄 */}
-        <div className="mb-6">
-          <h4 className="font-medium text-gray-700 mb-2">ご要望・備考</h4>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="例: 薄味にしてください、ソースは別添えで など"
-            className="w-full p-2 border border-gray-300 rounded-md text-sm"
-            rows={3}
-          />
-        </div>
 
         {/* 数量選択 */}
         <div className="mb-6">
-          <h4 className="font-medium text-gray-700 mb-2">数量</h4>
-          <div className="flex items-center">
-            <button
-              onClick={() => handleQuantityChange(quantity - 1)}
-              className="w-10 h-10 bg-gray-200 rounded-l-md flex items-center justify-center"
-              disabled={quantity <= 1}
-            >
-              -
-            </button>
-            <div className="w-12 h-10 bg-white border-t border-b border-gray-300 flex items-center justify-center">
-              {quantity}
+          <div className="flex flex-col items-center">
+            <h4 className="font-medium text-gray-700 mb-3">数量</h4>
+            <div className="flex items-center">
+              <button
+                onClick={() => handleQuantityChange(quantity - 1)}
+                className="w-10 h-10 bg-gray-200 rounded-l-md flex items-center justify-center"
+                disabled={quantity <= 1}
+              >
+                -
+              </button>
+              <div className="w-12 h-10 bg-white border border-gray-300 flex items-center justify-center text-lg font-medium text-gray-800">
+                {quantity}
+              </div>
+              <button
+                onClick={() => handleQuantityChange(quantity + 1)}
+                className="w-10 h-10 bg-gray-200 rounded-r-md flex items-center justify-center"
+                disabled={quantity >= 10}
+              >
+                +
+              </button>
             </div>
-            <button
-              onClick={() => handleQuantityChange(quantity + 1)}
-              className="w-10 h-10 bg-gray-200 rounded-r-md flex items-center justify-center"
-              disabled={quantity >= 10}
-            >
-              +
-            </button>
           </div>
         </div>
 
@@ -291,14 +282,14 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
         <div className="mb-4 sticky bottom-0 bg-white pt-2">
           <div className="flex justify-between items-center mb-3">
             <span className="font-medium">合計</span>
-            <span className="text-xl font-bold text-[#e0815e]">
-              ¥{totalPrice}
+            <span className="text-xl font-bold text-orange-500">
+              ¥{totalPrice.toLocaleString()}
             </span>
           </div>
 
           <button
             onClick={handleAddToCart}
-            className="w-full bg-[#e0815e] text-white py-3 rounded-md hover:bg-[#d3704f] transition-colors"
+            className="w-full bg-orange-500 text-white py-3 rounded-md hover:bg-orange-600 transition-colors"
           >
             カートに追加
           </button>

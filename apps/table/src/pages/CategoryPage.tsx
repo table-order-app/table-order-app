@@ -11,15 +11,9 @@ const CategoryPage: React.FC = () => {
     navigate(getPath.menuList(categoryId));
   };
 
-  const handleBack = () => {
-    // ホームページに戻る
-    navigate(getPath.home());
-  };
-
   return (
     <CategorySelection
       onSelectCategory={handleSelectCategory}
-      onBack={handleBack}
     />
   );
 };
