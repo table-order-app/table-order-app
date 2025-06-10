@@ -154,7 +154,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setIsSubmitting(true);
     try {
       const { createOrder } = await import("../services/orderService");
-      const tableId = parseInt(UI_CONFIG.TABLE_NUMBER) || 2; // テーブル2を使用（実在するテーブル）
+      // テーブル番号からテーブルIDを取得
+      const tableNumber = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
+      
+      // テーブル番号に対応するテーブルIDを取得するAPIを呼び出す
+      const { getTableByNumber } = await import("../services/tableService");
+      const tableResponse = await getTableByNumber(tableNumber);
+      
+      if (!tableResponse.success || !tableResponse.data) {
+        showToast("テーブル情報の取得に失敗しました", "error");
+        return false;
+      }
+      
+      const tableId = tableResponse.data.id;
 
       console.log("Submitting order with:");
       console.log("- tableId:", tableId);
@@ -165,9 +177,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       console.log("API Response:", response);
 
       if (response.success) {
-        showToast("注文を確定しました。ありがとうございます！", "success");
         clearCart();
-        navigate(getPath.orderConfirmation());
+        // 注文データを状態として渡して注文成功画面に遷移
+        navigate(getPath.orderSuccess(), { 
+          state: { orderData: response.data },
+          replace: true 
+        });
         return true;
       } else {
         showToast(`注文の確定に失敗しました: ${response.error}`, "error");

@@ -171,15 +171,21 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden pt-20">
-      <div className="p-4">
+    <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden pt-16">
+      <div className="p-3">
         {/* メニュー画像 */}
-        <div className="flex justify-center mb-4">
-          <div className="text-8xl">{menuItem.image}</div>
+        <div className="flex justify-center mb-3">
+          <div className="w-56 h-36 rounded-lg overflow-hidden shadow-md">
+            <img
+              src={menuItem.image}
+              alt={menuItem.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
 
         {/* メニュー詳細情報 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h3 className="text-xl font-bold mb-1 text-gray-800">
             {menuItem.name}
           </h3>
@@ -200,7 +206,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
 
         {/* オプション選択 */}
         {menuItem.options && menuItem.options.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <h4 className="font-medium text-gray-700 mb-3">オプション</h4>
             <div className="flex flex-wrap gap-2">
               {menuItem.options.map((option) => (
@@ -225,7 +231,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
 
         {/* トッピング選択 */}
         {menuItem.toppings && menuItem.toppings.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4">
             <h4 className="font-medium text-gray-700 mb-2">トッピング</h4>
             <div className="space-y-2 pl-2">
               {menuItem.toppings.map((topping) => (
@@ -253,7 +259,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
 
 
         {/* 数量選択 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex flex-col items-center">
             <h4 className="font-medium text-gray-700 mb-3">数量</h4>
             <div className="flex items-center">

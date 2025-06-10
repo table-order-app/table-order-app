@@ -2,6 +2,7 @@ import { pgTable, serial, varchar, integer, text, timestamp, pgEnum } from 'driz
 import { relations } from 'drizzle-orm'
 import { tables } from './table'
 import { menuItems } from './menu'
+import { stores } from './store'
 
 // 注文ステータスの列挙型
 export const orderStatusEnum = pgEnum('order_status', [
@@ -24,6 +25,7 @@ export const orderItemStatusEnum = pgEnum('order_item_status', [
 // 注文テーブル
 export const orders = pgTable('orders', {
   id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => stores.id).notNull(),
   tableId: integer('table_id').references(() => tables.id).notNull(),
   status: orderStatusEnum('status').default('new').notNull(),
   totalItems: integer('total_items').notNull(),
@@ -62,6 +64,10 @@ export const orderItemToppings = pgTable('order_item_toppings', {
 
 // リレーションの定義
 export const ordersRelations = relations(orders, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [orders.storeId],
+    references: [stores.id],
+  }),
   table: one(tables, {
     fields: [orders.tableId],
     references: [tables.id],

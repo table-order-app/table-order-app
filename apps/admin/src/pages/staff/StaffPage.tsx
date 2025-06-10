@@ -7,72 +7,52 @@ import {
   getStaffMembers, 
   updateStaffMember, 
   deleteStaffMember, 
-  createStaffMember 
+  createStaffMember,
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  Role,
+  CreateRoleData
 } from "../../services/staffService";
 
 // スタッフの型定義
 type Staff = {
   id: number;
   name: string;
-  role: "admin" | "manager" | "staff" | "kitchen";
+  role: string;
   email: string;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
 
-// 役割の型定義
-type Role = {
-  id: "admin" | "manager" | "staff" | "kitchen";
-  name: string;
-  color: string;
-  description: string;
-};
-
 const StaffPage = () => {
   const navigate = useNavigate();
 
-  // 役割データ（固定値）
-  const [roles] = useState<Role[]>([
-    { 
-      id: "admin", 
-      name: "管理者", 
-      color: "bg-purple-100 text-purple-800",
-      description: "システム全体の管理権限"
-    },
-    { 
-      id: "manager", 
-      name: "マネージャー", 
-      color: "bg-blue-100 text-blue-800",
-      description: "店舗運営の管理権限"
-    },
-    { 
-      id: "staff", 
-      name: "一般スタッフ", 
-      color: "bg-green-100 text-green-800",
-      description: "接客・レジ業務"
-    },
-    { 
-      id: "kitchen", 
-      name: "キッチンスタッフ", 
-      color: "bg-orange-100 text-orange-800",
-      description: "調理業務"
-    },
-  ]);
+  // 役割データ（APIから取得）
+  const [roles, setRoles] = useState<Role[]>([]);
 
   // スタッフデータ（APIから取得）
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 選択中の役割
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  // 選択中の役割（フィルター用）
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(null);
 
   // モーダル・ダイアログの状態
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  
+  // 役割管理のモーダル状態
+  const [isRoleManagementOpen, setIsRoleManagementOpen] = useState(false);
+  const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
+  const [isDeleteRoleDialogOpen, setIsDeleteRoleDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
   // フォームデータ
   const [editFormData, setEditFormData] = useState<Staff>({
@@ -88,6 +68,19 @@ const StaffPage = () => {
     role: "staff",
     email: "",
     active: true,
+  });
+
+  // 役割フォームデータ
+  const [addRoleFormData, setAddRoleFormData] = useState<CreateRoleData>({
+    name: "",
+    description: "",
+    color: "bg-blue-100 text-blue-800"
+  });
+  
+  const [editRoleFormData, setEditRoleFormData] = useState<CreateRoleData>({
+    name: "",
+    description: "",
+    color: "bg-blue-100 text-blue-800"
   });
 
   // バリデーションエラー
@@ -112,14 +105,86 @@ const StaffPage = () => {
     }
   };
 
-  // 初回ロード時にスタッフデータを取得
+  // APIから役割データを取得
+  const fetchRoles = async () => {
+    try {
+      const response = await getRoles();
+      if (response.success && response.data) {
+        setRoles(response.data);
+      } else {
+        // APIから取得できない場合は、デフォルトの役割を設定
+        setRoles([
+          { 
+            id: "admin", 
+            name: "管理者", 
+            color: "bg-purple-100 text-purple-800",
+            description: "システム全体の管理権限"
+          },
+          { 
+            id: "manager", 
+            name: "マネージャー", 
+            color: "bg-blue-100 text-blue-800",
+            description: "店舗運営の管理権限"
+          },
+          { 
+            id: "staff", 
+            name: "一般スタッフ", 
+            color: "bg-green-100 text-green-800",
+            description: "接客・レジ業務"
+          },
+          { 
+            id: "kitchen", 
+            name: "キッチンスタッフ", 
+            color: "bg-orange-100 text-orange-800",
+            description: "調理業務"
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      // エラーの場合もデフォルトの役割を設定
+      setRoles([
+        { 
+          id: "admin", 
+          name: "管理者", 
+          color: "bg-purple-100 text-purple-800",
+          description: "システム全体の管理権限"
+        },
+        { 
+          id: "manager", 
+          name: "マネージャー", 
+          color: "bg-blue-100 text-blue-800",
+          description: "店舗運営の管理権限"
+        },
+        { 
+          id: "staff", 
+          name: "一般スタッフ", 
+          color: "bg-green-100 text-green-800",
+          description: "接客・レジ業務"
+        },
+        { 
+          id: "kitchen", 
+          name: "キッチンスタッフ", 
+          color: "bg-orange-100 text-orange-800",
+          description: "調理業務"
+        },
+      ]);
+    }
+  };
+
+  // 初回ロード時にデータを取得
   useEffect(() => {
-    fetchStaff();
+    const initializeData = async () => {
+      await fetchRoles();
+      await fetchStaff();
+    };
+    
+    initializeData();
   }, []);
 
   // フィルタリングされたスタッフリスト
-  const filteredStaff = selectedRole
-    ? staffList.filter((staff) => staff.role === selectedRole)
+  const filteredStaff = selectedRoleFilter
+    ? staffList.filter((staff) => staff.role === selectedRoleFilter)
     : staffList;
 
   // 役割情報を取得する関数
@@ -141,9 +206,7 @@ const StaffPage = () => {
       errors.name = "名前は2文字以上で入力してください";
     }
 
-    if (!data.email.trim()) {
-      errors.email = "メールアドレスを入力してください";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = "正しいメールアドレスを入力してください";
     }
 
@@ -305,6 +368,157 @@ const StaffPage = () => {
     }
   };
 
+  // 役割管理の関数
+  const handleOpenRoleModal = (role: Role) => {
+    setSelectedRole(role);
+    setEditRoleFormData({
+      name: role.name,
+      description: role.description,
+      color: role.color
+    });
+    setError(null);
+    setValidationErrors({});
+    setIsEditRoleModalOpen(true);
+  };
+
+  const handleOpenDeleteRoleDialog = (role: Role) => {
+    setSelectedRole(role);
+    setIsDeleteRoleDialogOpen(true);
+  };
+
+  const handleRoleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (isEditRoleModalOpen) {
+      setEditRoleFormData({
+        ...editRoleFormData,
+        [name]: value,
+      });
+    } else {
+      setAddRoleFormData({
+        ...addRoleFormData,
+        [name]: value,
+      });
+    }
+
+    // リアルタイムバリデーション
+    if (validationErrors[name]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[name];
+      setValidationErrors(newErrors);
+    }
+  };
+
+  const validateRoleForm = (data: CreateRoleData): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!data.name.trim()) {
+      errors.name = "役割名を入力してください";
+    } else if (data.name.trim().length < 2) {
+      errors.name = "役割名は2文字以上で入力してください";
+    }
+
+    if (!data.description.trim()) {
+      errors.description = "説明を入力してください";
+    }
+
+    if (!data.color) {
+      errors.color = "色を選択してください";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAddRole = async () => {
+    if (!validateRoleForm(addRoleFormData)) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const createData = {
+        name: addRoleFormData.name.trim(),
+        description: addRoleFormData.description.trim(),
+        color: addRoleFormData.color
+      };
+
+      const result = await createRole(createData);
+      
+      if (result.success) {
+        await fetchRoles();
+        setAddRoleFormData({
+          name: "",
+          description: "",
+          color: "bg-blue-100 text-blue-800"
+        });
+        setIsAddRoleModalOpen(false);
+        setValidationErrors({});
+      } else {
+        setError(result.error || '役割の追加に失敗しました');
+      }
+    } catch (error) {
+      console.error("役割の追加に失敗しました", error);
+      setError('役割の追加中にエラーが発生しました');
+    }
+  };
+
+  const handleEditRole = async () => {
+    if (!validateRoleForm(editRoleFormData) || !selectedRole) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const updateData = {
+        name: editRoleFormData.name.trim(),
+        description: editRoleFormData.description.trim(),
+        color: editRoleFormData.color
+      };
+
+      const result = await updateRole(selectedRole.id, updateData);
+      
+      if (result.success) {
+        await fetchRoles();
+        setIsEditRoleModalOpen(false);
+        setSelectedRole(null);
+        setValidationErrors({});
+      } else {
+        setError(result.error || '役割の更新に失敗しました');
+      }
+    } catch (error) {
+      console.error("役割の更新に失敗しました", error);
+      setError('役割の更新中にエラーが発生しました');
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    if (!selectedRole) return;
+    
+    // この役割を使用しているスタッフがいないかチェック
+    const staffUsingRole = staffList.filter(staff => staff.role === selectedRole.id);
+    if (staffUsingRole.length > 0) {
+      setError(`この役割は${staffUsingRole.length}人のスタッフが使用中のため削除できません`);
+      setIsDeleteRoleDialogOpen(false);
+      return;
+    }
+    
+    try {
+      const result = await deleteRole(selectedRole.id);
+      
+      if (result.success) {
+        await fetchRoles();
+        setIsDeleteRoleDialogOpen(false);
+        setSelectedRole(null);
+      } else {
+        setError('役割の削除に失敗しました');
+      }
+    } catch (error) {
+      console.error("役割の削除に失敗しました", error);
+      setError('役割の削除中にエラーが発生しました');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -360,19 +574,35 @@ const StaffPage = () => {
         <div className="px-4 py-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900">役割フィルター</h3>
-            <div className="text-sm text-gray-500">
-              スタッフを役割別に表示・管理
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                スタッフを役割別に表示・管理
+              </div>
+              <button
+                onClick={() => {
+                  setError(null);
+                  setValidationErrors({});
+                  setIsRoleManagementOpen(true);
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                役割管理
+              </button>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <button
               className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
-                selectedRole === null
+                selectedRoleFilter === null
                   ? "bg-indigo-100 text-indigo-800 ring-2 ring-indigo-500"
                   : "bg-gray-100 text-gray-800 hover:bg-gray-200"
               }`}
-              onClick={() => setSelectedRole(null)}
+              onClick={() => setSelectedRoleFilter(null)}
             >
               <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -386,11 +616,11 @@ const StaffPage = () => {
                 <button
                   key={role.id}
                   className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
-                    selectedRole === role.id
+                    selectedRoleFilter === role.id
                       ? "bg-indigo-100 text-indigo-800 ring-2 ring-indigo-500"
                       : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                   }`}
-                  onClick={() => setSelectedRole(role.id)}
+                  onClick={() => setSelectedRoleFilter(role.id)}
                   title={role.description}
                 >
                   <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${role.color.replace('text-', 'bg-').replace('100', '500')}`}></span>
@@ -409,7 +639,7 @@ const StaffPage = () => {
             <div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">スタッフ一覧</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {selectedRole ? `${getRoleInfo(selectedRole).name}` : '全役割'} - {filteredStaff.length}人のスタッフ
+                {selectedRoleFilter ? `${getRoleInfo(selectedRoleFilter).name}` : '全役割'} - {filteredStaff.length}人のスタッフ
               </p>
             </div>
             <button
@@ -439,7 +669,7 @@ const StaffPage = () => {
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">スタッフがいません</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {selectedRole ? 'この役割のスタッフはいません。' : '新しいスタッフを追加して始めましょう。'}
+                {selectedRoleFilter ? 'この役割のスタッフはいません。' : '新しいスタッフを追加して始めましょう。'}
               </p>
             </div>
           ) : (
@@ -585,7 +815,7 @@ const StaffPage = () => {
             
             <div>
               <label className="form-label">
-                メールアドレス <span className="text-red-500">*</span>
+                メールアドレス
               </label>
               <input
                 type="email"
@@ -593,8 +823,7 @@ const StaffPage = () => {
                 value={editFormData.email || ""}
                 onChange={handleInputChange}
                 className={`form-input mt-1 ${validationErrors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                placeholder="example@company.com"
-                required
+                placeholder="example@company.com (任意)"
               />
               {validationErrors.email && (
                 <p className="form-error">{validationErrors.email}</p>
@@ -710,7 +939,7 @@ const StaffPage = () => {
             
             <div>
               <label className="form-label">
-                メールアドレス <span className="text-red-500">*</span>
+                メールアドレス
               </label>
               <input
                 type="email"
@@ -718,8 +947,7 @@ const StaffPage = () => {
                 value={addFormData.email || ""}
                 onChange={handleAddStaffInputChange}
                 className={`form-input mt-1 ${validationErrors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                placeholder="example@company.com"
-                required
+                placeholder="example@company.com (任意)"
               />
               {validationErrors.email && (
                 <p className="form-error">{validationErrors.email}</p>
@@ -764,6 +992,503 @@ const StaffPage = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* 役割管理モーダル */}
+      {isRoleManagementOpen && (
+        <Modal
+          isOpen={isRoleManagementOpen}
+          onClose={() => setIsRoleManagementOpen(false)}
+          title="役割管理"
+          size="xl"
+        >
+          <div className="space-y-8">
+            {/* ヘッダーセクション */}
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-indigo-100 p-3 rounded-lg">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">組織の役割管理</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      役割を追加、編集、削除して組織に最適化
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="text-sm text-gray-500">
+                    合計 <span className="font-semibold text-gray-900">{roles.length}</span> の役割
+                  </div>
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setValidationErrors({});
+                      setIsAddRoleModalOpen(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    新しい役割
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 役割一覧セクション */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">登録済み役割</h4>
+                      <p className="text-sm text-gray-500">現在の組織で使用されている役割</p>
+                    </div>
+                  </div>
+                </div>
+
+                {roles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="bg-gray-100 rounded-full p-6 mb-4">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">役割が登録されていません</h3>
+                    <p className="text-gray-500 mb-6 text-center max-w-sm">
+                      組織に必要な役割を追加して、スタッフ管理を始めましょう
+                    </p>
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        setValidationErrors({});
+                        setIsAddRoleModalOpen(true);
+                      }}
+                      className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      最初の役割を追加
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {roles.map((role) => {
+                        const staffCount = staffList.filter(staff => staff.role === role.id).length;
+                        return (
+                          <div key={role.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 group">
+                            {/* 役割ヘッダー */}
+                            <div className="p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center">
+                                  <span className={`inline-block w-3 h-3 rounded-full mr-3 ${role.color.replace('text-', 'bg-').replace('100', '500')}`}></span>
+                                  <h5 className="text-lg font-semibold text-gray-900">{role.name}</h5>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                  <span className="text-sm font-medium text-gray-600">{staffCount}人</span>
+                                </div>
+                              </div>
+                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${role.color}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${role.color.replace('text-', 'bg-').replace('100', '500')}`}></span>
+                                {staffCount > 0 ? `${staffCount}人が使用中` : '未使用'}
+                              </div>
+                            </div>
+
+                            {/* 役割詳細 */}
+                            <div className="p-5">
+                              <p className="text-gray-600 text-sm leading-relaxed mb-4 min-h-[3rem]">
+                                {role.description}
+                              </p>
+
+                              {/* アクションボタン */}
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleOpenRoleModal(role)}
+                                  className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  編集
+                                </button>
+                                <button
+                                  onClick={() => handleOpenDeleteRoleDialog(role)}
+                                  disabled={staffCount > 0}
+                                  className={`inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                    staffCount > 0
+                                      ? 'border border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed'
+                                      : 'border border-red-300 text-red-700 bg-red-50 hover:bg-red-100'
+                                  }`}
+                                  title={staffCount > 0 ? 'この役割を使用中のスタッフがいるため削除できません' : ''}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* 役割追加モーダル */}
+      {isAddRoleModalOpen && (
+        <Modal
+          isOpen={isAddRoleModalOpen}
+          onClose={() => {
+            setIsAddRoleModalOpen(false);
+            setValidationErrors({});
+          }}
+          title="新しい役割の追加"
+          size="lg"
+        >
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddRole(); }} className="space-y-8">
+            {/* ヘッダーセクション */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-100">
+              <div className="flex items-center space-x-4">
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">新しい役割を作成</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    組織に最適な役割を定義して、スタッフ管理を効率化
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 基本情報セクション */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                基本情報
+              </h4>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    役割名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={addRoleFormData.name}
+                    onChange={handleRoleInputChange}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${validationErrors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="例: マネージャー補佐、シェフ、バリスタ"
+                    required
+                  />
+                  {validationErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    役割の説明 <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={addRoleFormData.description}
+                    onChange={handleRoleInputChange}
+                    rows={4}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${validationErrors.description ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="この役割の責任範囲、主な業務、権限について詳しく説明してください..."
+                    required
+                  />
+                  {validationErrors.description && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    スタッフがこの役割を理解しやすいよう、具体的に記述してください
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 表示設定セクション */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 21a4 4 0 004-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4M7 21a4 4 0 004-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4" />
+                </svg>
+                表示設定
+              </h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  識別色 <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { value: "bg-blue-100 text-blue-800", name: "青色", color: "bg-blue-500" },
+                    { value: "bg-green-100 text-green-800", name: "緑色", color: "bg-green-500" },
+                    { value: "bg-yellow-100 text-yellow-800", name: "黄色", color: "bg-yellow-500" },
+                    { value: "bg-red-100 text-red-800", name: "赤色", color: "bg-red-500" },
+                    { value: "bg-purple-100 text-purple-800", name: "紫色", color: "bg-purple-500" },
+                    { value: "bg-pink-100 text-pink-800", name: "ピンク色", color: "bg-pink-500" },
+                    { value: "bg-indigo-100 text-indigo-800", name: "インディゴ色", color: "bg-indigo-500" },
+                    { value: "bg-gray-100 text-gray-800", name: "グレー色", color: "bg-gray-500" },
+                  ].map((colorOption) => (
+                    <label key={colorOption.value} className="relative">
+                      <input
+                        type="radio"
+                        name="color"
+                        value={colorOption.value}
+                        checked={addRoleFormData.color === colorOption.value}
+                        onChange={handleRoleInputChange}
+                        className="sr-only"
+                      />
+                      <div className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        addRoleFormData.color === colorOption.value
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-4 h-4 rounded-full ${colorOption.color}`}></span>
+                          <span className="text-sm font-medium text-gray-700">{colorOption.name}</span>
+                        </div>
+                        {addRoleFormData.color === colorOption.value && (
+                          <div className="absolute top-1 right-1">
+                            <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {validationErrors.color && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.color}</p>
+                )}
+              </div>
+            </div>
+            
+            {/* ボタン */}
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                onClick={() => {
+                  setIsAddRoleModalOpen(false);
+                  setValidationErrors({});
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+              >
+                役割を追加
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 役割編集モーダル */}
+      {isEditRoleModalOpen && (
+        <Modal
+          isOpen={isEditRoleModalOpen}
+          onClose={() => {
+            setIsEditRoleModalOpen(false);
+            setValidationErrors({});
+          }}
+          title="役割の編集"
+          size="lg"
+        >
+          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleEditRole(); }} className="space-y-8">
+            {/* ヘッダーセクション */}
+            <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-6 border border-orange-100">
+              <div className="flex items-center space-x-4">
+                <div className="bg-orange-100 p-3 rounded-lg">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">役割を編集</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    役割の詳細を更新して、組織の変化に対応
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 基本情報セクション */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                基本情報
+              </h4>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    役割名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editRoleFormData.name}
+                    onChange={handleRoleInputChange}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${validationErrors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="例: マネージャー補佐、シェフ、バリスタ"
+                    required
+                  />
+                  {validationErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    役割の説明 <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editRoleFormData.description}
+                    onChange={handleRoleInputChange}
+                    rows={4}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${validationErrors.description ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="この役割の責任範囲、主な業務、権限について詳しく説明してください..."
+                    required
+                  />
+                  {validationErrors.description && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    スタッフがこの役割を理解しやすいよう、具体的に記述してください
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 表示設定セクション */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 21a4 4 0 004-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4M7 21a4 4 0 004-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4" />
+                </svg>
+                表示設定
+              </h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  識別色 <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { value: "bg-blue-100 text-blue-800", name: "青色", color: "bg-blue-500" },
+                    { value: "bg-green-100 text-green-800", name: "緑色", color: "bg-green-500" },
+                    { value: "bg-yellow-100 text-yellow-800", name: "黄色", color: "bg-yellow-500" },
+                    { value: "bg-red-100 text-red-800", name: "赤色", color: "bg-red-500" },
+                    { value: "bg-purple-100 text-purple-800", name: "紫色", color: "bg-purple-500" },
+                    { value: "bg-pink-100 text-pink-800", name: "ピンク色", color: "bg-pink-500" },
+                    { value: "bg-indigo-100 text-indigo-800", name: "インディゴ色", color: "bg-indigo-500" },
+                    { value: "bg-gray-100 text-gray-800", name: "グレー色", color: "bg-gray-500" },
+                  ].map((colorOption) => (
+                    <label key={colorOption.value} className="relative">
+                      <input
+                        type="radio"
+                        name="color"
+                        value={colorOption.value}
+                        checked={editRoleFormData.color === colorOption.value}
+                        onChange={handleRoleInputChange}
+                        className="sr-only"
+                      />
+                      <div className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        editRoleFormData.color === colorOption.value
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-4 h-4 rounded-full ${colorOption.color}`}></span>
+                          <span className="text-sm font-medium text-gray-700">{colorOption.name}</span>
+                        </div>
+                        {editRoleFormData.color === colorOption.value && (
+                          <div className="absolute top-1 right-1">
+                            <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {validationErrors.color && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.color}</p>
+                )}
+              </div>
+            </div>
+            
+            {/* ボタン */}
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                onClick={() => {
+                  setIsEditRoleModalOpen(false);
+                  setValidationErrors({});
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+              >
+                変更を保存
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* 役割削除確認ダイアログ */}
+      {isDeleteRoleDialogOpen && (
+        <ConfirmDialog
+          isOpen={isDeleteRoleDialogOpen}
+          onClose={() => setIsDeleteRoleDialogOpen(false)}
+          onConfirm={handleDeleteRole}
+          title="役割の削除"
+          message={`「${selectedRole?.name}」を削除してもよろしいですか？この操作は元に戻せません。`}
+          confirmText="削除"
+          variant="danger"
+        />
       )}
     </div>
   );

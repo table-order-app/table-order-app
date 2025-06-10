@@ -4,7 +4,7 @@
 
 // APIエンドポイント設定
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api",
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
   TIMEOUT: 10000,
 };
 
@@ -27,7 +27,7 @@ export const UI_CONFIG = {
   PRIMARY_COLOR: "#e0815e",
   PRIMARY_COLOR_HOVER: "#d3704f",
   // テーブル番号（本番環境では動的に取得する）
-  TABLE_NUMBER: import.meta.env.VITE_TABLE_NUMBER || "test",
+  TABLE_NUMBER: import.meta.env.VITE_TABLE_NUMBER || "1",
 };
 
 // 開発環境かどうかを示すフラグ

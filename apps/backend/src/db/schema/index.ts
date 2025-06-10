@@ -1,3 +1,4 @@
+export * from './store'
 export * from './menu'
 export * from './order'
 export * from './table'

@@ -9,6 +9,7 @@ import { orderRoutes } from './routes/order'
 import { tableRoutes } from './routes/table'
 import { staffRoutes } from './routes/staff'
 import { settingRoutes } from './routes/setting'
+import { storeRoutes } from './routes/store'
 
 const app = new Hono()
 
@@ -18,6 +19,7 @@ app.use('*', cors())
 app.use('*', prettyJSON())
 
 // Routes
+app.route('/api/store', storeRoutes)
 app.route('/api/menu', menuRoutes)
 app.route('/api/order', orderRoutes)
 app.route('/api/table', tableRoutes)

@@ -2,15 +2,34 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { categories, menuItems, options, toppings, allergens } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { categories, menuItems, options, toppings, allergens, orderItems, stores } from '../db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export const menuRoutes = new Hono()
 
 // カテゴリ一覧を取得
 menuRoutes.get('/categories', async (c) => {
   try {
-    const result = await db.query.categories.findMany()
+    const storeId = c.req.query('storeId')
+    
+    let result;
+    if (storeId) {
+      // 店舗IDが指定されている場合は店舗でフィルタ
+      result = await db.query.categories.findMany({
+        where: eq(categories.storeId, Number(storeId))
+      })
+    } else {
+      // 店舗IDが指定されていない場合は最初の店舗のデータを表示
+      const firstStore = await db.query.stores.findFirst()
+      if (firstStore) {
+        result = await db.query.categories.findMany({
+          where: eq(categories.storeId, firstStore.id)
+        })
+      } else {
+        result = []
+      }
+    }
+    
     return c.json({ success: true, data: result })
   } catch (error) {
     console.error('Error fetching categories:', error)
@@ -20,12 +39,14 @@ menuRoutes.get('/categories', async (c) => {
 
 // カテゴリを作成
 menuRoutes.post('/categories', zValidator('json', z.object({
+  storeId: z.number().int().positive().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
 })), async (c) => {
   try {
-    const { name, description } = c.req.valid('json')
+    const { storeId = 1, name, description } = c.req.valid('json')
     const result = await db.insert(categories).values({
+      storeId,
       name,
       description,
     }).returning()
@@ -39,11 +60,32 @@ menuRoutes.post('/categories', zValidator('json', z.object({
 // メニュー一覧を取得
 menuRoutes.get('/items', async (c) => {
   try {
-    const result = await db.query.menuItems.findMany({
-      with: {
-        category: true,
-      },
-    })
+    const storeId = c.req.query('storeId')
+    
+    let result;
+    if (storeId) {
+      // 店舗IDが指定されている場合は店舗でフィルタ
+      result = await db.query.menuItems.findMany({
+        where: eq(menuItems.storeId, Number(storeId)),
+        with: {
+          category: true,
+        },
+      })
+    } else {
+      // 店舗IDが指定されていない場合は最初の店舗のデータを表示
+      const firstStore = await db.query.stores.findFirst()
+      if (firstStore) {
+        result = await db.query.menuItems.findMany({
+          where: eq(menuItems.storeId, firstStore.id),
+          with: {
+            category: true,
+          },
+        })
+      } else {
+        result = []
+      }
+    }
+    
     return c.json({ success: true, data: result })
   } catch (error) {
     console.error('Error fetching menu items:', error)
@@ -53,16 +95,20 @@ menuRoutes.get('/items', async (c) => {
 
 // メニューアイテムを作成
 menuRoutes.post('/items', zValidator('json', z.object({
+  storeId: z.number().int().positive().optional(),
   categoryId: z.number().int().positive(),
   name: z.string().min(1),
-  description: z.string().optional(),
-  price: z.number().int().positive(),
+  description: z.string().max(200).optional(),
+  price: z.number().int().positive().max(999999),
   image: z.string().optional(),
   available: z.boolean().optional(),
 })), async (c) => {
   try {
-    const data = c.req.valid('json')
-    const result = await db.insert(menuItems).values(data).returning()
+    const { storeId = 1, ...data } = c.req.valid('json')
+    const result = await db.insert(menuItems).values({
+      storeId,
+      ...data
+    }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
     console.error('Error creating menu item:', error)
@@ -74,12 +120,31 @@ menuRoutes.post('/items', zValidator('json', z.object({
 menuRoutes.get('/items/:id', async (c) => {
   try {
     const id = Number(c.req.param('id'))
-    const result = await db.query.menuItems.findFirst({
-      where: eq(menuItems.id, id),
-      with: {
-        category: true,
-      },
-    })
+    const storeId = c.req.query('storeId')
+    
+    let result;
+    if (storeId) {
+      // 店舗IDが指定されている場合は店舗でフィルタ
+      result = await db.query.menuItems.findFirst({
+        where: and(eq(menuItems.id, id), eq(menuItems.storeId, Number(storeId))),
+        with: {
+          category: true,
+        },
+      })
+    } else {
+      // 店舗IDが指定されていない場合は最初の店舗でフィルタ
+      const firstStore = await db.query.stores.findFirst()
+      if (firstStore) {
+        result = await db.query.menuItems.findFirst({
+          where: and(eq(menuItems.id, id), eq(menuItems.storeId, firstStore.id)),
+          with: {
+            category: true,
+          },
+        })
+      } else {
+        result = null
+      }
+    }
     
     if (!result) {
       return c.json({ success: false, error: 'メニューアイテムが見つかりません' }, 404)
@@ -96,18 +161,19 @@ menuRoutes.get('/items/:id', async (c) => {
 menuRoutes.put('/items/:id', zValidator('json', z.object({
   categoryId: z.number().int().positive().optional(),
   name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  price: z.number().int().positive().optional(),
+  description: z.string().max(200).optional(),
+  price: z.number().int().positive().max(999999).optional(),
   image: z.string().optional(),
   available: z.boolean().optional(),
 })), async (c) => {
   try {
     const id = Number(c.req.param('id'))
+    const storeId = Number(c.req.query('storeId') || '1')
     const data = c.req.valid('json')
     
     const result = await db.update(menuItems)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(menuItems.id, id))
+      .where(and(eq(menuItems.id, id), eq(menuItems.storeId, storeId)))
       .returning()
     
     if (result.length === 0) {
@@ -125,9 +191,39 @@ menuRoutes.put('/items/:id', zValidator('json', z.object({
 menuRoutes.delete('/items/:id', async (c) => {
   try {
     const id = Number(c.req.param('id'))
+    const storeId = Number(c.req.query('storeId') || '1')
+    
+    // メニューアイテムの詳細を取得して提供状況をチェック
+    const menuItem = await db.query.menuItems.findFirst({
+      where: and(eq(menuItems.id, id), eq(menuItems.storeId, storeId))
+    })
+    
+    if (!menuItem) {
+      return c.json({ success: false, error: 'メニューアイテムが見つかりません' }, 404)
+    }
+    
+    // 提供中の場合は削除を拒否
+    if (menuItem.available) {
+      return c.json({ 
+        success: false, 
+        error: 'このメニューは現在提供中のため削除できません。先に「提供停止」に設定してから削除してください。' 
+      }, 400)
+    }
+    
+    // 該当のメニューアイテムが注文で使用されているかチェック
+    const existingOrderItems = await db.query.orderItems.findFirst({
+      where: eq(orderItems.menuItemId, id)
+    })
+    
+    if (existingOrderItems) {
+      return c.json({ 
+        success: false, 
+        error: 'このメニューは過去の注文で使用されているため削除できません。メニューを非表示にするには「提供停止」に設定してください。' 
+      }, 400)
+    }
     
     const result = await db.delete(menuItems)
-      .where(eq(menuItems.id, id))
+      .where(and(eq(menuItems.id, id), eq(menuItems.storeId, storeId)))
       .returning()
     
     if (result.length === 0) {

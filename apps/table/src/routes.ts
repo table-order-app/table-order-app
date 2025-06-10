@@ -5,6 +5,7 @@ import CategoryPage from "./pages/CategoryPage";
 import MenuListPage from "./pages/MenuListPage";
 import MenuDetailPage from "./pages/MenuDetailPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import OrderSuccessPage from "./pages/OrderSuccessPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -41,6 +42,12 @@ export const ROUTES = {
     exact: true,
   } as RouteDefinition,
 
+  ORDER_SUCCESS: {
+    path: "/order-success",
+    component: OrderSuccessPage,
+    exact: true,
+  } as RouteDefinition,
+
   ORDER_CONFIRMATION: {
     path: "/order-confirmation",
     component: OrderConfirmationPage,
@@ -53,6 +60,7 @@ export const getPath = {
   // 静的ルート
   home: () => ROUTES.HOME.path,
   categories: () => ROUTES.CATEGORIES.path,
+  orderSuccess: () => ROUTES.ORDER_SUCCESS.path,
   orderConfirmation: () => ROUTES.ORDER_CONFIRMATION.path,
 
   // 動的ルート

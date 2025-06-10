@@ -162,8 +162,12 @@ const Cart: React.FC<CartProps> = ({
                   className="p-5 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-300 border-l-4 border-transparent hover:border-orange-400"
                 >
                   <div className="flex mb-4">
-                    <div className="text-3xl mr-4 bg-gradient-to-br from-orange-100 to-red-100 h-16 w-16 flex items-center justify-center rounded-2xl shadow-md">
-                      {item.menuItem.image}
+                    <div className="mr-4 h-16 w-16 rounded-2xl shadow-md overflow-hidden">
+                      <img
+                        src={item.menuItem.image}
+                        alt={item.menuItem.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-grow">
                       <h3 className="font-bold text-gray-800 text-lg">

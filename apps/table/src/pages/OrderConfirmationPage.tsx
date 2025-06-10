@@ -123,6 +123,10 @@ const OrderConfirmationPage: React.FC = () => {
     navigate("/");
   };
 
+  const handleContinueShopping = () => {
+    navigate("/categories");
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("ja-JP", {
@@ -150,12 +154,23 @@ const OrderConfirmationPage: React.FC = () => {
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">エラーが発生しました</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={handleBackToMenu}
-            className="px-6 py-3 bg-[#e0815e] text-white rounded-xl hover:bg-[#d3704f] transition-colors shadow-md"
-          >
-            メニューに戻る
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleContinueShopping}
+              className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-md"
+            >
+              <div className="flex items-center justify-center">
+                <span className="mr-2">🍽️</span>
+                メニューを見る
+              </div>
+            </button>
+            <button
+              onClick={handleBackToMenu}
+              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              ホームに戻る
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -168,12 +183,23 @@ const OrderConfirmationPage: React.FC = () => {
           <div className="text-gray-400 text-5xl mb-4">📋</div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">注文履歴がありません</h2>
           <p className="text-gray-600 mb-6">まだ注文されていないようです。</p>
-          <button
-            onClick={handleBackToMenu}
-            className="px-6 py-3 bg-[#e0815e] text-white rounded-xl hover:bg-[#d3704f] transition-colors shadow-md"
-          >
-            メニューに戻る
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleContinueShopping}
+              className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-md"
+            >
+              <div className="flex items-center justify-center">
+                <span className="mr-2">🍽️</span>
+                注文を始める
+              </div>
+            </button>
+            <button
+              onClick={handleBackToMenu}
+              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              ホームに戻る
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -181,14 +207,28 @@ const OrderConfirmationPage: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto pb-20">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">注文状況</h1>
-        <button
-          onClick={handleBackToMenu}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          メニューに戻る
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">注文状況</h1>
+        
+        {/* アクションボタン */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleContinueShopping}
+            className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-center justify-center">
+              <span className="mr-2">🍽️</span>
+              追加注文する
+            </div>
+          </button>
+          
+          <button
+            onClick={handleBackToMenu}
+            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+          >
+            ホーム
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">

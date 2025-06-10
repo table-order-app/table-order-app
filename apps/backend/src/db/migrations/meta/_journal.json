@@ -1,12 +1,12 @@
 {
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
       "version": "7",
-      "when": 1748012640499,
-      "tag": "0000_dear_the_twelve",
+      "when": 1749252041425,
+      "tag": "0000_military_kate_bishop",
       "breakpoints": true
     }
   ]

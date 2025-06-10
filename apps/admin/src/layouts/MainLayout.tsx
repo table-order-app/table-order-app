@@ -36,7 +36,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       href: getPath.staff(),
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
     },
@@ -56,7 +56,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   };
 
   return (
-    <div className="h-full flex bg-gray-100">
+    <div className="h-screen flex bg-gray-100">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 flex z-40 md:hidden">
@@ -103,7 +103,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       )}
 
       {/* Desktop sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col">
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
         <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-gray-200">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
@@ -143,7 +143,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 md:pl-64 overflow-hidden">
         {/* Mobile header */}
         <div className="md:hidden">
           <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
