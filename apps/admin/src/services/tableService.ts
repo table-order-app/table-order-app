@@ -1,10 +1,23 @@
 import { get, post, put, del } from "../utils/api";
 
+export interface Table {
+  id: number;
+  storeId: number;
+  number: number;
+  capacity: number;
+  area: string;
+  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  qrCode?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * テーブル一覧を取得
  */
-export async function getTables() {
-  return get<any[]>("/table");
+export async function getTables(storeId?: number) {
+  const url = storeId ? `/table?storeId=${storeId}` : "/table";
+  return get<Table[]>(url);
 }
 
 /**

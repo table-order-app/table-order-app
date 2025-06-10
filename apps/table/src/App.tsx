@@ -8,13 +8,14 @@ import "./App.css";
 import React, { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Cart from "./components/Cart";
+import AppInitializer from "./components/AppInitializer";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { routeConfig } from "./routes";
-import { UI_CONFIG } from "./config";
+import { AppConfig } from "./services/configService";
 
 // CartコンポーネントのラッパーContainer
-const CartContainer: React.FC = () => {
+const CartContainer: React.FC<{ config: AppConfig }> = ({ config }) => {
   const {
     cartItems,
     isCartOpen,
@@ -48,14 +49,14 @@ const CartContainer: React.FC = () => {
       onUpdateQuantity={updateCartItemQuantity}
       onRemoveItem={removeCartItem}
       onOrder={handleConfirmOrder}
-      tableNumber={UI_CONFIG.TABLE_NUMBER}
+      tableNumber={config.tableNumber}
       isSubmitting={isSubmitting}
     />
   );
 };
 
 // メインレイアウトコンポーネント
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC<{ children: React.ReactNode; config: AppConfig }> = ({ children, config }) => {
   const location = useLocation();
   const [headerTitle, setHeaderTitle] = useState<string | null>(null);
   const [showBackButton, setShowBackButton] = useState(false);
@@ -88,37 +89,47 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen bg-orange-50 flex flex-col">
       <Header
-        tableNumber={UI_CONFIG.TABLE_NUMBER}
+        tableNumber={config.tableNumber}
         showBackButton={showBackButton}
         title={headerTitle || undefined}
       />
       <main className="flex-grow flex flex-col items-center justify-start pt-20 p-4 fade-in">
         {children}
       </main>
-      <CartContainer />
+      <CartContainer config={config} />
     </div>
   );
 };
 
 function App() {
+  const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
+
+  const handleConfigReady = (config: AppConfig) => {
+    setAppConfig(config);
+  };
+
   return (
     <Router>
       <ToastProvider>
-        <CartProvider>
-          <Routes>
-            {routeConfig.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={
-                  <Layout>
-                    <route.component />
-                  </Layout>
-                }
-              />
-            ))}
-          </Routes>
-        </CartProvider>
+        <AppInitializer onConfigReady={handleConfigReady}>
+          {appConfig && (
+            <CartProvider>
+              <Routes>
+                {routeConfig.map((route) => (
+                  <Route
+                    key={route.path}
+                    path={route.path}
+                    element={
+                      <Layout config={appConfig}>
+                        <route.component />
+                      </Layout>
+                    }
+                  />
+                ))}
+              </Routes>
+            </CartProvider>
+          )}
+        </AppInitializer>
       </ToastProvider>
     </Router>
   );

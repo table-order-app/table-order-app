@@ -7,7 +7,8 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartItem, MenuItem, Option, Topping } from "../types";
-import { BUSINESS_CONFIG, UI_CONFIG } from "../config";
+import { BUSINESS_CONFIG } from "../config";
+import { getCurrentConfig } from "../services/configService";
 import { useToast } from "./ToastContext";
 import { getPath } from "../routes";
 
@@ -154,19 +155,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setIsSubmitting(true);
     try {
       const { createOrder } = await import("../services/orderService");
-      // テーブル番号からテーブルIDを取得
-      const tableNumber = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
-      
-      // テーブル番号に対応するテーブルIDを取得するAPIを呼び出す
-      const { getTableByNumber } = await import("../services/tableService");
-      const tableResponse = await getTableByNumber(tableNumber);
-      
-      if (!tableResponse.success || !tableResponse.data) {
-        showToast("テーブル情報の取得に失敗しました", "error");
-        return false;
-      }
-      
-      const tableId = tableResponse.data.id;
+      // 現在の設定からテーブルIDを取得
+      const config = getCurrentConfig();
+      const tableId = config.tableId;
 
       console.log("Submitting order with:");
       console.log("- tableId:", tableId);

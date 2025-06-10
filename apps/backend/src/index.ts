@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
 import { prettyJSON } from 'hono/pretty-json'
+import { deviceRoutes } from './routes/device'
 import { menuRoutes } from './routes/menu'
 import { orderRoutes } from './routes/order'
 import { tableRoutes } from './routes/table'
@@ -19,6 +20,7 @@ app.use('*', cors())
 app.use('*', prettyJSON())
 
 // Routes
+app.route('/api/device', deviceRoutes)
 app.route('/api/store', storeRoutes)
 app.route('/api/menu', menuRoutes)
 app.route('/api/order', orderRoutes)

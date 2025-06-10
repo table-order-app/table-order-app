@@ -22,6 +22,17 @@ export interface Category {
   updatedAt?: string;
 }
 
+export interface Store {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface CreateMenuItemData {
   categoryId: number;
   name: string;
@@ -43,6 +54,13 @@ export interface UpdateMenuItemData {
 export interface CreateCategoryData {
   name: string;
   description?: string;
+}
+
+/**
+ * 店舗一覧を取得
+ */
+export async function getStores() {
+  return get<Store[]>("/store");
 }
 
 /**

@@ -4,6 +4,7 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 import MenuPage from "./pages/menu/MenuPage";
 import StaffPage from "./pages/staff/StaffPage";
 import TablesPage from "./pages/tables/TablesPage";
+import DevicesPage from "./pages/devices/DevicesPage";
 import MainLayout from "./layouts/MainLayout";
 
 // ルート定義の型
@@ -47,6 +48,14 @@ export const ROUTES = {
     exact: true,
   } as RouteDefinition,
 
+  // デバイス管理ページ
+  DEVICES: {
+    path: "/devices",
+    component: DevicesPage,
+    layout: MainLayout,
+    exact: true,
+  } as RouteDefinition,
+
   REPORTS: {
     path: "/reports",
     component: DashboardPage, // 一時的にDashboardPageを使用
@@ -69,6 +78,7 @@ export const getPath = {
   menu: () => ROUTES.MENU.path,
   staff: () => ROUTES.STAFF.path,
   tables: () => ROUTES.TABLES.path,
+  devices: () => ROUTES.DEVICES.path,
   reports: () => ROUTES.REPORTS.path,
   settings: () => ROUTES.SETTINGS.path,
 };
