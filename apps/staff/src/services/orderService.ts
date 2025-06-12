@@ -1,10 +1,15 @@
 import { get, put } from "../utils/api";
+import { getCurrentStore } from "./authService";
 
 /**
  * 注文一覧を取得
  */
 export async function getOrders() {
-  return get<any[]>("/order");
+  const store = getCurrentStore();
+  if (!store) {
+    return { success: false, error: "店舗情報が取得できません" };
+  }
+  return get<any[]>(`/order?storeId=${store.id}`);
 }
 
 /**

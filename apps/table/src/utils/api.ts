@@ -1,4 +1,5 @@
 import { API_CONFIG } from "../config";
+import { getLoginInfo } from "./authUtils";
 
 /**
  * APIレスポンスの共通型定義
@@ -18,10 +19,20 @@ async function fetchApi<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   
+  // 認証情報を取得
+  const loginInfo = getLoginInfo();
+  const authHeaders: Record<string, string> = {};
+  
+  if (loginInfo) {
+    authHeaders['X-Store-Code'] = loginInfo.storeCode;
+    authHeaders['X-Table-Number'] = loginInfo.tableNumber;
+  }
+  
   try {
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...options.headers,
       },
       ...options,

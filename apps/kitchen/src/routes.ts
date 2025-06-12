@@ -4,6 +4,7 @@ import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ProgressPage from "./pages/progress/ProgressPage";
 import HistoryPage from "./pages/history/HistoryPage";
+import StoreLoginPage from "./pages/StoreLoginPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -36,6 +37,13 @@ export const ROUTES = {
     path: "/history",
     component: HistoryPage,
     layout: MainLayout,
+    exact: true,
+  } as RouteDefinition,
+
+  // 認証
+  STORE_LOGIN: {
+    path: "/store-login",
+    component: StoreLoginPage,
     exact: true,
   } as RouteDefinition,
 };

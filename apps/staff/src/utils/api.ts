@@ -1,4 +1,5 @@
 import { API_CONFIG } from "../config";
+import { getAuthHeaders } from "../services/authService";
 
 /**
  * APIレスポンスの共通型定義
@@ -19,9 +20,11 @@ async function fetchApi<T>(
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   
   try {
+    const authHeaders = getAuthHeaders();
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
+        ...(authHeaders as HeadersInit),
         ...options.headers,
       },
       ...options,

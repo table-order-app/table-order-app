@@ -3,11 +3,13 @@ import {
   Routes,
   Route,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import "./App.css";
 import React, { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Cart from "./components/Cart";
+import AuthGuard from "./components/AuthGuard";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { routeConfig } from "./routes";
@@ -92,15 +94,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-orange-50 flex flex-col">
-      <Header
-        tableNumber={UI_CONFIG.TABLE_NUMBER}
-        showBackButton={showBackButton}
-        title={headerTitle || undefined}
-      />
-      <main className="flex-grow flex flex-col items-center justify-start pt-20 p-4 fade-in">
+      {/* ログインページ以外でヘッダーを表示 */}
+      {location.pathname !== '/store-login' && (
+        <Header
+          tableNumber={UI_CONFIG.TABLE_NUMBER}
+          showBackButton={showBackButton}
+          title={headerTitle || undefined}
+        />
+      )}
+      <main className={`flex-grow flex flex-col items-center justify-start p-4 fade-in ${
+        location.pathname !== '/store-login' ? 'pt-20' : 'pt-0'
+      }`}>
         {children}
       </main>
-      <CartContainer />
+      {/* ログインページ以外でカートを表示 */}
+      {location.pathname !== '/store-login' && <CartContainer />}
     </div>
   );
 };
@@ -110,19 +118,21 @@ function App() {
     <Router>
       <ToastProvider>
         <CartProvider>
-          <Routes>
-            {routeConfig.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={
-                  <Layout>
-                    <route.component />
-                  </Layout>
-                }
-              />
-            ))}
-          </Routes>
+          <AuthGuard>
+            <Routes>
+              {routeConfig.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={
+                    <Layout>
+                      <route.component />
+                    </Layout>
+                  }
+                />
+              ))}
+            </Routes>
+          </AuthGuard>
         </CartProvider>
       </ToastProvider>
     </Router>

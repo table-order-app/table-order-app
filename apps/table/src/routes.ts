@@ -6,6 +6,7 @@ import MenuListPage from "./pages/MenuListPage";
 import MenuDetailPage from "./pages/MenuDetailPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
+import StoreLoginPage from "./pages/StoreLoginPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -16,6 +17,13 @@ interface RouteDefinition {
 
 // アプリケーションのすべてのルートを定義
 export const ROUTES = {
+  // 店舗ログイン
+  STORE_LOGIN: {
+    path: "/store-login",
+    component: StoreLoginPage,
+    exact: true,
+  } as RouteDefinition,
+
   // 基本ルート
   HOME: {
     path: "/",
@@ -58,6 +66,7 @@ export const ROUTES = {
 // タイプセーフなナビゲーション用ヘルパー関数
 export const getPath = {
   // 静的ルート
+  storeLogin: () => ROUTES.STORE_LOGIN.path,
   home: () => ROUTES.HOME.path,
   categories: () => ROUTES.CATEGORIES.path,
   orderSuccess: () => ROUTES.ORDER_SUCCESS.path,

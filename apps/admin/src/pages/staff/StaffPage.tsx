@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { getPath } from "../../routes";
 import { Modal } from "../../components/Modal";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -20,8 +20,10 @@ import {
 type Staff = {
   id: number;
   name: string;
+  loginId: string;
   role: string;
-  email: string;
+  email?: string;
+  phone?: string;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -58,15 +60,20 @@ const StaffPage = () => {
   const [editFormData, setEditFormData] = useState<Staff>({
     id: 0,
     name: "",
+    loginId: "",
     role: "staff",
     email: "",
+    phone: "",
     active: true,
   });
   
-  const [addFormData, setAddFormData] = useState<Omit<Staff, "id">>({
+  const [addFormData, setAddFormData] = useState<Omit<Staff, "id"> & { password: string }>({
     name: "",
+    loginId: "",
+    password: "",
     role: "staff",
     email: "",
+    phone: "",
     active: true,
   });
 
@@ -197,13 +204,31 @@ const StaffPage = () => {
   };
 
   // バリデーション関数
-  const validateForm = (data: Omit<Staff, "id"> | Staff): boolean => {
+  const validateForm = (data: Omit<Staff, "id"> | Staff, isAddForm: boolean = false): boolean => {
     const errors: Record<string, string> = {};
 
     if (!data.name.trim()) {
       errors.name = "名前を入力してください";
     } else if (data.name.trim().length < 2) {
       errors.name = "名前は2文字以上で入力してください";
+    }
+
+    if (!data.loginId.trim()) {
+      errors.loginId = "ログインIDを入力してください";
+    } else if (data.loginId.trim().length < 3) {
+      errors.loginId = "ログインIDは3文字以上で入力してください";
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(data.loginId.trim())) {
+      errors.loginId = "ログインIDは英数字、ハイフン、アンダースコアのみ使用できます";
+    }
+
+    // パスワードのバリデーション（追加フォームの場合のみ）
+    if (isAddForm && 'password' in data) {
+      const passwordData = data as Omit<Staff, "id"> & { password: string };
+      if (!passwordData.password.trim()) {
+        errors.password = "パスワードを入力してください";
+      } else if (passwordData.password.trim().length < 6) {
+        errors.password = "パスワードは6文字以上で入力してください";
+      }
     }
 
     if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
@@ -270,7 +295,8 @@ const StaffPage = () => {
       const updateData = {
         name: editFormData.name.trim(),
         role: editFormData.role,
-        email: editFormData.email.trim(),
+        email: editFormData.email.trim() || undefined,
+        phone: editFormData.phone?.trim() || undefined,
         active: editFormData.active
       };
 
@@ -282,7 +308,11 @@ const StaffPage = () => {
         setSelectedStaff(null);
         setValidationErrors({});
       } else {
-        setError(result.error || 'スタッフの更新に失敗しました');
+        // エラーがオブジェクトの場合は文字列に変換
+        const errorMessage = typeof result.error === 'string' 
+          ? result.error 
+          : 'スタッフの更新に失敗しました';
+        setError(errorMessage);
       }
     } catch (error) {
       console.error("スタッフの更新に失敗しました", error);
@@ -334,33 +364,58 @@ const StaffPage = () => {
   };
   
   const handleAddStaff = async () => {
-    if (!validateForm(addFormData)) {
+    if (!validateForm(addFormData, true)) {
       return;
     }
 
     try {
       setError(null);
+      
+      // デバッグ用: 認証情報を確認
+      console.log('認証トークン:', localStorage.getItem('accorto_auth_token'));
+      console.log('ストア情報:', localStorage.getItem('accorto_store_data'));
       const createData = {
         name: addFormData.name.trim(),
+        loginId: addFormData.loginId.trim(),
+        password: addFormData.password.trim(),
         role: addFormData.role,
-        email: addFormData.email.trim(),
+        email: addFormData.email.trim() || undefined,
+        phone: addFormData.phone.trim() || undefined,
         active: addFormData.active
       };
 
+      console.log('送信データ:', createData);
       const result = await createStaffMember(createData);
+      console.log('APIレスポンス:', result);
+      console.log('success:', result.success);
+      console.log('error:', result.error);
+      console.log('data:', result.data);
       
       if (result.success) {
         await fetchStaff();
         setAddFormData({
           name: "",
+          loginId: "",
+          password: "",
           role: "staff",
           email: "",
+          phone: "",
           active: true,
         });
         setIsAddModalOpen(false);
         setValidationErrors({});
       } else {
-        setError(result.error || 'スタッフの追加に失敗しました');
+        // エラーがオブジェクトの場合は文字列に変換
+        let errorMessage = 'スタッフの追加に失敗しました';
+        
+        if (typeof result.error === 'string') {
+          errorMessage = result.error;
+        } else if (result.error && result.error.issues && result.error.issues.length > 0) {
+          // Zodエラーの場合
+          errorMessage = result.error.issues[0].message || 'バリデーションエラーが発生しました';
+        }
+        
+        setError(errorMessage);
       }
     } catch (error) {
       console.error("スタッフの追加に失敗しました", error);
@@ -678,8 +733,9 @@ const StaffPage = () => {
                 <thead className="table-header">
                   <tr>
                     <th className="table-header-cell">名前</th>
+                    <th className="table-header-cell">ログインID</th>
                     <th className="table-header-cell">役割</th>
-                    <th className="table-header-cell">メールアドレス</th>
+                    <th className="table-header-cell">連絡先</th>
                     <th className="table-header-cell">状態</th>
                     <th className="table-header-cell">登録日</th>
                     <th className="relative px-6 py-3">
@@ -707,12 +763,19 @@ const StaffPage = () => {
                           </div>
                         </td>
                         <td className="table-cell">
+                          <div className="text-sm font-medium text-gray-700">{staff.loginId}</div>
+                        </td>
+                        <td className="table-cell">
                           <span className={`badge ${roleInfo.color}`} title={roleInfo.description}>
                             {roleInfo.name}
                           </span>
                         </td>
                         <td className="table-cell">
-                          <div className="text-sm text-gray-900">{staff.email}</div>
+                          <div className="text-sm text-gray-900">
+                            {staff.email && <div>{staff.email}</div>}
+                            {staff.phone && <div>{staff.phone}</div>}
+                            {!staff.email && !staff.phone && <span className="text-gray-400">-</span>}
+                          </div>
                         </td>
                         <td className="table-cell">
                           <span
@@ -790,6 +853,36 @@ const StaffPage = () => {
                 )}
               </div>
               
+              <div className="sm:col-span-1">
+                <label className="form-label">
+                  ログインID
+                </label>
+                <input
+                  type="text"
+                  name="loginId"
+                  value={editFormData.loginId || ""}
+                  readOnly
+                  className="form-input mt-1 bg-gray-50 text-gray-500 cursor-not-allowed"
+                  placeholder="ログインIDは変更できません"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  ログインIDは編集できません
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span className="text-sm text-yellow-800">
+                  パスワードはこのフォームから変更できません。パスワード変更が必要な場合は、管理者にお問い合わせください。
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
                 <label className="form-label">
                   役割 <span className="text-red-500">*</span>
@@ -914,6 +1007,50 @@ const StaffPage = () => {
                 )}
               </div>
               
+              <div className="sm:col-span-1">
+                <label className="form-label">
+                  ログインID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="loginId"
+                  value={addFormData.loginId || ""}
+                  onChange={handleAddStaffInputChange}
+                  className={`form-input mt-1 ${validationErrors.loginId ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="ログインIDを入力（英数字、-、_のみ）"
+                  required
+                />
+                {validationErrors.loginId && (
+                  <p className="form-error">{validationErrors.loginId}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  ログイン時に使用するIDです（3文字以上、英数字・ハイフン・アンダースコアのみ）
+                </p>
+              </div>
+            </div>
+            
+            <div>
+              <label className="form-label">
+                パスワード <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={addFormData.password || ""}
+                onChange={handleAddStaffInputChange}
+                className={`form-input mt-1 ${validationErrors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="パスワードを入力（6文字以上）"
+                required
+              />
+              {validationErrors.password && (
+                <p className="form-error">{validationErrors.password}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                ログイン時に使用するパスワードです（6文字以上）
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
                 <label className="form-label">
                   役割 <span className="text-red-500">*</span>

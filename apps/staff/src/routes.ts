@@ -3,6 +3,7 @@ import { ComponentType } from "react";
 import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import TableDetailPage from "./pages/table/TableDetailPage";
+import LoginPage from "./pages/auth/LoginPage";
 
 // ルート定義の型
 interface RouteDefinition {
@@ -14,9 +15,9 @@ interface RouteDefinition {
 
 // アプリケーションのすべてのルートを定義
 export const ROUTES = {
-  // 基本ルート - テーブル一覧ページ
+  // 基本ルート - ダッシュボード
   DASHBOARD: {
-    path: "/",
+    path: "/dashboard",
     component: DashboardPage,
     layout: MainLayout,
     exact: true,
@@ -28,12 +29,20 @@ export const ROUTES = {
     component: TableDetailPage,
     layout: MainLayout,
   } as RouteDefinition,
+
+  // 認証
+  LOGIN: {
+    path: "/login",
+    component: LoginPage,
+    exact: true,
+  } as RouteDefinition,
 };
 
 // タイプセーフなナビゲーション用ヘルパー関数
 export const getPath = {
   // 静的ルート
   dashboard: () => ROUTES.DASHBOARD.path,
+  login: () => ROUTES.LOGIN.path,
 
   // 動的ルート
   tableDetail: (tableId: string) =>

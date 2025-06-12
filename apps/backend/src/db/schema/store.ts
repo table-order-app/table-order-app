@@ -4,10 +4,13 @@ import { relations } from 'drizzle-orm'
 // 店舗テーブル
 export const stores = pgTable('stores', {
   id: serial('id').primaryKey(),
+  storeCode: varchar('store_code', { length: 8 }).unique(),
   name: varchar('name', { length: 100 }).notNull(),
   address: text('address'),
   phone: varchar('phone', { length: 20 }),
-  email: varchar('email', { length: 100 }),
+  email: varchar('email', { length: 100 }).unique().notNull(),
+  password: varchar('password', { length: 255 }).notNull(),
+  ownerName: varchar('owner_name', { length: 100 }).notNull(),
   active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -7,6 +7,43 @@ import { eq } from 'drizzle-orm'
 
 export const staffRoutes = new Hono()
 
+// 役割一覧を取得
+staffRoutes.get('/roles', async (c) => {
+  try {
+    // デフォルトの役割一覧を返す
+    const roles = [
+      { 
+        id: "admin", 
+        name: "管理者", 
+        color: "bg-purple-100 text-purple-800",
+        description: "システム全体の管理権限"
+      },
+      { 
+        id: "manager", 
+        name: "マネージャー", 
+        color: "bg-blue-100 text-blue-800",
+        description: "店舗運営の管理権限"
+      },
+      { 
+        id: "staff", 
+        name: "一般スタッフ", 
+        color: "bg-green-100 text-green-800",
+        description: "接客・レジ業務"
+      },
+      { 
+        id: "kitchen", 
+        name: "キッチンスタッフ", 
+        color: "bg-orange-100 text-orange-800",
+        description: "調理業務"
+      },
+    ]
+    return c.json({ success: true, data: roles })
+  } catch (error) {
+    console.error('Error fetching roles:', error)
+    return c.json({ success: false, error: '役割の取得に失敗しました' }, 500)
+  }
+})
+
 // スタッフ一覧を取得
 staffRoutes.get('/', async (c) => {
   try {

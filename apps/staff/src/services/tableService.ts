@@ -1,17 +1,26 @@
 import { get, put } from "../utils/api";
+import { getCurrentStore } from "./authService";
 
 /**
  * テーブル一覧を取得
  */
 export async function getTables() {
-  return get<any[]>("/table");
+  const store = getCurrentStore();
+  if (!store) {
+    return { success: false, error: "店舗情報が取得できません" };
+  }
+  return get<any[]>(`/table?storeId=${store.id}`);
 }
 
 /**
  * テーブル詳細を取得
  */
 export async function getTable(id: number) {
-  return get<any>(`/table/${id}`);
+  const store = getCurrentStore();
+  if (!store) {
+    return { success: false, error: "店舗情報が取得できません" };
+  }
+  return get<any>(`/table/${id}?storeId=${store.id}`);
 }
 
 /**

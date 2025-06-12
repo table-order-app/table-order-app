@@ -2,181 +2,162 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Order } from "../../types/order";
+import { getTable } from "../../services/tableService";
+import { getTableOrders, updateOrderItemStatus } from "../../services/orderService";
 
-// サンプルデータ - 実際はAPIから取得
-const sampleOrders: Order[] = [
-  {
-    id: "order1",
-    tableId: "table1",
-    table: { id: "table1", number: 1, area: "メインフロア" },
-    items: [
-      {
-        id: "item1",
-        name: "シーザーサラダ",
-        quantity: 2,
-        status: "new",
-        updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-      },
-      {
-        id: "item2",
-        name: "マルゲリータピザ",
-        quantity: 1,
-        notes: "チーズ多めで",
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 8 * 60000), // 8分前
-      },
-      {
-        id: "item3",
-        name: "スパークリングワイン",
-        quantity: 2,
-        status: "ready",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-    ],
-    totalItems: 5,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 25 * 60000), // 25分前
-    updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-  },
-  {
-    id: "order2",
-    tableId: "table2",
-    table: { id: "table2", number: 3, area: "テラス" },
-    items: [
-      {
-        id: "item4",
-        name: "カルボナーラ",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 12 * 60000), // 12分前
-      },
-      {
-        id: "item5",
-        name: "ガーリックブレッド",
-        quantity: 1,
-        status: "ready",
-        updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-      },
-      {
-        id: "item6",
-        name: "ティラミス",
-        quantity: 2,
-        status: "new",
-        updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-      },
-    ],
-    totalItems: 4,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 15 * 60000), // 15分前
-    updatedAt: new Date(Date.now() - 10 * 60000), // 10分前
-  },
-  {
-    id: "order3",
-    tableId: "table3",
-    table: { id: "table3", number: 5, area: "個室" },
-    items: [
-      {
-        id: "item7",
-        name: "ステーキセット",
-        quantity: 3,
-        notes: "ミディアムレア",
-        status: "ready",
-        updatedAt: new Date(Date.now() - 20 * 60000), // 20分前
-      },
-      {
-        id: "item8",
-        name: "シーフードパスタ",
-        quantity: 2,
-        status: "ready",
-        updatedAt: new Date(Date.now() - 18 * 60000), // 18分前
-      },
-      {
-        id: "item9",
-        name: "アイスクリーム",
-        quantity: 3,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-      },
-    ],
-    totalItems: 8,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 40 * 60000), // 40分前
-    updatedAt: new Date(Date.now() - 15 * 60000), // 15分前
-  },
-  {
-    id: "order4",
-    tableId: "table4",
-    table: { id: "table4", number: 7, area: "メインフロア" },
-    items: [
-      {
-        id: "item10",
-        name: "ハンバーガー",
-        quantity: 1,
-        status: "in-progress",
-        updatedAt: new Date(Date.now() - 4 * 60000), // 4分前
-      },
-      {
-        id: "item11",
-        name: "フライドポテト",
-        quantity: 1,
-        status: "new",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-      {
-        id: "item12",
-        name: "コーラ",
-        quantity: 1,
-        status: "new",
-        updatedAt: new Date(Date.now() - 5 * 60000), // 5分前
-      },
-    ],
-    totalItems: 3,
-    status: "in-progress",
-    createdAt: new Date(Date.now() - 5 * 60000), // 5分前
-    updatedAt: new Date(Date.now() - 4 * 60000), // 4分前
-  },
-];
+// API status mapping function
+const mapApiStatusToOrderStatus = (apiStatus: string) => {
+  switch (apiStatus) {
+    case "new":
+      return "new" as const;
+    case "in-progress":
+      return "in-progress" as const;
+    case "ready":
+      return "ready" as const;
+    case "completed":
+      return "completed" as const;
+    case "delivered":
+      return "delivered" as const;
+    case "cancelled":
+      return "cancelled" as const;
+    default:
+      return "new" as const;
+  }
+};
+
+// Transform API order data to UI format
+const transformApiOrderToOrder = (apiOrder: any): Order => {
+  const transformedItems = apiOrder.items.map((item: any) => ({
+    id: item.id.toString(),
+    name: item.name,
+    quantity: item.quantity,
+    notes: item.notes || undefined,
+    status: mapApiStatusToOrderStatus(item.status),
+    updatedAt: new Date(item.updatedAt),
+  }));
+
+  const transformedTable = {
+    id: apiOrder.table.id.toString(),
+    number: apiOrder.table.number,
+    area: apiOrder.table.area,
+  };
+
+  return {
+    id: apiOrder.id.toString(),
+    tableId: apiOrder.tableId.toString(),
+    table: transformedTable,
+    items: transformedItems,
+    totalItems: apiOrder.totalItems,
+    status: mapApiStatusToOrderStatus(apiOrder.status),
+    createdAt: new Date(apiOrder.createdAt),
+    updatedAt: new Date(apiOrder.updatedAt),
+  };
+};
 
 const TableDetailPage = () => {
   const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // テーブルIDから注文を取得
-    const foundOrder = sampleOrders.find((o) => o.tableId === tableId);
-    if (foundOrder) {
-      setOrder(foundOrder);
-    }
+    const fetchTableData = async () => {
+      if (!tableId) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log("Fetching data for tableId:", tableId);
+        
+        // tableIdは実際のテーブルIDではなく、table.idの値として扱う
+        // そのテーブルの注文一覧を取得
+        const ordersResponse = await getTableOrders(Number(tableId));
+        if (!ordersResponse.success) {
+          setError(ordersResponse.error || "注文情報の取得に失敗しました");
+          return;
+        }
+        
+        console.log("Orders response:", ordersResponse);
+        console.log("Orders data array:", ordersResponse.data);
+        console.log("Orders data length:", ordersResponse.data?.length);
+        
+        // 最新の進行中の注文を取得
+        if (ordersResponse.data && ordersResponse.data.length > 0) {
+          console.log("Processing orders, total count:", ordersResponse.data.length);
+          
+          const activeOrder = ordersResponse.data.find((order: any) => 
+            order.status !== "completed" && order.status !== "cancelled" && order.status !== "delivered"
+          ) || ordersResponse.data[0];
+          
+          console.log("Active order found:", activeOrder);
+          
+          if (activeOrder) {
+            try {
+              const transformedOrder = transformApiOrderToOrder(activeOrder);
+              console.log("Transformed order:", transformedOrder);
+              setOrder(transformedOrder);
+            } catch (transformError) {
+              console.error("Error transforming order:", transformError);
+              setError("注文データの変換中にエラーが発生しました");
+            }
+          } else {
+            console.log("No active order found");
+            setOrder(null);
+          }
+        } else {
+          console.log("No orders found for this table");
+          setOrder(null);
+        }
+      } catch (error) {
+        console.error("Error fetching table data:", error);
+        setError("データの取得中にエラーが発生しました");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTableData();
   }, [tableId]);
 
   // 提供完了処理
-  const handleDeliverItem = (orderId: string, itemId: string) => {
-    // 注文アイテムを提供済みにする
-    setOrder((prevOrder) => {
-      if (!prevOrder || prevOrder.id !== orderId) return prevOrder;
+  const handleDeliverItem = async (orderId: string, itemId: string) => {
+    try {
+      const response = await updateOrderItemStatus(Number(itemId), "delivered");
+      
+      if (response.success) {
+        // ローカル状態を更新
+        setOrder((prevOrder) => {
+          if (!prevOrder || prevOrder.id !== orderId) return prevOrder;
 
-      const updatedItems = prevOrder.items.map((item) => {
-        if (item.id !== itemId) return item;
-        return {
-          ...item,
-          status: "delivered" as const,
-          updatedAt: new Date(),
-        };
-      });
+          const updatedItems = prevOrder.items.map((item) => {
+            if (item.id !== itemId) return item;
+            return {
+              ...item,
+              status: "delivered" as const,
+              updatedAt: new Date(),
+            };
+          });
 
-      // 全てのアイテムが提供済みかチェック
-      const allDelivered = updatedItems.every(
-        (item) => item.status === "delivered"
-      );
+          // 全てのアイテムが提供済みかチェック
+          const allDelivered = updatedItems.every(
+            (item) => item.status === "delivered"
+          );
 
-      return {
-        ...prevOrder,
-        items: updatedItems,
-        status: allDelivered ? "delivered" : prevOrder.status,
-        updatedAt: new Date(),
-      };
-    });
+          return {
+            ...prevOrder,
+            items: updatedItems,
+            status: allDelivered ? "delivered" : prevOrder.status,
+            updatedAt: new Date(),
+          };
+        });
+      } else {
+        console.error("Failed to deliver item:", response.error);
+      }
+    } catch (error) {
+      console.error("Error delivering item:", error);
+    }
   };
 
   // 日時のフォーマット
@@ -233,7 +214,26 @@ const TableDetailPage = () => {
       </div>
 
       <div className="flex-1 overflow-auto">
-        {order ? (
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">データを読み込み中...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-500 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <p className="text-red-600 font-medium">{error}</p>
+              <p className="text-gray-600 mt-2">しばらく待ってから再度お試しください</p>
+            </div>
+          </div>
+        ) : order ? (
           <div className="p-4">
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               {/* ヘッダー部分 */}
@@ -440,7 +440,7 @@ const TableDetailPage = () => {
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-gray-500">テーブル情報を読み込み中...</p>
+            <p className="text-gray-500">このテーブルには現在進行中の注文がありません</p>
           </div>
         )}
       </div>

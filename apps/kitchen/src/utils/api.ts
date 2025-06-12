@@ -10,6 +10,23 @@ export interface ApiResponse<T> {
 }
 
 /**
+ * キッチンアプリの認証情報を取得
+ */
+function getKitchenAuthInfo() {
+  if (typeof window === 'undefined') return null;
+  
+  const storeCode = localStorage.getItem('accorto_kitchen_store_code');
+  const loginTime = localStorage.getItem('accorto_kitchen_login_time');
+  
+  if (!storeCode || !loginTime) return null;
+  
+  return {
+    storeCode,
+    loginTime: new Date(loginTime)
+  };
+}
+
+/**
  * API呼び出しのベース関数
  */
 async function fetchApi<T>(
@@ -18,10 +35,20 @@ async function fetchApi<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   
+  // キッチン認証情報を取得
+  const authInfo = getKitchenAuthInfo();
+  const authHeaders: Record<string, string> = {};
+  
+  if (authInfo) {
+    authHeaders['X-Store-Code'] = authInfo.storeCode;
+    // キッチンアプリは店舗コードのみでテーブル番号は不要
+  }
+  
   try {
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...options.headers,
       },
       ...options,

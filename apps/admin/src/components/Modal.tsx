@@ -1,10 +1,10 @@
-import { ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  children: ReactNode;
+  children: JSX.Element;
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 

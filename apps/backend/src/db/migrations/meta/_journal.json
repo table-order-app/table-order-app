@@ -8,6 +8,27 @@
       "when": 1749252041425,
       "tag": "0000_military_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749714801111,
+      "tag": "0001_romantic_texas_twister",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749715279944,
+      "tag": "0002_deep_mantis",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749715300143,
+      "tag": "0003_clean_nick_fury",
+      "breakpoints": true
     }
   ]
 }

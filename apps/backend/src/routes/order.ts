@@ -4,39 +4,22 @@ import { z } from 'zod'
 import { db } from '../db'
 import { orders, orderItems, orderItemOptions, orderItemToppings, stores } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
+import { flexibleAuthMiddleware } from '../middleware/auth'
 
 export const orderRoutes = new Hono()
 
-// 注文一覧を取得
-orderRoutes.get('/', async (c) => {
+// 注文一覧を取得（統合認証）
+orderRoutes.get('/', flexibleAuthMiddleware, async (c) => {
   try {
-    const storeId = c.req.query('storeId')
+    const auth = c.get('auth')
     
-    let result;
-    if (storeId) {
-      // 店舗IDが指定されている場合は店舗でフィルタ
-      result = await db.query.orders.findMany({
-        where: eq(orders.storeId, Number(storeId)),
-        with: {
-          table: true,
-          items: true,
-        },
-      })
-    } else {
-      // 店舗IDが指定されていない場合は最初の店舗のデータを表示
-      const firstStore = await db.query.stores.findFirst()
-      if (firstStore) {
-        result = await db.query.orders.findMany({
-          where: eq(orders.storeId, firstStore.id),
-          with: {
-            table: true,
-            items: true,
-          },
-        })
-      } else {
-        result = []
-      }
-    }
+    const result = await db.query.orders.findMany({
+      where: eq(orders.storeId, auth.storeId),
+      with: {
+        table: true,
+        items: true,
+      },
+    })
     
     return c.json({ success: true, data: result })
   } catch (error) {
@@ -45,9 +28,8 @@ orderRoutes.get('/', async (c) => {
   }
 })
 
-// 注文を作成
-orderRoutes.post('/', zValidator('json', z.object({
-  storeId: z.number().int().positive().optional(),
+// 注文を作成（統合認証）
+orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
   tableId: z.number().int().positive(),
   items: z.array(z.object({
     menuItemId: z.number().int().positive(),
@@ -65,22 +47,14 @@ orderRoutes.post('/', zValidator('json', z.object({
   })),
 })), async (c) => {
   try {
-    let { storeId, tableId, items } = c.req.valid('json')
-    
-    // storeIdが指定されていない場合は最初の店舗を使用
-    if (!storeId) {
-      const firstStore = await db.query.stores.findFirst()
-      if (!firstStore) {
-        return c.json({ success: false, error: '店舗が見つかりません' }, 400)
-      }
-      storeId = firstStore.id
-    }
+    const auth = c.get('auth')
+    const { tableId, items } = c.req.valid('json')
     
     // トランザクションを開始
     const result = await db.transaction(async (tx) => {
       // 注文を作成
       const [order] = await tx.insert(orders).values({
-        storeId,
+        storeId: auth.storeId,
         tableId,
         totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
         status: 'new',
@@ -218,13 +192,16 @@ orderRoutes.patch('/items/:itemId/status', zValidator('json', z.object({
   }
 })
 
-// テーブルごとの注文を取得
-orderRoutes.get('/table/:tableId', async (c) => {
+// テーブルごとの注文を取得（統合認証）
+orderRoutes.get('/table/:tableId', flexibleAuthMiddleware, async (c) => {
   try {
+    const auth = c.get('auth')
     const tableId = Number(c.req.param('tableId'))
+    
     const result = await db.query.orders.findMany({
-      where: eq(orders.tableId, tableId),
+      where: and(eq(orders.tableId, tableId), eq(orders.storeId, auth.storeId)),
       with: {
+        table: true,
         items: {
           with: {
             menuItem: true,

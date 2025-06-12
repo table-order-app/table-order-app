@@ -26,8 +26,22 @@ export const UI_CONFIG = {
   // 主要なテーマカラー（TailwindCSS用）
   PRIMARY_COLOR: "#e0815e",
   PRIMARY_COLOR_HOVER: "#d3704f",
-  // テーブル番号（本番環境では動的に取得する）
-  TABLE_NUMBER: import.meta.env.VITE_TABLE_NUMBER || "1",
+  // テーブル番号（LocalStorageから取得、なければデフォルト値）
+  TABLE_NUMBER: (() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('accorto_table_number') || 
+             import.meta.env.VITE_TABLE_NUMBER || "1";
+    }
+    return import.meta.env.VITE_TABLE_NUMBER || "1";
+  })(),
+  // 店舗ID（LocalStorageから取得、なければデフォルト値）
+  STORE_ID: (() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('accorto_store_id') || 
+             import.meta.env.VITE_STORE_ID || "1";
+    }
+    return import.meta.env.VITE_STORE_ID || "1";
+  })(),
 };
 
 // 開発環境かどうかを示すフラグ

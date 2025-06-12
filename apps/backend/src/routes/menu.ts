@@ -4,31 +4,19 @@ import { z } from 'zod'
 import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, orderItems, stores } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
+import { authMiddleware, optionalAuthMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
 
 export const menuRoutes = new Hono()
 
-// カテゴリ一覧を取得
-menuRoutes.get('/categories', async (c) => {
+// カテゴリ一覧を取得（統合認証）
+menuRoutes.get('/categories', flexibleAuthMiddleware, async (c) => {
   try {
-    const storeId = c.req.query('storeId')
+    const auth = c.get('auth')
     
-    let result;
-    if (storeId) {
-      // 店舗IDが指定されている場合は店舗でフィルタ
-      result = await db.query.categories.findMany({
-        where: eq(categories.storeId, Number(storeId))
-      })
-    } else {
-      // 店舗IDが指定されていない場合は最初の店舗のデータを表示
-      const firstStore = await db.query.stores.findFirst()
-      if (firstStore) {
-        result = await db.query.categories.findMany({
-          where: eq(categories.storeId, firstStore.id)
-        })
-      } else {
-        result = []
-      }
-    }
+    // 認証された店舗のカテゴリのみ取得
+    const result = await db.query.categories.findMany({
+      where: eq(categories.storeId, auth.storeId)
+    })
     
     return c.json({ success: true, data: result })
   } catch (error) {
@@ -37,16 +25,16 @@ menuRoutes.get('/categories', async (c) => {
   }
 })
 
-// カテゴリを作成
-menuRoutes.post('/categories', zValidator('json', z.object({
-  storeId: z.number().int().positive().optional(),
+// カテゴリを作成（統合認証）
+menuRoutes.post('/categories', flexibleAuthMiddleware, zValidator('json', z.object({
   name: z.string().min(1),
   description: z.string().optional(),
 })), async (c) => {
   try {
-    const { storeId = 1, name, description } = c.req.valid('json')
+    const auth = c.get('auth')
+    const { name, description } = c.req.valid('json')
     const result = await db.insert(categories).values({
-      storeId,
+      storeId: auth.storeId,
       name,
       description,
     }).returning()
@@ -57,34 +45,18 @@ menuRoutes.post('/categories', zValidator('json', z.object({
   }
 })
 
-// メニュー一覧を取得
-menuRoutes.get('/items', async (c) => {
+// メニュー一覧を取得（統合認証）
+menuRoutes.get('/items', flexibleAuthMiddleware, async (c) => {
   try {
-    const storeId = c.req.query('storeId')
+    const auth = c.get('auth')
     
-    let result;
-    if (storeId) {
-      // 店舗IDが指定されている場合は店舗でフィルタ
-      result = await db.query.menuItems.findMany({
-        where: eq(menuItems.storeId, Number(storeId)),
-        with: {
-          category: true,
-        },
-      })
-    } else {
-      // 店舗IDが指定されていない場合は最初の店舗のデータを表示
-      const firstStore = await db.query.stores.findFirst()
-      if (firstStore) {
-        result = await db.query.menuItems.findMany({
-          where: eq(menuItems.storeId, firstStore.id),
-          with: {
-            category: true,
-          },
-        })
-      } else {
-        result = []
-      }
-    }
+    // 認証された店舗のメニューアイテムのみ取得
+    const result = await db.query.menuItems.findMany({
+      where: eq(menuItems.storeId, auth.storeId),
+      with: {
+        category: true,
+      },
+    })
     
     return c.json({ success: true, data: result })
   } catch (error) {
@@ -93,9 +65,8 @@ menuRoutes.get('/items', async (c) => {
   }
 })
 
-// メニューアイテムを作成
-menuRoutes.post('/items', zValidator('json', z.object({
-  storeId: z.number().int().positive().optional(),
+// メニューアイテムを作成（統合認証）
+menuRoutes.post('/items', flexibleAuthMiddleware, zValidator('json', z.object({
   categoryId: z.number().int().positive(),
   name: z.string().min(1),
   description: z.string().max(200).optional(),
@@ -104,9 +75,10 @@ menuRoutes.post('/items', zValidator('json', z.object({
   available: z.boolean().optional(),
 })), async (c) => {
   try {
-    const { storeId = 1, ...data } = c.req.valid('json')
+    const auth = c.get('auth')
+    const data = c.req.valid('json')
     const result = await db.insert(menuItems).values({
-      storeId,
+      storeId: auth.storeId,
       ...data
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
@@ -116,35 +88,18 @@ menuRoutes.post('/items', zValidator('json', z.object({
   }
 })
 
-// メニューアイテムを取得
-menuRoutes.get('/items/:id', async (c) => {
+// メニューアイテムを取得（統合認証）
+menuRoutes.get('/items/:id', flexibleAuthMiddleware, async (c) => {
   try {
     const id = Number(c.req.param('id'))
-    const storeId = c.req.query('storeId')
+    const auth = c.get('auth')
     
-    let result;
-    if (storeId) {
-      // 店舗IDが指定されている場合は店舗でフィルタ
-      result = await db.query.menuItems.findFirst({
-        where: and(eq(menuItems.id, id), eq(menuItems.storeId, Number(storeId))),
-        with: {
-          category: true,
-        },
-      })
-    } else {
-      // 店舗IDが指定されていない場合は最初の店舗でフィルタ
-      const firstStore = await db.query.stores.findFirst()
-      if (firstStore) {
-        result = await db.query.menuItems.findFirst({
-          where: and(eq(menuItems.id, id), eq(menuItems.storeId, firstStore.id)),
-          with: {
-            category: true,
-          },
-        })
-      } else {
-        result = null
-      }
-    }
+    const result = await db.query.menuItems.findFirst({
+      where: and(eq(menuItems.id, id), eq(menuItems.storeId, auth.storeId)),
+      with: {
+        category: true,
+      },
+    })
     
     if (!result) {
       return c.json({ success: false, error: 'メニューアイテムが見つかりません' }, 404)
