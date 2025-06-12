@@ -245,14 +245,19 @@ adminRoutes.post('/staff', zValidator('json', z.object({
       return await bcrypt.hash(password, saltRounds)
     }
     
+    // メールアドレスが空の場合、ユニークなプレースホルダーを生成
+    const email = data.email && data.email.trim() 
+      ? data.email.trim() 
+      : `no-email-${auth.storeId}-${data.loginId}@placeholder.local`
+
     const result = await db.insert(staffMembers).values({
       storeId: auth.storeId,
       name: data.name,
       loginId: data.loginId,
       password: await hashPassword(data.password),
       role: data.role || 'staff',
-      email: data.email || '',  // undefined/nullの場合は空文字列
-      phone: data.phone || '',  // undefined/nullの場合は空文字列
+      email: email,
+      phone: data.phone || '',
       active: data.active ?? true,
     }).returning()
     
@@ -260,8 +265,19 @@ adminRoutes.post('/staff', zValidator('json', z.object({
     const { password, ...staffData } = result[0]
     
     return c.json({ success: true, data: staffData }, 201)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating staff:', error)
+    
+    // 特定のエラーに対する詳細なメッセージ
+    if (error.code === '23505') {
+      if (error.constraint === 'staff_members_email_unique') {
+        return c.json({ success: false, error: 'このメールアドレスは既に使用されています' }, 400)
+      }
+      if (error.constraint === 'staff_members_store_id_login_id_unique') {
+        return c.json({ success: false, error: 'このログインIDは既に使用されています' }, 400)
+      }
+    }
+    
     return c.json({ success: false, error: 'スタッフの作成に失敗しました' }, 500)
   }
 })

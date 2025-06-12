@@ -154,8 +154,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setIsSubmitting(true);
     try {
       const { createOrder } = await import("../services/orderService");
-      // テーブル番号からテーブルIDを取得
-      const tableNumber = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
+      // テーブル番号をLocalStorageから動的に取得
+      const tableNumberStr = localStorage.getItem('accorto_table_number') || '1';
+      const tableNumber = parseInt(tableNumberStr) || 1;
+      
+      console.log('Current table number from localStorage:', tableNumberStr);
       
       // テーブル番号に対応するテーブルIDを取得するAPIを呼び出す
       const { getTableByNumber } = await import("../services/tableService");

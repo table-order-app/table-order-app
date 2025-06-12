@@ -7,13 +7,9 @@ import { stores } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { generateStoreCode } from '../utils/storeCode'
 import bcrypt from 'bcryptjs'
+import { JWT_SECRET, JWT_EXPIRY } from '../config/jwt'
 
 export const authRoutes = new Hono()
-
-const JWT_SECRET = process.env.JWT_SECRET || (() => {
-  console.warn('⚠️  JWT_SECRET environment variable not set. Using default secret for development only.')
-  return 'dev-secret-key-change-in-production'
-})()
 
 // 本格的なパスワードハッシュ化
 const hashPassword = async (password: string): Promise<string> => {
@@ -83,7 +79,7 @@ authRoutes.post('/signup', zValidator('json', z.object({
     const token = await sign({
       storeId: store.id,
       email: store.email,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24時間
+      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRY.STORE, // 24時間
     }, JWT_SECRET)
     
     return c.json({
@@ -139,7 +135,7 @@ authRoutes.post('/login', zValidator('json', z.object({
     const token = await sign({
       storeId: store.id,
       email: store.email,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24時間
+      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRY.STORE, // 24時間
     }, JWT_SECRET)
     
     return c.json({
@@ -189,6 +185,7 @@ authRoutes.get('/verify', async (c) => {
       data: {
         store: {
           id: store.id,
+          storeCode: store.storeCode,
           name: store.name,
           ownerName: store.ownerName,
           email: store.email,

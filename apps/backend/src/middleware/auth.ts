@@ -3,8 +3,7 @@ import { verify } from 'hono/jwt'
 import { db } from '../db'
 import { stores } from '../db/schema'
 import { eq } from 'drizzle-orm'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+import { JWT_SECRET } from '../config/jwt'
 
 export interface AuthContext {
   storeId: number

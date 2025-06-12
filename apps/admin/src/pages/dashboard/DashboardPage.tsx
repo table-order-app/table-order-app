@@ -1,13 +1,54 @@
 import { useNavigate } from "react-router";
 import { getPath } from "../../routes";
 import { getCurrentStore, generateStoreCode } from "../../services/authService";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [currentStore, setCurrentStore] = useState(getCurrentStore());
   const [copySuccess, setCopySuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
+
+  // LocalStorageの変更を監視してストア情報を更新
+  useEffect(() => {
+    const updateStoreInfo = async () => {
+      // まずトークン検証を試行
+      try {
+        const { verifyToken } = await import("../../services/authService");
+        const verifiedStore = await verifyToken();
+        if (verifiedStore) {
+          setCurrentStore(verifiedStore);
+          return;
+        }
+      } catch (error) {
+        console.log('Token verification failed:', error);
+      }
+      
+      // 検証に失敗した場合はLocalStorageから取得
+      const store = getCurrentStore();
+      setCurrentStore(store);
+    };
+
+    // 初回実行
+    updateStoreInfo();
+
+    // StorageEventを監視（他のタブでの変更）
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'accorto_store_data') {
+        updateStoreInfo();
+      }
+    };
+
+    // 定期的にLocalStorageをチェック（同一タブ内での変更検知）
+    const intervalId = setInterval(updateStoreInfo, 10000); // 10秒間隔に変更
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // デバッグ用ログ
   console.log("Current store data:", currentStore);

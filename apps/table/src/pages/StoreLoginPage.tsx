@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const StoreLoginPage: React.FC = () => {
@@ -11,6 +11,21 @@ const StoreLoginPage: React.FC = () => {
   
   // リダイレクト元のページを取得
   const from = (location.state as any)?.from || "/";
+
+  // ページ読み込み時にLocalStorageの値を確認
+  useEffect(() => {
+    const existingStoreCode = localStorage.getItem("accorto_store_code");
+    const existingTableNumber = localStorage.getItem("accorto_table_number");
+    
+    console.log('Initial localStorage values:', { 
+      existingStoreCode, 
+      existingTableNumber 
+    });
+    
+    // 既存の値があれば初期値として設定（オプション）
+    // if (existingStoreCode) setStoreCode(existingStoreCode);
+    // if (existingTableNumber) setTableNumber(existingTableNumber);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +51,7 @@ const StoreLoginPage: React.FC = () => {
       }
 
       // LocalStorageに店舗情報を保存
+      console.log('Saving to localStorage:', { storeCode: storeCode.toUpperCase(), tableNumber });
       localStorage.setItem("accorto_store_code", storeCode.toUpperCase());
       localStorage.setItem("accorto_table_number", tableNumber);
       localStorage.setItem("accorto_login_time", new Date().toISOString());
@@ -97,9 +113,9 @@ const StoreLoginPage: React.FC = () => {
                 required
                 value={storeCode}
                 onChange={(e) => setStoreCode(e.target.value.toUpperCase())}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono text-center tracking-widest"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono text-center tracking-widest text-gray-900 bg-white text-lg font-semibold"
                 placeholder="DFH7L2L8"
-                style={{ letterSpacing: '0.1em' }}
+                style={{ letterSpacing: '0.1em', fontSize: '16px' }}
               />
               <p className="mt-1 text-xs text-gray-500">
                 8文字の英数字コード
@@ -113,13 +129,21 @@ const StoreLoginPage: React.FC = () => {
               <input
                 id="tableNumber"
                 name="tableNumber"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min="1"
                 required
                 value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  console.log('Table number input change:', value);
+                  setTableNumber(value);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 bg-white text-center text-lg font-medium"
                 placeholder="例: 1"
+                style={{ fontSize: '16px' }}
+                autoComplete="off"
               />
             </div>
 

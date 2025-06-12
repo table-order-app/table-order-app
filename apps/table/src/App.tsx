@@ -26,6 +26,21 @@ const CartContainer: React.FC = () => {
     submitOrder,
     isSubmitting,
   } = useCart();
+  
+  const [currentTableNumber, setCurrentTableNumber] = useState<string>(() => {
+    return localStorage.getItem('accorto_table_number') || '1';
+  });
+
+  // LocalStorageの変更を監視
+  useEffect(() => {
+    const updateTableNumber = () => {
+      const tableNumber = localStorage.getItem('accorto_table_number') || '1';
+      setCurrentTableNumber(tableNumber);
+    };
+
+    const intervalId = setInterval(updateTableNumber, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleCloseCart = () => {
     setIsCartOpen(false);
@@ -50,7 +65,7 @@ const CartContainer: React.FC = () => {
       onUpdateQuantity={updateCartItemQuantity}
       onRemoveItem={removeCartItem}
       onOrder={handleConfirmOrder}
-      tableNumber={UI_CONFIG.TABLE_NUMBER}
+      tableNumber={currentTableNumber}
       isSubmitting={isSubmitting}
     />
   );
@@ -61,6 +76,36 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [headerTitle, setHeaderTitle] = useState<string | null>(null);
   const [showBackButton, setShowBackButton] = useState(false);
+  const [currentTableNumber, setCurrentTableNumber] = useState<string>(() => {
+    // 初期値をLocalStorageから取得
+    return localStorage.getItem('accorto_table_number') || '1';
+  });
+
+  // LocalStorageの変更を監視してテーブル番号を更新
+  useEffect(() => {
+    const updateTableNumber = () => {
+      const tableNumber = localStorage.getItem('accorto_table_number') || '1';
+      console.log('Updating table number from localStorage:', tableNumber);
+      setCurrentTableNumber(tableNumber);
+    };
+
+    // LocalStorageの変更を監視
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'accorto_table_number') {
+        updateTableNumber();
+      }
+    };
+
+    // 定期的にLocalStorageをチェック（同一タブ内での変更検知）
+    const intervalId = setInterval(updateTableNumber, 1000);
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // パスに基づいてヘッダー表示を設定
   useEffect(() => {
@@ -97,7 +142,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* ログインページ以外でヘッダーを表示 */}
       {location.pathname !== '/store-login' && (
         <Header
-          tableNumber={UI_CONFIG.TABLE_NUMBER}
+          tableNumber={currentTableNumber}
           showBackButton={showBackButton}
           title={headerTitle || undefined}
         />
