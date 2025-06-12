@@ -227,6 +227,7 @@ orderRoutes.get('/table/:tableId', async (c) => {
       with: {
         items: {
           with: {
+            menuItem: true,
             options: true,
             toppings: true,
           },

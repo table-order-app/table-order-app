@@ -8,7 +8,12 @@ interface OrderItem {
   id: number;
   name: string;
   quantity: number;
-  price: number;
+  menuItem: {
+    id: number;
+    name: string;
+    price: number;
+    image: string;
+  };
   options?: Array<{
     name: string;
     price: number;
@@ -23,7 +28,7 @@ interface OrderItem {
 interface Order {
   id: number;
   tableId: number;
-  status: "pending" | "preparing" | "ready" | "delivered" | "cancelled";
+  status: "new" | "in-progress" | "ready" | "delivered" | "cancelled";
   createdAt: string;
   items: OrderItem[];
 }
@@ -39,7 +44,18 @@ const OrderConfirmationPage: React.FC = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const tableId = parseInt(tableNumber) || 1;
+        const tableNumber = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
+        
+        // テーブル番号からテーブルIDを取得
+        const { getTableByNumber } = await import("../services/tableService");
+        const tableResponse = await getTableByNumber(tableNumber);
+        
+        if (!tableResponse.success || !tableResponse.data) {
+          setError("テーブル情報の取得に失敗しました");
+          return;
+        }
+        
+        const tableId = tableResponse.data.id;
         const response = await getTableOrders(tableId);
         
         if (response.success && response.data) {
@@ -63,13 +79,13 @@ const OrderConfirmationPage: React.FC = () => {
     
     const intervalId = setInterval(fetchOrders, 30000);
     return () => clearInterval(intervalId);
-  }, [tableNumber]);
+  }, []);
 
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
-      case "pending":
+      case "new":
         return "bg-yellow-100 text-yellow-800";
-      case "preparing":
+      case "in-progress":
         return "bg-blue-100 text-blue-800";
       case "ready":
         return "bg-green-100 text-green-800";
@@ -84,9 +100,9 @@ const OrderConfirmationPage: React.FC = () => {
 
   const getStatusText = (status: Order["status"]) => {
     switch (status) {
-      case "pending":
+      case "new":
         return "受付済み";
-      case "preparing":
+      case "in-progress":
         return "調理中";
       case "ready":
         return "お渡し準備完了";
@@ -99,23 +115,30 @@ const OrderConfirmationPage: React.FC = () => {
     }
   };
 
-  const calculateOrderTotal = (order: Order) => {
-    return order.items.reduce((total, item) => {
-      let itemTotal = item.price * item.quantity;
-      
-      if (item.options) {
-        item.options.forEach(option => {
-          itemTotal += option.price * item.quantity;
-        });
-      }
-      
-      if (item.toppings) {
-        item.toppings.forEach(topping => {
-          itemTotal += topping.price * item.quantity;
-        });
-      }
-      
-      return total + itemTotal;
+  const calculateTotalAmount = (orders: Order[]) => {
+    return orders.reduce((total, order) => {
+      return total + order.items.reduce((orderTotal, item) => {
+        // 基本価格を数値として確実に取得
+        let itemTotal = Number(item.menuItem?.price) || 0;
+        
+        // オプション価格を追加
+        if (item.options) {
+          item.options.forEach(option => {
+            itemTotal += Number(option.price) || 0;
+          });
+        }
+        
+        // トッピング価格を追加
+        if (item.toppings) {
+          item.toppings.forEach(topping => {
+            itemTotal += Number(topping.price) || 0;
+          });
+        }
+        
+        // 数量をかけて合計に追加
+        const quantity = Number(item.quantity) || 0;
+        return orderTotal + (itemTotal * quantity);
+      }, 0);
     }, 0);
   };
 
@@ -140,7 +163,7 @@ const OrderConfirmationPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh]">
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <LoadingSpinner />
         <p className="mt-4 text-gray-600">注文情報を取得中...</p>
       </div>
@@ -149,24 +172,21 @@ const OrderConfirmationPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="max-w-lg mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
-        <div className="text-center">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">エラーが発生しました</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white border border-red-200 rounded-lg p-8 text-center shadow-sm">
+          <div className="text-4xl mb-4">😔</div>
+          <h2 className="text-lg font-semibold text-red-800 mb-2">エラーが発生しました</h2>
+          <p className="text-red-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
               onClick={handleContinueShopping}
-              className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-md"
+              className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
             >
-              <div className="flex items-center justify-center">
-                <span className="mr-2">🍽️</span>
-                メニューを見る
-              </div>
+              メニューを見る
             </button>
             <button
               onClick={handleBackToMenu}
-              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               ホームに戻る
             </button>
@@ -178,24 +198,21 @@ const OrderConfirmationPage: React.FC = () => {
 
   if (orders.length === 0) {
     return (
-      <div className="max-w-lg mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
-        <div className="text-center">
-          <div className="text-gray-400 text-5xl mb-4">📋</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">注文履歴がありません</h2>
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-sm">
+          <div className="text-4xl mb-4">📋</div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">注文履歴がありません</h2>
           <p className="text-gray-600 mb-6">まだ注文されていないようです。</p>
           <div className="space-y-3">
             <button
               onClick={handleContinueShopping}
-              className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-md"
+              className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
             >
-              <div className="flex items-center justify-center">
-                <span className="mr-2">🍽️</span>
-                注文を始める
-              </div>
+              注文を始める
             </button>
             <button
               onClick={handleBackToMenu}
-              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               ホームに戻る
             </button>
@@ -206,108 +223,136 @@ const OrderConfirmationPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">注文状況</h1>
-        
-        {/* アクションボタン */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleContinueShopping}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-          >
-            <div className="flex items-center justify-center">
-              <span className="mr-2">🍽️</span>
-              追加注文する
+    <div className="w-full max-w-7xl mx-auto p-4">
+          {/* アクションボタン */}
+          <div className="mb-6">
+            <div className="flex gap-3">
+              <button
+                onClick={handleContinueShopping}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors text-sm"
+              >
+                追加注文する
+              </button>
+              
+              <button
+                onClick={handleBackToMenu}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+              >
+                ホーム
+              </button>
             </div>
-          </button>
-          
-          <button
-            onClick={handleBackToMenu}
-            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-          >
-            ホーム
-          </button>
-        </div>
-      </div>
+          </div>
 
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="bg-white rounded-xl shadow-md overflow-hidden"
-          >
-            <div className="p-5 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-sm text-gray-500">注文番号: {order.id}</span>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {formatDate(order.createdAt)}
-                  </div>
-                </div>
-                <div
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                    order.status
-                  )}`}
-                >
-                  {getStatusText(order.status)}
-                </div>
-              </div>
-            </div>
-
+          {/* 注文アイテム一覧（まとめて表示） */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="divide-y divide-gray-100">
-              {order.items.map((item, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50">
-                  <div className="flex justify-between">
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-800">
-                          {item.name}
-                        </span>
-                        <span className="text-gray-600">
-                          {item.quantity}個
-                        </span>
+              {orders.flatMap(order => order.items).map((item, index) => {
+                const basePrice = Number(item.menuItem?.price) || 0;
+                const optionsPrice = item.options?.reduce((sum, opt) => sum + (Number(opt.price) || 0), 0) || 0;
+                const toppingsPrice = item.toppings?.reduce((sum, top) => sum + (Number(top.price) || 0), 0) || 0;
+                const itemTotalPrice = (basePrice + optionsPrice + toppingsPrice) * (Number(item.quantity) || 0);
+
+                return (
+                  <div key={index} className="p-4 hover:bg-gray-25 transition-colors duration-200">
+                    <div className="flex items-start space-x-4">
+                      {/* 商品画像 */}
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg shadow-sm overflow-hidden">
+                          <img
+                            src={item.menuItem?.image || '/assets/images/default.jpg'}
+                            alt={item.menuItem?.name || item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
 
-                      {/* オプション表示 */}
-                      {item.options && item.options.length > 0 && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          <span className="font-medium">オプション:</span>{" "}
-                          {item.options.map((opt) => opt.name).join(", ")}
+                      {/* 商品情報 */}
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium text-gray-800">
+                              {item.menuItem?.name || item.name}
+                            </h4>
+                            <div className="text-sm text-gray-500 mt-1">
+                              ¥{basePrice.toLocaleString()}
+                              {optionsPrice > 0 && (
+                                <span className="text-gray-600"> + オプション ¥{optionsPrice.toLocaleString()}</span>
+                              )}
+                              {toppingsPrice > 0 && (
+                                <span className="text-gray-600"> + トッピング ¥{toppingsPrice.toLocaleString()}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-600 mb-1">
+                              ×{item.quantity}
+                            </div>
+                            <div className="font-medium text-gray-800">
+                              ¥{itemTotalPrice.toLocaleString()}
+                            </div>
+                          </div>
                         </div>
-                      )}
 
-                      {/* トッピング表示 */}
-                      {item.toppings && item.toppings.length > 0 && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          <span className="font-medium">トッピング:</span>{" "}
-                          {item.toppings.map((top) => top.name).join(", ")}
-                        </div>
-                      )}
+                        {/* オプション・トッピング表示 */}
+                        <div className="space-y-2">
+                          {item.options && item.options.length > 0 && (
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                オプション
+                              </span>
+                              <span className="text-sm text-gray-600">
+                                {item.options.map((opt, i) => (
+                                  <span key={i}>
+                                    {opt.name} (+¥{Number(opt.price).toLocaleString()})
+                                    {i < item.options!.length - 1 && ", "}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
 
-                      {/* 備考表示 */}
-                      {item.notes && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          <span className="font-medium">備考:</span> {item.notes}
+                          {item.toppings && item.toppings.length > 0 && (
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                トッピング
+                              </span>
+                              <span className="text-sm text-gray-600">
+                                {item.toppings.map((top, i) => (
+                                  <span key={i}>
+                                    {top.name} (+¥{Number(top.price).toLocaleString()})
+                                    {i < item.toppings!.length - 1 && ", "}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.notes && (
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                備考
+                              </span>
+                              <span className="text-sm text-gray-600">{item.notes}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
+            {/* 全体の合計金額 */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
               <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">合計</span>
-                <span className="text-xl font-bold text-[#e0815e]">
-                  ¥{calculateOrderTotal(order)}
+                <span className="font-medium text-gray-700">合計金額</span>
+                <span className="text-lg font-bold text-gray-800">
+                  ¥{calculateTotalAmount(orders).toLocaleString()}
                 </span>
               </div>
             </div>
           </div>
-        ))}
-      </div>
     </div>
   );
 };

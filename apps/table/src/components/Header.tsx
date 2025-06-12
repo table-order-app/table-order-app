@@ -73,8 +73,30 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Right Section - Cart and Table Info */}
-        <div className="flex items-center space-x-3">
+        {/* Right Section - Order History, Cart and Table Info */}
+        <div className="flex items-center space-x-2">
+          {/* Order History Button */}
+          <button
+            onClick={() => navigate("/order-confirmation")}
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+              />
+            </svg>
+          </button>
+
+          {/* Cart Button */}
           <button
             onClick={handleOpenCart}
             className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 hover:bg-orange-200 transition-colors duration-200"
@@ -100,10 +122,10 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-lg font-semibold text-sm border border-orange-200 hidden sm:block">
+          <div className="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-semibold text-sm border border-orange-200 hidden sm:block">
             テーブル {tableNumber}
           </div>
-          <div className="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-semibold text-sm border border-orange-200 sm:hidden">
+          <div className="bg-orange-50 text-orange-700 px-2 py-2 rounded-lg font-semibold text-sm border border-orange-200 sm:hidden">
             T{tableNumber}
           </div>
         </div>

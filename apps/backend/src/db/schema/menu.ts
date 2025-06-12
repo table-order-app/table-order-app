@@ -26,28 +26,36 @@ export const menuItems = pgTable('menu_items', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// オプションテーブル
+// オプションテーブル（店舗別）
 export const options = pgTable('options', {
   id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => stores.id).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
   price: integer('price').notNull(),
+  category: varchar('category', { length: 50 }), // 'size', 'spice', 'extra'等
+  active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// トッピングテーブル
+// トッピングテーブル（店舗別）
 export const toppings = pgTable('toppings', {
   id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => stores.id).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
   price: integer('price').notNull(),
+  category: varchar('category', { length: 50 }), // 'vegetable', 'meat', 'cheese'等
+  active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-// アレルゲンテーブル
+// アレルゲンテーブル（店舗別）
 export const allergens = pgTable('allergens', {
   id: serial('id').primaryKey(),
+  storeId: integer('store_id').references(() => stores.id).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
+  active: boolean('active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -96,14 +104,26 @@ export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
   allergens: many(menuItemAllergens),
 }))
 
-export const optionsRelations = relations(options, ({ many }) => ({
+export const optionsRelations = relations(options, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [options.storeId],
+    references: [stores.id],
+  }),
   menuItems: many(menuItemOptions),
 }))
 
-export const toppingsRelations = relations(toppings, ({ many }) => ({
+export const toppingsRelations = relations(toppings, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [toppings.storeId],
+    references: [stores.id],
+  }),
   menuItems: many(menuItemToppings),
 }))
 
-export const allergensRelations = relations(allergens, ({ many }) => ({
+export const allergensRelations = relations(allergens, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [allergens.storeId],
+    references: [stores.id],
+  }),
   menuItems: many(menuItemAllergens),
 }))

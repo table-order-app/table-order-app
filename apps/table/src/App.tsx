@@ -78,6 +78,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       setHeaderTitle("メニュー詳細");
       setShowBackButton(true);
     }
+    // 注文履歴画面
+    else if (currentPath.includes("/order-confirmation")) {
+      setHeaderTitle("注文履歴");
+      setShowBackButton(false);
+    }
     // ホーム画面
     else {
       setHeaderTitle(null);
