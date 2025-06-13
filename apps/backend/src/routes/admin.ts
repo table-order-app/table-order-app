@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, tables, staffMembers, stores } from '../db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth'
 import bcrypt from 'bcryptjs'
 
@@ -279,5 +279,134 @@ adminRoutes.post('/staff', zValidator('json', z.object({
     }
     
     return c.json({ success: false, error: 'スタッフの作成に失敗しました' }, 500)
+  }
+})
+
+// スタッフ詳細を取得
+adminRoutes.get('/staff/:id', async (c) => {
+  try {
+    const auth = c.get('auth')
+    const id = Number(c.req.param('id'))
+    
+    const result = await db.query.staffMembers.findFirst({
+      where: and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId))
+    })
+    
+    if (!result) {
+      return c.json({ success: false, error: 'スタッフが見つかりません' }, 404)
+    }
+    
+    // パスワードを除外してレスポンス
+    const { password, ...staffData } = result
+    
+    return c.json({ success: true, data: staffData })
+  } catch (error) {
+    console.error('Error fetching staff member:', error)
+    return c.json({ success: false, error: 'スタッフの取得に失敗しました' }, 500)
+  }
+})
+
+// スタッフを更新
+adminRoutes.put('/staff/:id', zValidator('json', z.object({
+  name: z.string().min(1).optional(),
+  loginId: z.string().min(1).optional(),
+  password: z.string().min(6).optional(),
+  role: z.enum(['admin', 'manager', 'staff', 'kitchen']).optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  active: z.boolean().optional(),
+})), async (c) => {
+  try {
+    const auth = c.get('auth')
+    const id = Number(c.req.param('id'))
+    const rawData = c.req.valid('json')
+    
+    // 空文字列をundefinedに変換
+    const data = {
+      ...rawData,
+      email: rawData.email === '' ? undefined : rawData.email,
+      phone: rawData.phone === '' ? undefined : rawData.phone,
+    }
+    
+    // ログインIDを変更する場合は重複チェック
+    if (data.loginId) {
+      const existingStaff = await db.query.staffMembers.findFirst({
+        where: and(
+          eq(staffMembers.storeId, auth.storeId),
+          eq(staffMembers.loginId, data.loginId),
+          // 自分自身は除外
+          sql`${staffMembers.id} != ${id}`
+        )
+      })
+      
+      if (existingStaff) {
+        return c.json({ 
+          success: false, 
+          error: `⚠️ ログインID「${data.loginId}」は既に他のスタッフで使用されています\n\n別のログインIDに変更してください。同じ店舗内でログインIDが重複することはできません。` 
+        }, 400)
+      }
+    }
+    
+    // パスワードが提供された場合はハッシュ化
+    let updateData: any = { ...data }
+    if (data.password) {
+      const hashPassword = async (password: string): Promise<string> => {
+        const saltRounds = 12
+        return await bcrypt.hash(password, saltRounds)
+      }
+      updateData.password = await hashPassword(data.password)
+    }
+    
+    const result = await db.update(staffMembers)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId)))
+      .returning()
+    
+    if (result.length === 0) {
+      return c.json({ success: false, error: 'スタッフが見つかりません' }, 404)
+    }
+    
+    // パスワードを除外してレスポンス
+    const { password, ...staffData } = result[0]
+    
+    return c.json({ success: true, data: staffData })
+  } catch (error: any) {
+    console.error('Error updating staff member:', error)
+    
+    // 特定のエラーに対する詳細なメッセージ
+    if (error.code === '23505') {
+      if (error.constraint === 'staff_members_email_unique') {
+        return c.json({ success: false, error: 'このメールアドレスは既に使用されています' }, 400)
+      }
+      if (error.constraint === 'staff_members_store_id_login_id_unique') {
+        return c.json({ success: false, error: 'このログインIDは既に使用されています' }, 400)
+      }
+    }
+    
+    return c.json({ success: false, error: 'スタッフの更新に失敗しました' }, 500)
+  }
+})
+
+// スタッフを削除
+adminRoutes.delete('/staff/:id', async (c) => {
+  try {
+    const auth = c.get('auth')
+    const id = Number(c.req.param('id'))
+    
+    const result = await db.delete(staffMembers)
+      .where(and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId)))
+      .returning()
+    
+    if (result.length === 0) {
+      return c.json({ success: false, error: 'スタッフが見つかりません' }, 404)
+    }
+    
+    // パスワードを除外してレスポンス
+    const { password, ...staffData } = result[0]
+    
+    return c.json({ success: true, data: staffData })
+  } catch (error) {
+    console.error('Error deleting staff member:', error)
+    return c.json({ success: false, error: 'スタッフの削除に失敗しました' }, 500)
   }
 })

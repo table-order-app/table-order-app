@@ -3,6 +3,7 @@ export type OrderStatus =
   | "new"
   | "in-progress"
   | "ready"
+  | "completed"
   | "delivered"
   | "cancelled";
 

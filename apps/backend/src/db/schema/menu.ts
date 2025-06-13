@@ -16,11 +16,11 @@ export const categories = pgTable('categories', {
 export const menuItems = pgTable('menu_items', {
   id: serial('id').primaryKey(),
   storeId: integer('store_id').references(() => stores.id).notNull(),
-  categoryId: integer('category_id').references(() => categories.id).notNull(),
+  categoryId: integer('category_id').references(() => categories.id),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
   price: integer('price').notNull(),
-  image: varchar('image', { length: 255 }),
+  image: text('image'),
   available: boolean('available').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ProgressData, Order, OrderItem, Table } from "../../types/order";
 import PieChart from "../../components/ui/PieChart";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
-import { getOrders } from "../../services/orderService";
+import { getOrders, getCheckoutRequestedTables, checkoutTable } from "../../services/orderService";
 
 // API status mapping function
 const mapApiStatusToOrderStatus = (apiStatus: string) => {
@@ -67,6 +67,7 @@ const transformApiOrderToOrder = (apiOrder: any): Order => {
 
 const DashboardPage = () => {
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
+  const [checkoutRequestedTables, setCheckoutRequestedTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -75,8 +76,17 @@ const DashboardPage = () => {
   const calculateProgressDataFromOrders = (ordersData: Order[]): ProgressData[] => {
     const progressMap = new Map<string, ProgressData>();
 
-    // スタッフ用では全ての注文を表示（完了済みも含む）
-    ordersData.forEach((order) => {
+    // アクティブな注文のみを表示（提供済み以外）
+    // または、提供済みでも一部のアイテムがまだ未完了の注文を含む
+    const activeOrders = ordersData.filter(order => {
+      if (order.status !== "delivered") {
+        return true;
+      }
+      // 注文ステータスが"delivered"でも、個別アイテムに未提供のものがある場合は表示
+      return order.items.some(item => item.status !== "delivered");
+    });
+    
+    activeOrders.forEach((order) => {
       if (!progressMap.has(order.tableId)) {
         progressMap.set(order.tableId, {
           tableId: order.tableId,
@@ -103,7 +113,7 @@ const DashboardPage = () => {
 
         if (item.status === "delivered") {
           progressData.completedItems += item.quantity;
-        } else if (item.status === "ready") {
+        } else if (item.status === "ready" || item.status === "completed") {
           progressData.readyItems += item.quantity;
         } else if (item.status === "in-progress" || item.status === "new") {
           progressData.pendingItems += item.quantity;
@@ -126,32 +136,45 @@ const DashboardPage = () => {
           console.log("Fetching orders from API...");
         }
         
-        const response = await getOrders();
+        // 注文データと会計要請テーブルを並行取得
+        const [ordersResponse, checkoutTablesResponse] = await Promise.all([
+          getOrders(),
+          getCheckoutRequestedTables()
+        ]);
+        
         if (isInitialFetch) {
-          console.log("API Response:", response);
+          console.log("Orders API Response:", ordersResponse);
+          console.log("Checkout Tables API Response:", checkoutTablesResponse);
         }
 
-        if (response.success && response.data) {
+        if (ordersResponse.success && ordersResponse.data) {
           if (isInitialFetch) {
-            console.log("Orders data received:", response.data);
+            console.log("Orders data received:", ordersResponse.data);
           }
-          const transformedOrders = response.data.map(transformApiOrderToOrder);
+          const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
           
           // 注文データから進捗データを計算
           const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
           setProgressData(calculatedProgressData);
         } else {
           if (isInitialFetch) {
-            console.error("API Error:", response.error);
+            console.error("Orders API Error:", ordersResponse.error);
           }
-          setError(response.error || "注文データの取得に失敗しました");
+          setError(ordersResponse.error || "注文データの取得に失敗しました");
+        }
+
+        // 会計要請テーブルの設定
+        if (checkoutTablesResponse.success && checkoutTablesResponse.data) {
+          setCheckoutRequestedTables(checkoutTablesResponse.data);
+        } else {
+          console.error("Checkout tables error:", checkoutTablesResponse.error);
         }
       } catch (error) {
         if (isInitialFetch) {
-          console.error("Error fetching orders:", error);
+          console.error("Error fetching data:", error);
         }
         setError(
-          `注文データの取得中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`
+          `データの取得中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`
         );
       } finally {
         setLoading(false);
@@ -173,7 +196,36 @@ const DashboardPage = () => {
 
   // テーブル進捗状況をタップした時の処理
   const handleProgressSelect = (progress: ProgressData) => {
-    navigate(getPath.tableDetail(progress.tableId));
+    navigate(getPath.tableDetail(progress.tableNumber.toString()));
+  };
+
+  // 会計要請テーブルの会計処理
+  const handleCheckoutRequestedTable = async (table: any) => {
+    try {
+      const response = await checkoutTable(table.id);
+      
+      if (response.success) {
+        // 成功時はリストから削除するため、データを再取得
+        const checkoutTablesResponse = await getCheckoutRequestedTables();
+        if (checkoutTablesResponse.success) {
+          setCheckoutRequestedTables(checkoutTablesResponse.data || []);
+        }
+        
+        // 進捗データも更新
+        const ordersResponse = await getOrders();
+        if (ordersResponse.success && ordersResponse.data) {
+          const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
+          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
+          setProgressData(calculatedProgressData);
+        }
+      } else {
+        console.error("Failed to checkout table:", response.error);
+        setError(response.error || "会計処理に失敗しました");
+      }
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      setError("会計処理中にエラーが発生しました");
+    }
   };
 
   if (loading) {
@@ -221,6 +273,39 @@ const DashboardPage = () => {
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
+          {/* 会計要請されたテーブル */}
+          {checkoutRequestedTables.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-4 text-red-600">🔔 会計要請テーブル</h2>
+              <div className="grid grid-cols-1 gap-3">
+                {checkoutRequestedTables.map((table) => (
+                  <div
+                    key={table.id}
+                    className="bg-red-50 border border-red-200 rounded-lg p-4 flex justify-between items-center"
+                  >
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-800">
+                        テーブル {table.number}
+                      </h3>
+                      <p className="text-red-600 text-sm">
+                        要請時刻: {new Date(table.checkoutRequestedAt).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleCheckoutRequestedTable(table)}
+                      className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                    >
+                      会計完了
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h2 className="text-xl font-semibold mb-4">テーブル別提供状況</h2>
           {progressData.length === 0 ? (
             <div className="text-center py-12">

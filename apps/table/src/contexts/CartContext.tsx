@@ -4,6 +4,7 @@ import React, {
   useState,
   ReactNode,
   useCallback,
+  useEffect,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartItem, MenuItem, Option, Topping } from "../types";
@@ -46,11 +47,67 @@ interface CartProviderProps {
 }
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  // テーブル固有のカートキーを生成
+  const getCartStorageKey = useCallback(() => {
+    const storeCode = localStorage.getItem('accorto_store_code') || 'default';
+    const tableNumber = localStorage.getItem('accorto_table_number') || '1';
+    const key = `accorto_cart_${storeCode}_table_${tableNumber}`;
+    console.log('Cart storage key:', key);
+    return key;
+  }, []);
+
+  // LocalStorageからカートを読み込み
+  const loadCartFromStorage = useCallback(() => {
+    try {
+      const cartKey = getCartStorageKey();
+      const storedCart = localStorage.getItem(cartKey);
+      return storedCart ? JSON.parse(storedCart) : [];
+    } catch (error) {
+      console.error('Failed to load cart from storage:', error);
+      return [];
+    }
+  }, [getCartStorageKey]);
+
+  // LocalStorageにカートを保存
+  const saveCartToStorage = useCallback((items: CartItem[]) => {
+    try {
+      const cartKey = getCartStorageKey();
+      localStorage.setItem(cartKey, JSON.stringify(items));
+    } catch (error) {
+      console.error('Failed to save cart to storage:', error);
+    }
+  }, [getCartStorageKey]);
+
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => loadCartFromStorage());
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  // テーブル情報の変更を監視してカートを再読み込み
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newCartItems = loadCartFromStorage();
+      setCartItems(newCartItems);
+    };
+
+    // ストレージイベントをリッスン（他のタブでの変更を検知）
+    window.addEventListener('storage', handleStorageChange);
+    
+    // テーブル番号や店舗コードの変更を検知
+    const checkForTableChange = () => {
+      const currentCart = loadCartFromStorage();
+      setCartItems(currentCart);
+    };
+
+    // 定期的にチェック（ローカルストレージの直接変更を検知）
+    const interval = setInterval(checkForTableChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [loadCartFromStorage]);
 
   // カートに商品を追加
   const addToCart = useCallback(
@@ -69,12 +126,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         quantity,
       };
 
-      setCartItems((prevItems) => [...prevItems, newCartItem]);
+      setCartItems((prevItems) => {
+        const updatedItems = [...prevItems, newCartItem];
+        saveCartToStorage(updatedItems);
+        return updatedItems;
+      });
 
       // トースト通知を表示
       showToast(`${menuItem.name}をカートに追加しました`, "success");
     },
-    [showToast]
+    [showToast, saveCartToStorage]
   );
 
   // カート内の商品数量を更新
@@ -89,10 +150,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setCartItems((prevItems) => {
         const updatedItems = [...prevItems];
         updatedItems[index].quantity = newQuantity;
+        saveCartToStorage(updatedItems);
         return updatedItems;
       });
     },
-    []
+    [saveCartToStorage]
   );
 
   // カートから商品を削除
@@ -111,16 +173,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           );
         }
 
+        saveCartToStorage(updatedItems);
         return updatedItems;
       });
     },
-    [showToast]
+    [showToast, saveCartToStorage]
   );
 
   // カートをクリア
   const clearCart = useCallback(() => {
     setCartItems([]);
-  }, []);
+    saveCartToStorage([]);
+  }, [saveCartToStorage]);
 
   // カート内の合計金額を計算
   const getTotalPrice = useCallback(() => {
@@ -155,31 +219,22 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     try {
       const { createOrder } = await import("../services/orderService");
       // テーブル番号をLocalStorageから動的に取得
+      const storeCode = localStorage.getItem('accorto_store_code');
       const tableNumberStr = localStorage.getItem('accorto_table_number') || '1';
       const tableNumber = parseInt(tableNumberStr) || 1;
       
-      console.log('Current table number from localStorage:', tableNumberStr);
-      
-      // テーブル番号に対応するテーブルIDを取得するAPIを呼び出す
-      const { getTableByNumber } = await import("../services/tableService");
-      const tableResponse = await getTableByNumber(tableNumber);
-      
-      if (!tableResponse.success || !tableResponse.data) {
-        showToast("テーブル情報の取得に失敗しました", "error");
-        return false;
-      }
-      
-      const tableId = tableResponse.data.id;
+      console.log('=== Order Submission Debug ===');
+      console.log('Store code from localStorage:', storeCode);
+      console.log('Table number from localStorage:', tableNumberStr);
+      console.log('Parsed table number:', tableNumber);
+      console.log('Cart items count:', cartItems.length);
 
-      console.log("Submitting order with:");
-      console.log("- tableId:", tableId);
-      console.log("- cartItems:", cartItems);
-
-      const response = await createOrder(tableId, cartItems);
+      const response = await createOrder(tableNumber, cartItems);
 
       console.log("API Response:", response);
 
       if (response.success) {
+        console.log('Order submitted successfully:', response.data);
         clearCart();
         // 注文データを状態として渡して注文成功画面に遷移
         navigate(getPath.orderSuccess(), { 
@@ -188,6 +243,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         });
         return true;
       } else {
+        console.error('Order submission failed:', response.error);
         showToast(`注文の確定に失敗しました: ${response.error}`, "error");
         return false;
       }

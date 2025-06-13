@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, integer, text, timestamp, pgEnum, unique } from 'drizzle-orm/pg-core'
+import { pgTable, serial, varchar, integer, text, timestamp, pgEnum, unique, boolean } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { stores } from './store'
 
@@ -27,6 +27,8 @@ export const tables = pgTable('tables', {
   area: tableAreaEnum('area').notNull(),
   status: tableStatusEnum('status').default('available').notNull(),
   qrCode: varchar('qr_code', { length: 255 }),
+  checkoutRequested: boolean('checkout_requested').default(false).notNull(),
+  checkoutRequestedAt: timestamp('checkout_requested_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({

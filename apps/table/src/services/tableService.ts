@@ -39,3 +39,39 @@ export const getTableByNumber = async (tableNumber: number): Promise<TableRespon
     };
   }
 };
+
+export interface TableValidationResponse {
+  success: boolean;
+  exists: boolean;
+  error?: string;
+  data?: {
+    store: {
+      id: number;
+      name: string;
+      storeCode: string;
+    };
+    table: {
+      id: number;
+      number: number;
+      capacity: number;
+      area: string;
+      status: string;
+    };
+  };
+}
+
+export const validateTable = async (storeCode: string, tableNumber: number): Promise<TableValidationResponse> => {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/table/validate/${storeCode}/${tableNumber}`);
+    const data = await response.json();
+    
+    return data;
+  } catch (error) {
+    console.error('Error validating table:', error);
+    return {
+      success: false,
+      exists: false,
+      error: 'ネットワークエラーが発生しました'
+    };
+  }
+};

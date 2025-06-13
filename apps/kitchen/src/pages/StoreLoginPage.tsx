@@ -43,8 +43,8 @@ const StoreLoginPage: React.FC = () => {
   };
 
   const handleSkip = () => {
-    // デフォルト値でスキップ
-    localStorage.setItem("accorto_kitchen_store_code", "DFH7L2L8");
+    // デフォルト値でスキップ（テスト用: STORE001）
+    localStorage.setItem("accorto_kitchen_store_code", "STORE001");
     localStorage.setItem("accorto_kitchen_login_time", new Date().toISOString());
     navigate(from, { replace: true });
   };

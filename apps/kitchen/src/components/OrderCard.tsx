@@ -36,7 +36,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleViewDetails = () => {
-    navigate(getPath.orderDetail(order.id));
+    // Navigate to dashboard since we simplified the kitchen app
+    navigate(getPath.dashboard());
   };
 
   const handleStatusChange = (status: OrderStatus) => {

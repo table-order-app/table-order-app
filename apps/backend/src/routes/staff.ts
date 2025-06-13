@@ -3,7 +3,8 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
 import { staffMembers } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
+import { flexibleAuthMiddleware } from '../middleware/auth'
 
 export const staffRoutes = new Hono()
 
@@ -44,10 +45,15 @@ staffRoutes.get('/roles', async (c) => {
   }
 })
 
-// スタッフ一覧を取得
-staffRoutes.get('/', async (c) => {
+// スタッフ一覧を取得（認証必須）
+staffRoutes.get('/', flexibleAuthMiddleware, async (c) => {
   try {
-    const result = await db.query.staffMembers.findMany()
+    const auth = c.get('auth')
+    
+    // 認証された店舗のスタッフのみ取得
+    const result = await db.query.staffMembers.findMany({
+      where: eq(staffMembers.storeId, auth.storeId)
+    })
     return c.json({ success: true, data: result })
   } catch (error) {
     console.error('Error fetching staff members:', error)
@@ -55,16 +61,36 @@ staffRoutes.get('/', async (c) => {
   }
 })
 
-// スタッフを作成
-staffRoutes.post('/', zValidator('json', z.object({
+// スタッフを作成（認証必須）
+staffRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
   name: z.string().min(1),
-  email: z.string().email(),
-  role: z.enum(['admin', 'manager', 'staff', 'kitchen']).optional(),
-  active: z.boolean().optional(),
+  loginId: z.string().min(1),
+  password: z.string().min(6),
 })), async (c) => {
   try {
+    const auth = c.get('auth')
     const data = c.req.valid('json')
-    const result = await db.insert(staffMembers).values(data).returning()
+    
+    // 同じ店舗でログインIDが重複していないかチェック
+    const existingStaff = await db.query.staffMembers.findFirst({
+      where: and(eq(staffMembers.storeId, auth.storeId), eq(staffMembers.loginId, data.loginId))
+    })
+    
+    if (existingStaff) {
+      return c.json({ 
+        success: false, 
+        error: `⚠️ ログインID「${data.loginId}」は既に使用されています\n\n別のログインIDを選択してください。同じ店舗内でログインIDが重複することはできません。` 
+      }, 400)
+    }
+    
+    const result = await db.insert(staffMembers).values({
+      storeId: auth.storeId,
+      name: data.name,
+      loginId: data.loginId,
+      password: data.password,
+      role: 'staff', // デフォルト値
+      active: true, // デフォルト値
+    }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
     console.error('Error creating staff member:', error)
@@ -72,12 +98,13 @@ staffRoutes.post('/', zValidator('json', z.object({
   }
 })
 
-// スタッフを取得
-staffRoutes.get('/:id', async (c) => {
+// スタッフを取得（認証必須）
+staffRoutes.get('/:id', flexibleAuthMiddleware, async (c) => {
   try {
+    const auth = c.get('auth')
     const id = Number(c.req.param('id'))
     const result = await db.query.staffMembers.findFirst({
-      where: eq(staffMembers.id, id),
+      where: and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId)),
     })
     
     if (!result) {
@@ -91,20 +118,38 @@ staffRoutes.get('/:id', async (c) => {
   }
 })
 
-// スタッフを更新
-staffRoutes.put('/:id', zValidator('json', z.object({
+// スタッフを更新（認証必須）
+staffRoutes.put('/:id', flexibleAuthMiddleware, zValidator('json', z.object({
   name: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  role: z.enum(['admin', 'manager', 'staff', 'kitchen']).optional(),
-  active: z.boolean().optional(),
+  loginId: z.string().min(1).optional(),
 })), async (c) => {
   try {
+    const auth = c.get('auth')
     const id = Number(c.req.param('id'))
     const data = c.req.valid('json')
     
+    // ログインIDを変更する場合は重複チェック
+    if (data.loginId) {
+      const existingStaff = await db.query.staffMembers.findFirst({
+        where: and(
+          eq(staffMembers.storeId, auth.storeId),
+          eq(staffMembers.loginId, data.loginId),
+          // 自分自身は除外
+          sql`${staffMembers.id} != ${id}`
+        )
+      })
+      
+      if (existingStaff) {
+        return c.json({ 
+          success: false, 
+          error: `⚠️ ログインID「${data.loginId}」は既に他のスタッフで使用されています\n\n別のログインIDに変更してください。同じ店舗内でログインIDが重複することはできません。` 
+        }, 400)
+      }
+    }
+    
     const result = await db.update(staffMembers)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(staffMembers.id, id))
+      .where(and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId)))
       .returning()
     
     if (result.length === 0) {
@@ -118,13 +163,14 @@ staffRoutes.put('/:id', zValidator('json', z.object({
   }
 })
 
-// スタッフを削除
-staffRoutes.delete('/:id', async (c) => {
+// スタッフを削除（認証必須）
+staffRoutes.delete('/:id', flexibleAuthMiddleware, async (c) => {
   try {
+    const auth = c.get('auth')
     const id = Number(c.req.param('id'))
     
     const result = await db.delete(staffMembers)
-      .where(eq(staffMembers.id, id))
+      .where(and(eq(staffMembers.id, id), eq(staffMembers.storeId, auth.storeId)))
       .returning()
     
     if (result.length === 0) {

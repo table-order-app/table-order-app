@@ -6,6 +6,7 @@ import MenuListPage from "./pages/MenuListPage";
 import MenuDetailPage from "./pages/MenuDetailPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
+import CheckoutRequestPage from "./pages/CheckoutRequestPage";
 import StoreLoginPage from "./pages/StoreLoginPage";
 
 // ルート定義の型
@@ -61,6 +62,12 @@ export const ROUTES = {
     component: OrderConfirmationPage,
     exact: true,
   } as RouteDefinition,
+
+  CHECKOUT_REQUEST: {
+    path: "/checkout-request",
+    component: CheckoutRequestPage,
+    exact: true,
+  } as RouteDefinition,
 };
 
 // タイプセーフなナビゲーション用ヘルパー関数
@@ -71,6 +78,7 @@ export const getPath = {
   categories: () => ROUTES.CATEGORIES.path,
   orderSuccess: () => ROUTES.ORDER_SUCCESS.path,
   orderConfirmation: () => ROUTES.ORDER_CONFIRMATION.path,
+  checkoutRequest: () => ROUTES.CHECKOUT_REQUEST.path,
 
   // 動的ルート
   menuList: (categoryId: number) => `/menus/${categoryId}`,

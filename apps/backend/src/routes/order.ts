@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { orders, orderItems, orderItemOptions, orderItemToppings, stores } from '../db/schema'
+import { orders, orderItems, orderItemOptions, orderItemToppings, stores, tables } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
 
@@ -30,7 +30,7 @@ orderRoutes.get('/', flexibleAuthMiddleware, async (c) => {
 
 // 注文を作成（統合認証）
 orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
-  tableId: z.number().int().positive(),
+  tableNumber: z.number().int().positive(),
   items: z.array(z.object({
     menuItemId: z.number().int().positive(),
     name: z.string().min(1),
@@ -48,7 +48,18 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
 })), async (c) => {
   try {
     const auth = c.get('auth')
-    const { tableId, items } = c.req.valid('json')
+    const { tableNumber, items } = c.req.valid('json')
+    
+    // 店舗ID + テーブル番号からテーブルIDを安全に解決
+    const table = await db.query.tables.findFirst({
+      where: and(eq(tables.storeId, auth.storeId), eq(tables.number, tableNumber))
+    })
+    
+    if (!table) {
+      return c.json({ success: false, error: 'テーブルが見つかりません' }, 404)
+    }
+    
+    const tableId = table.id
     
     // トランザクションを開始
     const result = await db.transaction(async (tx) => {
@@ -193,13 +204,22 @@ orderRoutes.patch('/items/:itemId/status', zValidator('json', z.object({
 })
 
 // テーブルごとの注文を取得（統合認証）
-orderRoutes.get('/table/:tableId', flexibleAuthMiddleware, async (c) => {
+orderRoutes.get('/table/:tableNumber', flexibleAuthMiddleware, async (c) => {
   try {
     const auth = c.get('auth')
-    const tableId = Number(c.req.param('tableId'))
+    const tableNumber = Number(c.req.param('tableNumber'))
+    
+    // 店舗ID + テーブル番号からテーブルIDを安全に解決
+    const table = await db.query.tables.findFirst({
+      where: and(eq(tables.storeId, auth.storeId), eq(tables.number, tableNumber))
+    })
+    
+    if (!table) {
+      return c.json({ success: false, error: 'テーブルが見つかりません' }, 404)
+    }
     
     const result = await db.query.orders.findMany({
-      where: and(eq(orders.tableId, tableId), eq(orders.storeId, auth.storeId)),
+      where: and(eq(orders.tableId, table.id), eq(orders.storeId, auth.storeId)),
       with: {
         table: true,
         items: {

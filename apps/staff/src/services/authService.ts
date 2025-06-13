@@ -62,6 +62,22 @@ export const login = async (loginData: StaffLoginData): Promise<AuthResponse> =>
 };
 
 /**
+ * レガシーローカルストレージキーをクリーンアップ
+ */
+export const cleanupLegacyAuth = (): void => {
+  // レガシー認証キーを削除
+  const legacyKeys = [
+    'accorto_staff_store_id',
+    'accorto_staff_id', 
+    'accorto_staff_login_time'
+  ];
+  
+  legacyKeys.forEach(key => {
+    localStorage.removeItem(key);
+  });
+};
+
+/**
  * スタッフログアウト
  */
 export const logout = async (): Promise<void> => {
@@ -77,6 +93,9 @@ export const logout = async (): Promise<void> => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(STAFF_KEY);
     localStorage.removeItem(STORE_KEY);
+    
+    // レガシーキーもクリーンアップ
+    cleanupLegacyAuth();
   }
 };
 

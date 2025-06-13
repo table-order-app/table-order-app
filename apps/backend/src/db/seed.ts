@@ -16,10 +16,13 @@ const seed = async () => {
   
   // 店舗データの作成
   const storeData = await db.insert(stores).values({
+    storeCode: 'STORE001',
     name: 'Accorto レストラン',
     address: '東京都渋谷区1-1-1',
     phone: '03-1234-5678',
     email: 'info@accorto.example.com',
+    password: 'password123',
+    ownerName: 'オーナー様',
     active: true,
   }).returning();
   

@@ -1,9 +1,11 @@
 import { get, post, put, del } from "../utils/api";
+import { API_CONFIG } from "../config";
+import { getAuthHeaders } from "./authService";
 
 // 型定義
 export interface MenuItem {
   id: number;
-  categoryId: number;
+  categoryId: number | null;
   name: string;
   description: string;
   price: number;
@@ -23,12 +25,12 @@ export interface Category {
 }
 
 export interface CreateMenuItemData {
-  categoryId: number;
+  categoryId?: number;
   name: string;
-  description: string;
+  description?: string;
   price: number;
   image?: string;
-  available: boolean;
+  available?: boolean;
 }
 
 export interface UpdateMenuItemData {
@@ -88,10 +90,32 @@ export async function getMenuItem(id: number) {
 }
 
 /**
- * メニューを作成
+ * メニューを作成（JSON）
  */
 export async function createMenuItem(data: CreateMenuItemData) {
   return post<MenuItem>("/menu/items", data);
+}
+
+/**
+ * メニューを作成（FormData - 画像ファイル対応）
+ */
+export async function createMenuItemWithFile(formData: FormData) {
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/menu/items-with-file`, {
+      method: 'POST',
+      headers: getAuthHeaders(), // Content-Typeは指定しない（ブラウザが自動設定）
+      body: formData
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error creating menu item with file:', error);
+    return {
+      success: false,
+      error: 'メニューの作成に失敗しました。ネットワーク接続を確認してください。'
+    };
+  }
 }
 
 /**

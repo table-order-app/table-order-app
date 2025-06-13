@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MenuItem, Option, Topping } from "../types";
 import { getMenuItem } from "../services/menuService";
+import { getImageUrl } from "../config";
 
 interface MenuDetailProps {
   menuId: number;
@@ -177,7 +178,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
         <div className="flex justify-center mb-3">
           <div className="w-56 h-36 rounded-lg overflow-hidden shadow-md">
             <img
-              src={menuItem.image}
+              src={getImageUrl(menuItem.image) || '/assets/images/default-menu.png'}
               alt={menuItem.name}
               className="w-full h-full object-cover"
             />

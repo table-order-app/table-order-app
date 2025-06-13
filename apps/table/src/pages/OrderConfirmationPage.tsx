@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTableOrders } from "../services/orderService";
-import { UI_CONFIG } from "../config";
+import { getTableOrders, requestCheckout } from "../services/orderService";
+import { getPath } from "../routes";
+import { UI_CONFIG, getImageUrl } from "../config";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 interface OrderItem {
@@ -38,25 +39,25 @@ const OrderConfirmationPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const tableNumber = UI_CONFIG.TABLE_NUMBER;
+  const [checkoutRequesting, setCheckoutRequesting] = useState(false);
+  
+  // ローカルストレージから実際のテーブル番号を取得
+  const getTableNumber = () => {
+    return parseInt(localStorage.getItem('accorto_table_number') || '1') || 1;
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const tableNumber = parseInt(UI_CONFIG.TABLE_NUMBER) || 1;
+        const tableNumber = getTableNumber();
         
-        // テーブル番号からテーブルIDを取得
-        const { getTableByNumber } = await import("../services/tableService");
-        const tableResponse = await getTableByNumber(tableNumber);
+        console.log('Fetching orders for table number:', tableNumber);
+        console.log('Store code:', localStorage.getItem('accorto_store_code'));
+        console.log('Table number from storage:', localStorage.getItem('accorto_table_number'));
         
-        if (!tableResponse.success || !tableResponse.data) {
-          setError("テーブル情報の取得に失敗しました");
-          return;
-        }
-        
-        const tableId = tableResponse.data.id;
-        const response = await getTableOrders(tableId);
+        // テーブル番号を直接使用（新しいAPI設計）
+        const response = await getTableOrders(tableNumber);
         
         if (response.success && response.data) {
           const sortedOrders = [...response.data].sort(
@@ -150,6 +151,32 @@ const OrderConfirmationPage: React.FC = () => {
     navigate("/categories");
   };
 
+  const handleRequestCheckout = async () => {
+    if (checkoutRequesting) return;
+    
+    try {
+      setCheckoutRequesting(true);
+      const tableNumber = getTableNumber();
+      const response = await requestCheckout(tableNumber);
+      
+      if (response.success) {
+        // 成功時は専用ページに遷移
+        navigate(getPath.checkoutRequest());
+      } else {
+        // エラー時はアラートで表示
+        alert(response.error || "会計要請に失敗しました。もう一度お試しください。");
+      }
+    } catch (error) {
+      console.error("Error requesting checkout:", error);
+      alert("会計要請中にエラーが発生しました。もう一度お試しください。");
+    } finally {
+      setCheckoutRequesting(false);
+    }
+  };
+
+  // 全ての注文が提供済みかチェック
+  const allOrdersDelivered = orders.length > 0 && orders.every(order => order.status === "delivered");
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("ja-JP", {
@@ -224,6 +251,43 @@ const OrderConfirmationPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4">
+          {/* 会計要請ボタン（目立つ位置） */}
+          {allOrdersDelivered && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-blue-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900">お食事が完了しました</h3>
+                    <p className="text-sm text-blue-700">スタッフに会計をお呼びいただけます</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRequestCheckout}
+                  disabled={checkoutRequesting}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                >
+                  {checkoutRequesting ? "要請中..." : "会計をお願いします"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* アクションボタン */}
           <div className="mb-6">
             <div className="flex gap-3">
@@ -259,7 +323,7 @@ const OrderConfirmationPage: React.FC = () => {
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 rounded-lg shadow-sm overflow-hidden">
                           <img
-                            src={item.menuItem?.image || '/assets/images/default.jpg'}
+                            src={getImageUrl(item.menuItem?.image) || '/assets/images/default-menu.png'}
                             alt={item.menuItem?.name || item.name}
                             className="w-full h-full object-cover"
                           />

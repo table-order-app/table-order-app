@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
 import { prettyJSON } from 'hono/pretty-json'
+import { serveStatic } from '@hono/node-server/serve-static'
 import { menuRoutes } from './routes/menu'
 import { orderRoutes } from './routes/order'
 import { tableRoutes } from './routes/table'
@@ -35,6 +36,9 @@ app.onError((err, c) => {
   
   return c.json({ success: false, error: 'サーバーエラーが発生しました' }, 500)
 })
+
+// Static file serving for uploaded images
+app.use('/uploads/*', serveStatic({ root: './public' }))
 
 // Routes
 app.route('/api/auth', authRoutes)

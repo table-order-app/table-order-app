@@ -2,7 +2,7 @@ import { post, get } from "../utils/api";
 import { CartItem } from "../types";
 
 export interface OrderRequest {
-  tableId: number;
+  tableNumber: number;
   items: Array<{
     menuItemId: number;
     name: string;
@@ -22,7 +22,7 @@ export interface OrderRequest {
 /**
  * 注文を作成
  */
-export async function createOrder(tableId: number, cartItems: CartItem[]) {
+export async function createOrder(tableNumber: number, cartItems: CartItem[]) {
   const orderItems = cartItems.map(item => ({
     menuItemId: item.menuItem.id,
     name: item.menuItem.name,
@@ -39,7 +39,7 @@ export async function createOrder(tableId: number, cartItems: CartItem[]) {
   }));
 
   const payload = {
-    tableId,
+    tableNumber,
     items: orderItems
   };
 
@@ -51,6 +51,13 @@ export async function createOrder(tableId: number, cartItems: CartItem[]) {
 /**
  * テーブルの注文履歴を取得
  */
-export async function getTableOrders(tableId: number) {
-  return get<any[]>(`/order/table/${tableId}`);
+export async function getTableOrders(tableNumber: number) {
+  return get<any[]>(`/order/table/${tableNumber}`);
+}
+
+/**
+ * 会計要請を送信
+ */
+export async function requestCheckout(tableNumber: number) {
+  return post<any>(`/table/${tableNumber}/request-checkout`, {});
 }

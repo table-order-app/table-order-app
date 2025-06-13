@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CartItem } from "../types";
+import { getImageUrl } from "../config";
 
 interface CartProps {
   cartItems: CartItem[];
@@ -164,7 +165,7 @@ const Cart: React.FC<CartProps> = ({
                   <div className="flex mb-4">
                     <div className="mr-4 h-16 w-16 rounded-2xl shadow-md overflow-hidden">
                       <img
-                        src={item.menuItem.image}
+                        src={getImageUrl(item.menuItem.image) || '/assets/images/default-menu.png'}
                         alt={item.menuItem.name}
                         className="w-full h-full object-cover"
                       />

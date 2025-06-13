@@ -5,10 +5,13 @@ CREATE TYPE "public"."table_status" AS ENUM('available', 'occupied', 'reserved',
 CREATE TYPE "public"."staff_role" AS ENUM('admin', 'manager', 'staff', 'kitchen');--> statement-breakpoint
 CREATE TABLE "stores" (
 	"id" serial PRIMARY KEY NOT NULL,
+	"store_code" varchar(8) UNIQUE,
 	"name" varchar(100) NOT NULL,
 	"address" text,
 	"phone" varchar(20),
-	"email" varchar(100),
+	"email" varchar(100) UNIQUE NOT NULL,
+	"password" varchar(255) NOT NULL,
+	"owner_name" varchar(100) NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

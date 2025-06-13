@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { validateTable } from "../services/tableService";
 
 const StoreLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,6 +51,17 @@ const StoreLoginPage: React.FC = () => {
         return;
       }
 
+      // テーブルの存在確認
+      console.log('Validating table:', { storeCode: storeCode.toUpperCase(), tableNumber: numericTableNumber });
+      const validationResult = await validateTable(storeCode.toUpperCase(), numericTableNumber);
+      
+      if (!validationResult.success || !validationResult.exists) {
+        setError(validationResult.error || "テーブルが存在しません");
+        return;
+      }
+
+      console.log('Table validation successful:', validationResult.data);
+
       // LocalStorageに店舗情報を保存
       console.log('Saving to localStorage:', { storeCode: storeCode.toUpperCase(), tableNumber });
       localStorage.setItem("accorto_store_code", storeCode.toUpperCase());
@@ -66,12 +78,37 @@ const StoreLoginPage: React.FC = () => {
     }
   };
 
-  const handleSkip = () => {
-    // デフォルト値でスキップ（例: 店舗コードDFH7L2L8）
-    localStorage.setItem("accorto_store_code", "DFH7L2L8");
-    localStorage.setItem("accorto_table_number", "1");
-    localStorage.setItem("accorto_login_time", new Date().toISOString());
-    navigate(from, { replace: true });
+  const handleSkip = async () => {
+    try {
+      setLoading(true);
+      
+      // デフォルト値でスキップ（テスト用: STORE001）
+      const defaultStoreCode = "STORE001";
+      const defaultTableNumber = 1;
+      
+      console.log('Validating default values:', { storeCode: defaultStoreCode, tableNumber: defaultTableNumber });
+      
+      // テーブルの存在確認
+      const validationResult = await validateTable(defaultStoreCode, defaultTableNumber);
+      
+      if (!validationResult.success || !validationResult.exists) {
+        setError(`デフォルト設定でログインできません: ${validationResult.error}`);
+        return;
+      }
+      
+      console.log('Default table validation successful:', validationResult.data);
+      console.log('Setting default values:', { storeCode: defaultStoreCode, tableNumber: defaultTableNumber });
+      
+      localStorage.setItem("accorto_store_code", defaultStoreCode);
+      localStorage.setItem("accorto_table_number", defaultTableNumber.toString());
+      localStorage.setItem("accorto_login_time", new Date().toISOString());
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError("スキップログインに失敗しました");
+      console.error("Skip login error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

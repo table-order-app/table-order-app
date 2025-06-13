@@ -3,7 +3,7 @@ import { Pool } from 'pg'
 import * as schema from './schema'
 
 // Database connection configuration
-const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/accorto'
+const connectionString = process.env.DATABASE_URL || 'postgres://itouharuki@localhost:5432/accorto'
 
 // Create a PostgreSQL pool
 const pool = new Pool({

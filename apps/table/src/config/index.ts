@@ -47,6 +47,20 @@ export const UI_CONFIG = {
 // 開発環境かどうかを示すフラグ
 export const IS_DEV = import.meta.env.DEV;
 
+// 画像URLを完全なURLに変換するヘルパー関数
+export const getImageUrl = (imagePath: string | null | undefined): string | null => {
+  if (!imagePath) return null;
+  
+  // 既にフルURLの場合はそのまま返す
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // 相対パスの場合はAPIベースURLと結合
+  const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // /apiを除去
+  return `${baseUrl}${imagePath}`;
+};
+
 // 定数をまとめたオブジェクト
 export default {
   API: API_CONFIG,
