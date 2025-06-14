@@ -44,6 +44,10 @@ body {
   cursor: not-allowed;
 }
 
+.btn-primary:active {
+  transform: none;
+}
+
 .btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -71,6 +75,10 @@ body {
   cursor: not-allowed;
 }
 
+.btn-secondary:active {
+  transform: none;
+}
+
 .btn-danger {
   display: inline-flex;
   align-items: center;
@@ -96,6 +104,10 @@ body {
 .btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-danger:active {
+  transform: none;
 }
 
 .form-input {
