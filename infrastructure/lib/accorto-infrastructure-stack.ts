@@ -67,7 +67,7 @@ export class AccortoInfrastructureStack extends cdk.Stack {
     // RDS PostgreSQL
     const database = new rds.DatabaseInstance(this, 'AccortoDatabase', {
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_15_4,
+        version: rds.PostgresEngineVersion.VER_15,
       }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
       vpc,
