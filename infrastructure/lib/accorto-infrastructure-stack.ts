@@ -88,7 +88,7 @@ export class AccortoInfrastructureStack extends cdk.Stack {
 
     // S3バケット（画像保存用）
     const imagesBucket = new s3.Bucket(this, 'AccortoImagesBucket', {
-      bucketName: `${projectName}-images-${environment}-${this.account}`,
+      bucketName: `${projectName}-images-${environment}-${this.account}-${Date.now()}`,
       versioned: true,
       cors: [
         {
@@ -127,7 +127,7 @@ export class AccortoInfrastructureStack extends cdk.Stack {
     frontendApps.forEach(appName => {
       // S3バケット
       const bucket = new s3.Bucket(this, `Accorto${appName.charAt(0).toUpperCase() + appName.slice(1)}Bucket`, {
-        bucketName: `${projectName}-${appName}-${environment}-${this.account}`,
+        bucketName: `${projectName}-${appName}-${environment}-${this.account}-${Date.now()}`,
         websiteIndexDocument: 'index.html',
         websiteErrorDocument: 'index.html', // SPA用
         publicReadAccess: true,
