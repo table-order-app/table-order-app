@@ -14,24 +14,10 @@ import {
   MenuItem,
   Category
 } from "../../services/menuService";
-import { API_CONFIG } from "../../config";
+import { getImageUrl, getImageUrlWithFallback } from "../../utils/imageUtils";
 
 const MenuPage = () => {
   const navigate = useNavigate();
-
-  // 画像URLを完全なURLに変換するヘルパー関数
-  const getImageUrl = (imagePath: string | null | undefined): string | null => {
-    if (!imagePath) return null;
-    
-    // 既にフルURLの場合はそのまま返す
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // 相対パスの場合はAPIベースURLと結合
-    const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // /apiを除去
-    return `${baseUrl}${imagePath}`;
-  };
   
   // メニューとカテゴリデータ
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -524,7 +510,7 @@ const MenuPage = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
                               {getImageUrl(item.image) ? (
-                                <img className="h-10 w-10 rounded-full object-cover" src={getImageUrl(item.image)!} alt={item.name} />
+                                <img className="h-10 w-10 rounded-full object-cover" src={getImageUrlWithFallback(item.image)} alt={item.name} />
                               ) : (
                                 <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                                   <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -747,7 +733,7 @@ const MenuPage = () => {
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 mb-1">プレビュー:</p>
                       <img
-                        src={getImageUrl(editFormData.image)!}
+                        src={getImageUrlWithFallback(editFormData.image)}
                         alt="プレビュー"
                         className="h-20 w-20 object-cover rounded-lg border border-gray-200"
                       />
@@ -961,7 +947,7 @@ const MenuPage = () => {
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 mb-1">プレビュー:</p>
                       <img
-                        src={addFormData.imageFile ? URL.createObjectURL(addFormData.imageFile) : getImageUrl(addFormData.image)!}
+                        src={addFormData.imageFile ? URL.createObjectURL(addFormData.imageFile) : getImageUrlWithFallback(addFormData.image)}
                         alt="プレビュー"
                         className="h-20 w-20 object-cover rounded-lg border border-gray-200"
                       />

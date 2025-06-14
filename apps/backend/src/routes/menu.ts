@@ -5,32 +5,25 @@ import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, orderItems, stores } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware, optionalAuthMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
-import fs from 'fs/promises'
-import path from 'path'
+import { saveImage, deleteImageFromS3, isS3Enabled } from '../utils/s3'
+import { logError, logInfo, logDebug } from '../utils/logger-simple'
 
 export const menuRoutes = new Hono()
 
-// ファイル保存用ヘルパー関数
-async function saveImageFile(file: File): Promise<string> {
-  // アップロードディレクトリの確保
-  const uploadDir = './public/uploads/menu'
-  await fs.mkdir(uploadDir, { recursive: true })
+// 古い画像を削除するヘルパー関数
+async function deleteOldImage(imagePath: string | null) {
+  if (!imagePath) return
   
-  // ファイル名の生成（タイムスタンプ + 元のファイル名）
-  const timestamp = Date.now()
-  const originalName = file.name
-  const extension = path.extname(originalName)
-  const basename = path.basename(originalName, extension)
-  const fileName = `${timestamp}-${basename}${extension}`
-  const filePath = path.join(uploadDir, fileName)
-  
-  // ファイルの保存
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-  await fs.writeFile(filePath, buffer)
-  
-  // 公開URLパスを返す
-  return `/uploads/menu/${fileName}`
+  try {
+    if (isS3Enabled() && (imagePath.includes('amazonaws.com') || imagePath.includes('cloudfront'))) {
+      // S3画像の削除
+      await deleteImageFromS3(imagePath)
+      logInfo('S3 image deleted', { imagePath })
+    }
+    // ローカルファイルの削除は行わない（開発環境のため）
+  } catch (error) {
+    logError('Failed to delete old image', error, { imagePath })
+  }
 }
 
 // カテゴリ一覧を取得（統合認証）
@@ -185,8 +178,9 @@ menuRoutes.post('/items-with-file', flexibleAuthMiddleware, async (c) => {
         return c.json({ success: false, error: '画像ファイルを選択してください' }, 400)
       }
       
-      // ファイル保存処理
-      imagePath = await saveImageFile(imageFile)
+      // ファイル保存処理（S3またはローカル）
+      imagePath = await saveImage(imageFile, 'menu')
+      logInfo('Image uploaded successfully', { imagePath, fileSize: imageFile.size, fileName: imageFile.name })
     }
     
     const result = await db.insert(menuItems).values({
@@ -314,6 +308,9 @@ menuRoutes.delete('/items/:id', async (c) => {
       }, 400)
     }
     
+    // 古い画像を削除
+    await deleteOldImage(menuItem.image)
+    
     const result = await db.delete(menuItems)
       .where(and(eq(menuItems.id, id), eq(menuItems.storeId, storeId)))
       .returning()
@@ -322,6 +319,7 @@ menuRoutes.delete('/items/:id', async (c) => {
       return c.json({ success: false, error: 'メニューアイテムが見つかりません' }, 404)
     }
     
+    logInfo('Menu item deleted', { id, storeId, name: menuItem.name })
     return c.json({ success: true, data: result[0] })
   } catch (error) {
     console.error('Error deleting menu item:', error)

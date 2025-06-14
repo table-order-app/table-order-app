@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTableOrders, requestCheckout } from "../services/orderService";
 import { getPath } from "../routes";
-import { UI_CONFIG, getImageUrl } from "../config";
+import { UI_CONFIG } from "../config";
+import { getImageUrlWithFallback } from "../utils/imageUtils";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 interface OrderItem {
@@ -323,7 +324,7 @@ const OrderConfirmationPage: React.FC = () => {
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 rounded-lg shadow-sm overflow-hidden">
                           <img
-                            src={getImageUrl(item.menuItem?.image) || '/assets/images/default-menu.png'}
+                            src={getImageUrlWithFallback(item.menuItem?.image)}
                             alt={item.menuItem?.name || item.name}
                             className="w-full h-full object-cover"
                           />

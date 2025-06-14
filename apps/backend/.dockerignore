@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Development files
+*.md
+.env*
+.git
+.gitignore
+
+# Build artifacts
+dist
+logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+coverage
+.nyc_output
+test-results
+
+# Development database
+*.db
+*.sqlite
+
+# Temporary files
+tmp
+temp
+
+# Public uploads (not needed in production with S3)
+public/uploads

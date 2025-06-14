@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MenuItem } from "../types";
 import { getMenuItemsByCategory } from "../services/menuService";
 import { getPath } from "../routes";
-import { getImageUrl } from "../config";
+import { getImageUrlWithFallback } from "../utils/imageUtils";
 
 const MenuCard: React.FC<{
   className?: string;
@@ -116,7 +116,7 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
               {/* Image Section */}
               <div className="relative pb-[60%] overflow-hidden">
                 <img
-                  src={getImageUrl(item.image) || '/assets/images/default-menu.png'}
+                  src={getImageUrlWithFallback(item.image)}
                   alt={item.name}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
