@@ -49,9 +49,8 @@ if (isProduction && !process.env.ALLOWED_ORIGINS) {
 // Middleware
 app.use('*', logger())
 app.use('*', cors({
-  origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+  origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
   credentials: true,
-  optionsSuccessStatus: 200,
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }))
