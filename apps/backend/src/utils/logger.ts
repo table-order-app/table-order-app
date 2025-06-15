@@ -83,7 +83,42 @@ export function createRequestLogger() {
   }
 }
 
-// エラーログ用のヘルパー関数
+// 機密情報をサニタイズする関数
+function sanitizeObject(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj
+  }
+  
+  if (typeof obj === 'string') {
+    return obj
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeObject)
+  }
+  
+  if (typeof obj === 'object') {
+    const sanitized: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase()
+      // 機密情報を含む可能性のあるキーを除外
+      if (lowerKey.includes('password') || 
+          lowerKey.includes('secret') || 
+          lowerKey.includes('token') || 
+          lowerKey.includes('auth') ||
+          lowerKey.includes('credential')) {
+        sanitized[key] = '[REDACTED]'
+      } else {
+        sanitized[key] = sanitizeObject(value)
+      }
+    }
+    return sanitized
+  }
+  
+  return obj
+}
+
+// エラーログ用のヘルパー関数（機密情報をサニタイズ）
 export function logError(message: string, error: any, context?: Record<string, any>) {
   logger.error(message, {
     error: {
@@ -91,7 +126,7 @@ export function logError(message: string, error: any, context?: Record<string, a
       stack: error.stack,
       name: error.name
     },
-    ...context
+    ...sanitizeObject(context || {})
   })
 }
 
