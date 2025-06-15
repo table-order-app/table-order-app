@@ -5,7 +5,7 @@ import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, orderItems, stores } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware, optionalAuthMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
-import { saveImage, isS3Enabled } from '../utils/s3'
+import { saveImage, deleteOldImage as deleteOldImageUtil } from '../utils/r2'
 import { logError, logInfo, logDebug } from '../utils/logger-simple'
 
 export const menuRoutes = new Hono()
@@ -15,9 +15,8 @@ async function deleteOldImage(imagePath: string | null) {
   if (!imagePath) return
   
   try {
-    // AWS機能は削除されたため、ローカルファイルの削除のみ対応
-    // ローカルファイルの削除は行わない（開発環境のため）
-    logInfo('Image deletion skipped (AWS functionality removed)', { imagePath })
+    await deleteOldImageUtil(imagePath)
+    logInfo('Old image deleted successfully', { imagePath })
   } catch (error) {
     logError('Failed to delete old image', error, { imagePath })
   }

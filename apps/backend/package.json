@@ -11,12 +11,15 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
+    "migrate:r2": "tsx src/scripts/migrate-to-r2.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.699.0",
+    "@aws-sdk/s3-request-presigner": "^3.699.0",
     "@hono/node-server": "^1.14.2",
     "@hono/zod-validator": "^0.5.0",
     "@types/bcryptjs": "^3.0.0",
