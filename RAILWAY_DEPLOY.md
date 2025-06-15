@@ -23,8 +23,8 @@
 1. プロジェクトページで Backend サービスをクリック
 2. "Settings" タブを開く
 3. "Root Directory" を `apps/backend` に設定
-4. "Build Command" を `pnpm build` に設定
-5. "Start Command" を `pnpm start` に設定
+4. "Custom Build Command" を有効にして `pnpm install && pnpm build` に設定
+5. "Custom Start Command" を有効にして `node dist/index.js` に設定
 
 #### PostgreSQLデータベース追加
 1. プロジェクトページで "New Service" をクリック
@@ -104,10 +104,20 @@ railway run pnpm db:seed
 
 ## 🚨 トラブルシューティング
 
+### "No start command could be found" エラーの場合
+1. "Settings" → "Deploy" で以下を設定：
+   - Build Command: `pnpm install && pnpm build`
+   - Start Command: `node dist/index.js`
+2. または、nixpacks.toml とrailway.json が正しく配置されていることを確認
+
 ### ビルドエラーの場合
 1. "Logs" タブでエラー内容確認
 2. 依存関係の問題なら `pnpm install` を確認
 3. TypeScriptエラーなら `pnpm build` をローカルで確認
+
+### モノレポ構造でのエラーの場合
+1. Root Directory が `apps/backend` に設定されていることを確認
+2. 必要に応じてDockerfileベースのデプロイに切り替え（Dockerfile.railway使用）
 
 ### データベース接続エラーの場合
 1. PostgreSQL サービスが起動していることを確認
