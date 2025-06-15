@@ -5,7 +5,7 @@ import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, orderItems, stores } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware, optionalAuthMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
-import { saveImage, deleteImageFromS3, isS3Enabled } from '../utils/s3'
+import { saveImage, isS3Enabled } from '../utils/s3'
 import { logError, logInfo, logDebug } from '../utils/logger-simple'
 
 export const menuRoutes = new Hono()
@@ -15,12 +15,9 @@ async function deleteOldImage(imagePath: string | null) {
   if (!imagePath) return
   
   try {
-    if (isS3Enabled() && (imagePath.includes('amazonaws.com') || imagePath.includes('cloudfront'))) {
-      // S3画像の削除
-      await deleteImageFromS3(imagePath)
-      logInfo('S3 image deleted', { imagePath })
-    }
+    // AWS機能は削除されたため、ローカルファイルの削除のみ対応
     // ローカルファイルの削除は行わない（開発環境のため）
+    logInfo('Image deletion skipped (AWS functionality removed)', { imagePath })
   } catch (error) {
     logError('Failed to delete old image', error, { imagePath })
   }
