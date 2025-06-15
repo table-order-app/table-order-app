@@ -4,15 +4,17 @@ build:
   commands:
     build:
       - echo "Installing dependencies..."
-      - npm ci
-      - echo "Building application..."
-      - npm run build
-      - echo "Build completed successfully"
+      - npm install -g pnpm@10.9.0
+      - echo "Installing workspace dependencies..."
+      - pnpm install --frozen-lockfile
+      - echo "Building specific app..."
+      - cd apps/backend
+      - pnpm run build
   env:
     - name: NODE_ENV
       value: production
 run:
-  command: npm start
+  command: cd apps/[YOUR_APP_NAME] && pnpm start # または実際の起動コマンド
   network:
     port: 8080
     env: PORT
