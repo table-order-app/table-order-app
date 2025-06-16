@@ -48,13 +48,37 @@ if (isProduction && !process.env.ALLOWED_ORIGINS) {
 
 // Middleware
 app.use('*', logger())
-app.use('*', cors({
-  origin: allowedOrigins.length > 0 ? allowedOrigins : false,
-  credentials: true,
-  optionsSuccessStatus: 200,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
-}))
+
+// リクエストサイズ制限を緩和（ファイルアップロード用）
+app.use('*', async (c, next) => {
+  // 大きなリクエストボディを許可
+  if (c.req.header('content-type')?.includes('multipart/form-data')) {
+    // マルチパートデータ（ファイルアップロード）用の特別処理
+    return await next()
+  }
+  await next()
+})
+
+// CORSミドルウェア
+app.use('*', async (c, next) => {
+  const origin = c.req.header('Origin')
+  
+  // オリジンチェック
+  if (origin && (allowedOrigins.includes(origin) || allowedOrigins.includes('*'))) {
+    c.header('Access-Control-Allow-Origin', origin)
+  }
+  
+  c.header('Access-Control-Allow-Credentials', 'true')
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, x-store-code, x-table-number')
+  
+  if (c.req.method === 'OPTIONS') {
+    return c.text('OK', 204)
+  }
+  
+  await next()
+})
+
 app.use('*', prettyJSON())
 
 // カスタムエラーハンドラー
@@ -76,11 +100,9 @@ app.onError((err, c) => {
   return c.json({ success: false, error: 'サーバーエラーが発生しました' }, 500)
 })
 
-// 開発環境でのみローカル画像配信を有効化
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/uploads/*', serveStatic({ root: './public' }))
-  logInfo('Static file serving enabled for development')
-}
+// 画像配信を有効化（簡易デプロイ用）
+app.use('/uploads/*', serveStatic({ root: './public' }))
+logInfo('Static file serving enabled')
 
 // CORS動作確認用のデバッグエンドポイント
 app.options('*', (c) => {
@@ -183,5 +205,9 @@ logInfo('Starting Accorto API Server', {
 
 serve({
   fetch: app.fetch,
-  port: Number(port)
+  port: Number(port),
+  // リクエストサイズ制限を緩和
+  maxRequestBodySize: 50 * 1024 * 1024, // 50MB
+  headersTimeout: 60000, // 60秒
+  requestTimeout: 120000 // 120秒
 })

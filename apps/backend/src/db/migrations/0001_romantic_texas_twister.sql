@@ -11,8 +11,6 @@ CREATE TABLE "store_settings" (
 --> statement-breakpoint
 ALTER TABLE "stores" ALTER COLUMN "email" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "staff_members" ALTER COLUMN "email" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "stores" ADD COLUMN "password" varchar(255) NOT NULL;--> statement-breakpoint
-ALTER TABLE "stores" ADD COLUMN "owner_name" varchar(100) NOT NULL;--> statement-breakpoint
 ALTER TABLE "allergens" ADD COLUMN "store_id" integer NOT NULL;--> statement-breakpoint
 ALTER TABLE "allergens" ADD COLUMN "active" boolean DEFAULT true NOT NULL;--> statement-breakpoint
 ALTER TABLE "options" ADD COLUMN "store_id" integer NOT NULL;--> statement-breakpoint

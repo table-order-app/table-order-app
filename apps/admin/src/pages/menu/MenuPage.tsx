@@ -720,21 +720,12 @@ const MenuPage = () => {
                     }}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                   />
-                  <p className="text-xs text-gray-500">または画像URLを入力:</p>
-                  <input
-                    type="url"
-                    name="image"
-                    value={editFormData.image || ""}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="https://example.com/image.jpg"
-                  />
                   {getImageUrl(editFormData.image) && (
                     <div className="mt-2">
-                      <p className="text-xs text-gray-500 mb-1">プレビュー:</p>
+                      <p className="text-xs text-gray-500 mb-1">現在の画像:</p>
                       <img
                         src={getImageUrlWithFallback(editFormData.image)}
-                        alt="プレビュー"
+                        alt="現在の画像"
                         className="h-20 w-20 object-cover rounded-lg border border-gray-200"
                       />
                     </div>
@@ -915,8 +906,7 @@ const MenuPage = () => {
                         
                         setAddFormData({
                           ...addFormData,
-                          imageFile: file,
-                          image: "" // URLフィールドをクリア
+                          imageFile: file
                         });
                         
                         setError(null); // エラーをクリア
@@ -927,35 +917,17 @@ const MenuPage = () => {
                   <p className="text-xs text-gray-500">
                     JPG、PNG、WebP形式 / 最大5MB
                   </p>
-                  <p className="text-xs text-gray-500">または画像URLを入力:</p>
-                  <input
-                    type="url"
-                    name="image"
-                    value={addFormData.image || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setAddFormData({
-                        ...addFormData,
-                        image: value,
-                        imageFile: null // ファイルをクリア
-                      });
-                    }}
-                    className="form-input"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {(addFormData.image || addFormData.imageFile) && (
+                  {addFormData.imageFile && (
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 mb-1">プレビュー:</p>
                       <img
-                        src={addFormData.imageFile ? URL.createObjectURL(addFormData.imageFile) : getImageUrlWithFallback(addFormData.image)}
+                        src={URL.createObjectURL(addFormData.imageFile)}
                         alt="プレビュー"
                         className="h-20 w-20 object-cover rounded-lg border border-gray-200"
                       />
-                      {addFormData.imageFile && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          ファイル: {addFormData.imageFile.name} ({Math.round(addFormData.imageFile.size / 1024)}KB)
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        ファイル: {addFormData.imageFile.name} ({Math.round(addFormData.imageFile.size / 1024)}KB)
+                      </p>
                     </div>
                   )}
                 </div>

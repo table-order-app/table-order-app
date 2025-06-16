@@ -34,6 +34,11 @@ function getImageConfig(): ImageConfig {
 export function getImageUrl(imagePath: string | null | undefined): string | null {
   if (!imagePath) return null;
   
+  // base64データの場合はそのまま返す
+  if (imagePath.startsWith('data:')) {
+    return imagePath;
+  }
+  
   // 既にフルURLの場合はそのまま返す
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
