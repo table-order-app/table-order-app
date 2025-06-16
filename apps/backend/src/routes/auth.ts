@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm'
 import { generateStoreCode } from '../utils/storeCode'
 import bcrypt from 'bcryptjs'
 import { JWT_SECRET, JWT_EXPIRY } from '../config/jwt'
+import { logError } from '../utils/logger'
 
 export const authRoutes = new Hono()
 
@@ -99,7 +100,7 @@ authRoutes.post('/signup', zValidator('json', z.object({
     }, 201)
     
   } catch (error) {
-    console.error('Error creating store account:', error)
+    logError('Error creating store account', error)
     return c.json({ success: false, error: '店舗アカウントの作成に失敗しました' }, 500)
   }
 })
@@ -155,7 +156,7 @@ authRoutes.post('/login', zValidator('json', z.object({
     })
     
   } catch (error) {
-    console.error('Error during login:', error)
+    logError('Error during login', error)
     return c.json({ success: false, error: 'ログインに失敗しました' }, 500)
   }
 })
