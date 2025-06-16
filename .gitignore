@@ -47,3 +47,8 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# ローカルドキュメント・デプロイ手順書
+*.md
+!README.md
+!CLAUDE.md

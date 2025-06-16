@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, integer, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, serial, varchar, integer, text, timestamp, pgEnum, numeric } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { tables } from './table'
 import { menuItems } from './menu'
@@ -29,6 +29,12 @@ export const orders = pgTable('orders', {
   tableId: integer('table_id').references(() => tables.id).notNull(),
   status: orderStatusEnum('status').default('new').notNull(),
   totalItems: integer('total_items').notNull(),
+  
+  // 価格情報を追加
+  subtotalAmount: numeric('subtotal_amount', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  taxAmount: numeric('tax_amount', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -42,6 +48,11 @@ export const orderItems = pgTable('order_items', {
   quantity: integer('quantity').notNull(),
   notes: text('notes'),
   status: orderItemStatusEnum('status').default('new').notNull(),
+  
+  // 価格情報を追加
+  unitPrice: numeric('unit_price', { precision: 10, scale: 2 }).notNull(),
+  totalPrice: numeric('total_price', { precision: 10, scale: 2 }).notNull(),
+  
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -51,7 +62,7 @@ export const orderItemOptions = pgTable('order_item_options', {
   id: serial('id').primaryKey(),
   orderItemId: integer('order_item_id').references(() => orderItems.id).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
-  price: integer('price').notNull(),
+  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
 })
 
 // 注文アイテムトッピングテーブル
@@ -59,7 +70,7 @@ export const orderItemToppings = pgTable('order_item_toppings', {
   id: serial('id').primaryKey(),
   orderItemId: integer('order_item_id').references(() => orderItems.id).notNull(),
   name: varchar('name', { length: 100 }).notNull(),
-  price: integer('price').notNull(),
+  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
 })
 
 // リレーションの定義

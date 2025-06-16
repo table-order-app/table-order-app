@@ -15,6 +15,7 @@ import { storeRoutes } from './routes/store'
 import { authRoutes } from './routes/auth'
 import { adminRoutes } from './routes/admin'
 import { staffAuthRoutes } from './routes/staffAuth'
+import { accountingRoutes } from './routes/accounting'
 
 const app = new Hono()
 
@@ -128,6 +129,7 @@ app.route('/api/order', orderRoutes)
 app.route('/api/table', tableRoutes)
 app.route('/api/staff', staffRoutes)
 app.route('/api/setting', settingRoutes)
+app.route('/api/accounting', accountingRoutes)
 
 // Health check endpoints
 app.get('/', (c) => c.json({ status: 'ok', message: 'Accorto API Server' }))

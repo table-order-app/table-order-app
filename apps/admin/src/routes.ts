@@ -4,6 +4,7 @@ import MenuPage from "./pages/menu/MenuPage";
 import StaffPage from "./pages/staff/StaffPage";
 import TablesPage from "./pages/tables/TablesPage";
 import StoresPage from "./pages/stores/StoresPage";
+import AccountingPage from "./pages/accounting/AccountingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import StoreLoginPage from "./pages/StoreLoginPage";
@@ -58,6 +59,14 @@ export const ROUTES = {
     exact: true,
   } as RouteDefinition,
 
+  // 会計管理ページ
+  ACCOUNTING: {
+    path: "/accounting",
+    component: AccountingPage,
+    layout: MainLayout,
+    exact: true,
+  } as RouteDefinition,
+
   REPORTS: {
     path: "/reports",
     component: DashboardPage, // 一時的にDashboardPageを使用
@@ -101,6 +110,7 @@ export const getPath = {
   staff: () => ROUTES.STAFF.path,
   tables: () => ROUTES.TABLES.path,
   stores: () => ROUTES.STORES.path,
+  accounting: () => ROUTES.ACCOUNTING.path,
   reports: () => ROUTES.REPORTS.path,
   settings: () => ROUTES.SETTINGS.path,
   login: () => ROUTES.LOGIN.path,
