@@ -10,7 +10,11 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
+    // スクリーンショットの保存設定
+    screenshot: 'only-on-failure',
   },
+  // テスト結果とスクリーンショットの出力ディレクトリ
+  outputDir: './test-results',
 
   projects: [
     {

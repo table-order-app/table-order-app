@@ -33,6 +33,10 @@ lerna-debug.log*
 
 # テスト関連
 /coverage
+/test-results/
+/playwright-report/
+/test-screenshots/
+/playwright/.cache/
 
 # OS固有のファイル
 .DS_Store
