@@ -31,7 +31,7 @@ accountingRoutes.use('*', flexibleAuthMiddleware)
 // 会計設定の取得
 accountingRoutes.get('/settings', async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     
     const settings = await db
       .select()
@@ -72,23 +72,40 @@ accountingRoutes.get('/settings', async (c) => {
 
 // 会計設定の更新
 accountingRoutes.put('/settings', zValidator('json', z.object({
-  dayClosingTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません'),
-  taxRate: z.number().min(0).max(1, '税率は0-1の範囲で入力してください'),
-  autoCloseEnabled: z.boolean(),
-  autoCloseTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません'),
-  displayCurrency: z.string().default('JPY')
+  dayClosingTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません').optional(),
+  taxRate: z.number().min(0).max(1, '税率は0-1の範囲で入力してください').optional(),
+  autoCloseEnabled: z.boolean().optional(),
+  autoCloseTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません').optional(),
+  displayCurrency: z.string().default('JPY').optional()
 })), async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     const updateData = c.req.valid('json')
     
+    // 部分更新用のデータを準備
+    const updateValues: any = {
+      updatedAt: sql`now()`
+    }
+    
+    if (updateData.dayClosingTime !== undefined) {
+      updateValues.dayClosingTime = updateData.dayClosingTime
+    }
+    if (updateData.taxRate !== undefined) {
+      updateValues.taxRate = updateData.taxRate.toString()
+    }
+    if (updateData.autoCloseEnabled !== undefined) {
+      updateValues.autoCloseEnabled = updateData.autoCloseEnabled
+    }
+    if (updateData.autoCloseTime !== undefined) {
+      updateValues.autoCloseTime = updateData.autoCloseTime
+    }
+    if (updateData.displayCurrency !== undefined) {
+      updateValues.displayCurrency = updateData.displayCurrency
+    }
+
     const updatedSettings = await db
       .update(accountingSettings)
-      .set({
-        ...updateData,
-        taxRate: updateData.taxRate.toString(),
-        updatedAt: sql`now()`
-      })
+      .set(updateValues)
       .where(eq(accountingSettings.storeId, storeId))
       .returning()
     
@@ -129,7 +146,7 @@ accountingRoutes.get('/daily-sales', zValidator('query', z.object({
   endDate: z.string().optional()
 })), async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     const { date, startDate, endDate } = c.req.valid('query')
     
     // 会計設定を取得
@@ -152,15 +169,20 @@ accountingRoutes.get('/daily-sales', zValidator('query', z.object({
       targetDates = [getCurrentAccountingDate(dayClosingTime)]
     }
     
+    let whereConditions = [eq(dailySales.storeId, storeId)]
+    
+    if (targetDates.length === 1) {
+      whereConditions.push(eq(dailySales.accountingDate, targetDates[0]))
+    } else {
+      // Multiple dates: use OR conditions
+      const dateConditions = targetDates.map(date => eq(dailySales.accountingDate, date))
+      whereConditions.push(sql`(${sql.join(dateConditions, sql` OR `)})`)
+    }
+    
     const salesData = await db
       .select()
       .from(dailySales)
-      .where(
-        and(
-          eq(dailySales.storeId, storeId),
-          sql`${dailySales.accountingDate} = ANY(${targetDates})`
-        )
-      )
+      .where(and(...whereConditions))
       .orderBy(desc(dailySales.accountingDate))
     
     return c.json({
@@ -179,8 +201,10 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
   date: z.string().optional()
 })), async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     const { date } = c.req.valid('json')
+    
+    console.log('🧮 Daily sales calculation started:', { storeId, date })
     
     // 会計設定を取得
     const settings = await db
@@ -195,6 +219,8 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     const targetDate = date || getCurrentAccountingDate(dayClosingTime)
     const { start, end } = getAccountingPeriod(targetDate, dayClosingTime)
     
+    console.log('📅 Calculation period:', { targetDate, start, end, dayClosingTime })
+    
     // アーカイブ済み注文から集計
     const archivedSales = await db
       .select({
@@ -206,8 +232,8 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
       .where(
         and(
           eq(archivedOrders.storeId, storeId),
-          gte(archivedOrders.completedAt, start),
-          lt(archivedOrders.completedAt, end)
+          gte(archivedOrders.archivedAt, start),
+          lt(archivedOrders.archivedAt, end)
         )
       )
     
@@ -232,6 +258,8 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     const totalOrders = (archivedSales[0]?.totalOrders || 0) + (activeSales[0]?.totalOrders || 0)
     const totalItems = (archivedSales[0]?.totalItems || 0) + (activeSales[0]?.totalItems || 0)
     const subtotalAmount = parseFloat(archivedSales[0]?.totalAmount || '0') + parseFloat(activeSales[0]?.totalAmount || '0')
+    
+    console.log('📊 Sales aggregation:', { archivedSales: archivedSales[0], activeSales: activeSales[0], totalOrders, totalItems, subtotalAmount })
     
     const { taxAmount, totalAmount } = calculateTax(subtotalAmount, taxRate)
     
@@ -302,7 +330,7 @@ accountingRoutes.post('/daily-sales/finalize', zValidator('json', z.object({
   date: z.string()
 })), async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     const { date } = c.req.valid('json')
     
     const result = await db
@@ -343,7 +371,7 @@ accountingRoutes.get('/sales-summary', zValidator('query', z.object({
   groupBy: z.enum(['day', 'week', 'month']).default('day')
 })), async (c) => {
   try {
-    const storeId = c.get('storeId')
+    const storeId = c.get('auth').storeId
     const { startDate, endDate, groupBy } = c.req.valid('query')
     
     let groupByClause: any

@@ -105,6 +105,11 @@ app.onError((err, c) => {
 app.use('/uploads/*', serveStatic({ root: './public' }))
 logInfo('Static file serving enabled')
 
+// ヘルスチェックエンドポイント
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
 // CORS動作確認用のデバッグエンドポイント
 app.options('*', (c) => {
   return c.text('OK', 200)

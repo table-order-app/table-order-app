@@ -11,6 +11,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [lastClickTime, setLastClickTime] = useState(0);
   const currentStore = getCurrentStore();
 
   const navigation = [
@@ -76,6 +78,26 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     return location.pathname === href;
   };
 
+  const handleNavigate = (href: string) => {
+    const now = Date.now();
+    
+    // 500ms以内の連続クリックを防ぐ
+    if (now - lastClickTime < 500 || isNavigating) {
+      return;
+    }
+    
+    setLastClickTime(now);
+    setIsNavigating(true);
+    
+    // ナビゲーションを実行
+    navigate(href);
+    
+    // 500ms後にナビゲーション状態をリセット
+    setTimeout(() => {
+      setIsNavigating(false);
+    }, 500);
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -114,13 +136,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                   <button
                     key={item.name}
                     onClick={() => {
-                      navigate(item.href);
+                      handleNavigate(item.href);
                       setSidebarOpen(false);
                     }}
+                    disabled={isNavigating}
                     className={`${
                       isCurrentPath(item.href)
                         ? "bg-gray-100 text-gray-900"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    } ${
+                      isNavigating ? "opacity-50 cursor-not-allowed" : ""
                     } group flex items-center px-2 py-2 text-base font-medium rounded-md w-full text-left transition-colors duration-200`}
                   >
                     <span className="mr-4 flex-shrink-0">{item.icon}</span>
@@ -144,11 +169,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               {navigation.map((item) => (
                 <button
                   key={item.name}
-                  onClick={() => navigate(item.href)}
+                  onClick={() => handleNavigate(item.href)}
+                  disabled={isNavigating}
                   className={`${
                     isCurrentPath(item.href)
                       ? "bg-gray-100 text-gray-900 border-r-2 border-indigo-500"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  } ${
+                    isNavigating ? "opacity-50 cursor-not-allowed" : ""
                   } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full text-left transition-colors duration-200`}
                 >
                   <span className="mr-3 flex-shrink-0">{item.icon}</span>

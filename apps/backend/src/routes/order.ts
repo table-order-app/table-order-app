@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { orders, orderItems, orderItemOptions, orderItemToppings, stores, tables } from '../db/schema'
+import { orders, orderItems, orderItemOptions, orderItemToppings, stores, tables, menuItems } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
 
@@ -63,21 +63,55 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
     
     // トランザクションを開始
     const result = await db.transaction(async (tx) => {
-      // 注文を作成
+      // 価格計算のためのメニューアイテム取得
+      let subtotalAmount = 0
+      const itemsWithPrices = []
+      
+      for (const item of items) {
+        // メニューアイテムの価格を取得
+        const menuItem = await tx.query.menuItems.findFirst({
+          where: eq(menuItems.id, item.menuItemId)
+        })
+        
+        if (!menuItem) {
+          throw new Error(`メニューアイテムが見つかりません: ${item.menuItemId}`)
+        }
+        
+        const unitPrice = parseFloat(menuItem.price)
+        const totalPrice = unitPrice * item.quantity
+        subtotalAmount += totalPrice
+        
+        itemsWithPrices.push({
+          ...item,
+          unitPrice,
+          totalPrice
+        })
+      }
+      
+      // 税額計算（10%）
+      const taxAmount = Math.floor(subtotalAmount * 0.1)
+      const totalAmount = subtotalAmount + taxAmount
+      
+      // 注文を作成（価格情報込み）
       const [order] = await tx.insert(orders).values({
         storeId: auth.storeId,
         tableId,
         totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
+        subtotalAmount: subtotalAmount.toString(),
+        taxAmount: taxAmount.toString(),
+        totalAmount: totalAmount.toString(),
         status: 'new',
       }).returning()
       
-      // 注文アイテムを作成
-      for (const item of items) {
+      // 注文アイテムを作成（価格情報込み）
+      for (const item of itemsWithPrices) {
         const [orderItem] = await tx.insert(orderItems).values({
           orderId: order.id,
           menuItemId: item.menuItemId,
           name: item.name,
           quantity: item.quantity,
+          unitPrice: item.unitPrice.toString(),
+          totalPrice: item.totalPrice.toString(),
           notes: item.notes,
           status: 'new',
         }).returning()
