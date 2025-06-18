@@ -26,7 +26,6 @@ export const tables = pgTable('tables', {
   capacity: integer('capacity').notNull(),
   area: tableAreaEnum('area').notNull(),
   status: tableStatusEnum('status').default('available').notNull(),
-  qrCode: varchar('qr_code', { length: 255 }),
   checkoutRequested: boolean('checkout_requested').default(false).notNull(),
   checkoutRequestedAt: timestamp('checkout_requested_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

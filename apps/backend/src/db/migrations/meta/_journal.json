@@ -71,6 +71,13 @@
       "when": 1750071126563,
       "tag": "0009_add_accounting_features",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1750239051686,
+      "tag": "0010_thick_kitty_pryde",
+      "breakpoints": true
     }
   ]
 }
