@@ -25,16 +25,6 @@ const mapApiStatusToOrderStatus = (apiStatus: string) => {
   }
 };
 
-// Area code to Japanese translation
-const translateAreaCode = (areaCode: string): string => {
-  const areaTranslations: Record<string, string> = {
-    'area1': 'メインフロア',
-    'area2': 'テラス',
-    'area3': '個室',
-    'area4': 'カウンター',
-  };
-  return areaTranslations[areaCode] || areaCode;
-};
 
 // Transform API order data to UI format
 const transformApiOrderToOrder = (apiOrder: any): Order => {
@@ -50,7 +40,6 @@ const transformApiOrderToOrder = (apiOrder: any): Order => {
   const transformedTable: Table = {
     id: apiOrder.table.id.toString(),
     number: apiOrder.table.number,
-    area: translateAreaCode(apiOrder.table.area),
   };
 
   return {
@@ -91,7 +80,6 @@ const DashboardPage = () => {
         progressMap.set(order.tableId, {
           tableId: order.tableId,
           tableNumber: order.table.number,
-          area: order.table.area,
           totalItems: 0,
           completedItems: 0,
           readyItems: 0,

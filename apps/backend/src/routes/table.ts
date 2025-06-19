@@ -56,8 +56,6 @@ tableRoutes.get('/validate/:storeCode/:tableNumber', async (c) => {
           id: table.id,
           number: table.number,
           capacity: table.capacity,
-          area: table.area,
-          status: table.status
         }
       }
     })
@@ -123,8 +121,6 @@ tableRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
       storeId: auth.storeId,
       number: data.number,
       capacity: data.capacity,
-      area: 'area1', // デフォルト値
-      status: 'available', // デフォルト値
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
@@ -245,30 +241,6 @@ tableRoutes.delete('/:id', flexibleAuthMiddleware, async (c) => {
   }
 })
 
-// テーブルステータスを更新
-tableRoutes.patch('/:id/status', zValidator('json', z.object({
-  status: z.enum(['available', 'occupied', 'reserved', 'maintenance']),
-})), async (c) => {
-  try {
-    const id = Number(c.req.param('id'))
-    const storeId = Number(c.req.query('storeId') || '1')
-    const { status } = c.req.valid('json')
-    
-    const result = await db.update(tables)
-      .set({ status, updatedAt: new Date() })
-      .where(and(eq(tables.id, id), eq(tables.storeId, storeId)))
-      .returning()
-    
-    if (result.length === 0) {
-      return c.json({ success: false, error: 'テーブルが見つかりません' }, 404)
-    }
-    
-    return c.json({ success: true, data: result[0] })
-  } catch (error) {
-    console.error('Error updating table status:', error)
-    return c.json({ success: false, error: 'テーブルステータスの更新に失敗しました' }, 500)
-  }
-})
 
 // テーブル会計要請（お客様用）
 tableRoutes.post('/:number/request-checkout', async (c) => {
@@ -479,10 +451,9 @@ tableRoutes.post('/:id/checkout', async (c) => {
         await tx.delete(orders).where(eq(orders.id, order.id))
       }
 
-      // 7. テーブルステータスをリセット
+      // 7. テーブル会計フラグをリセット
       await tx.update(tables)
         .set({ 
-          status: 'available',
           checkoutRequested: false,
           checkoutRequestedAt: null,
           updatedAt: new Date()

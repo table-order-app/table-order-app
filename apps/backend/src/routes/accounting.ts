@@ -47,8 +47,6 @@ accountingRoutes.get('/settings', async (c) => {
           storeId,
           dayClosingTime: '05:00:00',
           taxRate: '0.10',
-          autoCloseEnabled: false,
-          autoCloseTime: '04:00:00',
           displayCurrency: 'JPY'
         })
         .returning()
@@ -74,8 +72,6 @@ accountingRoutes.get('/settings', async (c) => {
 accountingRoutes.put('/settings', zValidator('json', z.object({
   dayClosingTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません').optional(),
   taxRate: z.number().min(0).max(1, '税率は0-1の範囲で入力してください').optional(),
-  autoCloseEnabled: z.boolean().optional(),
-  autoCloseTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, '時間形式が正しくありません').optional(),
   displayCurrency: z.string().default('JPY').optional()
 })), async (c) => {
   try {
@@ -92,12 +88,6 @@ accountingRoutes.put('/settings', zValidator('json', z.object({
     }
     if (updateData.taxRate !== undefined) {
       updateValues.taxRate = updateData.taxRate.toString()
-    }
-    if (updateData.autoCloseEnabled !== undefined) {
-      updateValues.autoCloseEnabled = updateData.autoCloseEnabled
-    }
-    if (updateData.autoCloseTime !== undefined) {
-      updateValues.autoCloseTime = updateData.autoCloseTime
     }
     if (updateData.displayCurrency !== undefined) {
       updateValues.displayCurrency = updateData.displayCurrency

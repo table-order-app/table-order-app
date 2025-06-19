@@ -2,21 +2,6 @@ import { pgTable, serial, varchar, integer, text, timestamp, pgEnum, unique, boo
 import { relations } from 'drizzle-orm'
 import { stores } from './store'
 
-// テーブル状態の列挙型
-export const tableStatusEnum = pgEnum('table_status', [
-  'available',
-  'occupied',
-  'reserved',
-  'maintenance',
-])
-
-// テーブルエリアの列挙型
-export const tableAreaEnum = pgEnum('table_area', [
-  'area1',
-  'area2',
-  'area3',
-  'area4',
-])
 
 // テーブルテーブル
 export const tables = pgTable('tables', {
@@ -24,8 +9,6 @@ export const tables = pgTable('tables', {
   storeId: integer('store_id').references(() => stores.id).notNull(),
   number: integer('number').notNull(),
   capacity: integer('capacity').notNull(),
-  area: tableAreaEnum('area').notNull(),
-  status: tableStatusEnum('status').default('available').notNull(),
   checkoutRequested: boolean('checkout_requested').default(false).notNull(),
   checkoutRequestedAt: timestamp('checkout_requested_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -10,8 +10,6 @@ type Table = {
   id: number;
   number: number;
   capacity: number;
-  area: string;
-  status: "available" | "occupied" | "reserved" | "maintenance";
   qrCode?: string | null;
   createdAt?: string;
   updatedAt?: string;

@@ -307,16 +307,16 @@ const seed = async () => {
   
   // テーブルデータの作成
   await db.insert(tables).values([
-    { storeId, number: 1, capacity: 2, area: 'area1', status: 'available' },
-    { storeId, number: 2, capacity: 2, area: 'area1', status: 'available' },
-    { storeId, number: 3, capacity: 4, area: 'area1', status: 'available' },
-    { storeId, number: 4, capacity: 4, area: 'area1', status: 'occupied' },
-    { storeId, number: 5, capacity: 6, area: 'area2', status: 'available' },
-    { storeId, number: 6, capacity: 6, area: 'area2', status: 'available' },
-    { storeId, number: 7, capacity: 8, area: 'area2', status: 'reserved' },
-    { storeId, number: 8, capacity: 2, area: 'area3', status: 'available' },
-    { storeId, number: 9, capacity: 4, area: 'area3', status: 'available' },
-    { storeId, number: 10, capacity: 2, area: 'area4', status: 'maintenance' },
+    { storeId, number: 1, capacity: 2 },
+    { storeId, number: 2, capacity: 2 },
+    { storeId, number: 3, capacity: 4 },
+    { storeId, number: 4, capacity: 4 },
+    { storeId, number: 5, capacity: 6 },
+    { storeId, number: 6, capacity: 6 },
+    { storeId, number: 7, capacity: 8 },
+    { storeId, number: 8, capacity: 2 },
+    { storeId, number: 9, capacity: 4 },
+    { storeId, number: 10, capacity: 2 },
   ]);
   
   // スタッフデータの作成

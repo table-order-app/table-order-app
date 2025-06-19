@@ -38,7 +38,6 @@ const transformApiOrderToOrder = (apiOrder: any): Order => {
   const transformedTable = {
     id: apiOrder.table.id.toString(),
     number: apiOrder.table.number,
-    area: apiOrder.table.area,
   };
 
   return {
@@ -261,7 +260,6 @@ const TableDetailPage = () => {
                   <h2 className="text-xl font-semibold">
                     テーブル {orders[0].table.number}
                   </h2>
-                  <p className="text-gray-600">{orders[0].table.area}</p>
                   <p className="text-gray-500 text-sm mt-1">
                     注文数: {orders.length}件
                   </p>

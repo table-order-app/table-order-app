@@ -5,8 +5,6 @@ export interface Table {
   storeId: number;
   number: number;
   capacity: number;
-  area: string;
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   qrCode?: string;
   createdAt: string;
   updatedAt: string;
@@ -54,8 +52,6 @@ export interface TableValidationResponse {
       id: number;
       number: number;
       capacity: number;
-      area: string;
-      status: string;
     };
   };
 }

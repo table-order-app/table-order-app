@@ -13,9 +13,6 @@ export const accountingSettings = pgTable('accounting_settings', {
   // 税率設定 (例: 0.10 = 10%)
   taxRate: numeric('tax_rate', { precision: 5, scale: 4 }).default('0.10').notNull(),
   
-  // 会計締め処理の自動実行設定
-  autoCloseEnabled: boolean('auto_close_enabled').default(false).notNull(),
-  autoCloseTime: time('auto_close_time').default('04:00:00').notNull(),
   
   // 会計集計の表示設定
   displayCurrency: text('display_currency').default('JPY').notNull(),

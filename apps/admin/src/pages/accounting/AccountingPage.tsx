@@ -6,16 +6,6 @@ import { useToast } from '../../components/ui/ToastContainer'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import StatCard from '../../components/ui/StatCard'
 
-// 型定義
-interface AccountingSettings {
-  id: number
-  storeId: number
-  dayClosingTime: string
-  taxRate: number
-  autoCloseEnabled: boolean
-  autoCloseTime: string
-  displayCurrency: string
-}
 
 interface DailySales {
   id: number
@@ -42,7 +32,6 @@ interface SalesSummary {
 }
 
 const AccountingPage = () => {
-  const [settings, setSettings] = useState<AccountingSettings | null>(null)
   const [dailySales, setDailySales] = useState<DailySales[]>([])
   const [summary, setSummary] = useState<SalesSummary[]>([])
   // 検索用の日付範囲（初期表示は今日）
@@ -50,35 +39,11 @@ const AccountingPage = () => {
   const [displayEndDate, setDisplayEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [isLoading, setIsLoading] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
-  const [dayClosingTime, setDayClosingTime] = useState('05:00')
   const [searchDate, setSearchDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [activeView, setActiveView] = useState<'daily' | 'settings'>('daily')
   
   const { addToast } = useToast()
 
-  // 設定の取得
-  const fetchSettings = async () => {
-    try {
-      const token = localStorage.getItem('accorto_auth_token')
-      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/settings`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSettings(data.data)
-        if (data.data?.dayClosingTime) {
-          setDayClosingTime(data.data.dayClosingTime.slice(0, 5)) // HH:MM形式に変換
-        }
-      }
-    } catch (error) {
-      console.error('設定の取得に失敗しました:', error)
-    }
-  }
 
   // 日次売上の取得
   const fetchDailySales = async () => {
@@ -287,54 +252,9 @@ const AccountingPage = () => {
     }
   }
 
-  // 日の切り替え時間の更新
-  const updateDayClosingTime = async () => {
-    try {
-      setIsLoading(true)
-      const token = localStorage.getItem('accorto_auth_token')
-      
-      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/settings`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          dayClosingTime: `${dayClosingTime}:00`
-        })
-      })
-      
-      if (response.ok) {
-        await fetchSettings()
-        addToast({
-          type: 'success',
-          title: '設定更新',
-          message: '日の切り替え時間が更新されました'
-        })
-      } else {
-        const error = await response.json()
-        addToast({
-          type: 'error',
-          title: '設定エラー',
-          message: error.error || '設定の更新に失敗しました'
-        })
-      }
-    } catch (error) {
-      console.error('設定の更新に失敗しました:', error)
-      addToast({
-        type: 'error',
-        title: 'システムエラー',
-        message: '設定更新中にエラーが発生しました'
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   useEffect(() => {
     const initializeData = async () => {
-      await fetchSettings()
-      
       // 初期表示時は今日の日付で集計を実行
       const today = format(new Date(), 'yyyy-MM-dd')
       setDisplayStartDate(today)
@@ -384,38 +304,11 @@ const AccountingPage = () => {
             <p className="mt-1 text-sm text-gray-500">日次売上の管理と集計を行います</p>
           </div>
           
-          {/* タブナビゲーション */}
-          <div className="mt-3 sm:mt-0">
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => setActiveView('daily')}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === 'daily'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                日次売上
-              </button>
-              <button
-                onClick={() => setActiveView('settings')}
-                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === 'settings'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                設定
-              </button>
-            </nav>
-          </div>
         </div>
       </div>
 
       <div className="p-6 space-y-6">
 
-      {activeView === 'daily' && (
-        <>
           {/* 統計カード */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -510,57 +403,6 @@ const AccountingPage = () => {
               </div>
             </div>
           </div>
-        </>
-      )}
-
-      {activeView === 'settings' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">会計設定</h2>
-            <p className="text-sm text-gray-500 mt-1">日次集計の基本設定を管理します</p>
-          </div>
-          
-          <div className="px-6 py-6">
-            <div className="max-w-md">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                日の切り替え時間
-              </label>
-              <div className="flex items-center space-x-3">
-                <input
-                  type="time"
-                  value={dayClosingTime}
-                  onChange={(e) => setDayClosingTime(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                <button
-                  onClick={updateDayClosingTime}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium flex items-center space-x-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" color="white" />
-                      <span>保存中...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>保存</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                この時間までの注文は前日扱いになります。例：05:00なら朝5時までの注文は前日の売上として集計されます。
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeView === 'daily' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">売上データ</h2>
@@ -677,7 +519,6 @@ const AccountingPage = () => {
             </div>
           )}
         </div>
-      )}
 
       </div>
     </div>

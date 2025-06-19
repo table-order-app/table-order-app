@@ -21,7 +21,6 @@ export interface OrderItem {
 export interface Table {
   id: string;
   number: number;
-  area: string;
 }
 
 // 注文の型定義
@@ -40,7 +39,6 @@ export interface Order {
 export interface ProgressData {
   tableId: string;
   tableNumber: number;
-  area: string;
   totalItems: number;
   completedItems: number; // 提供済み
   readyItems: number; // 提供準備完了
