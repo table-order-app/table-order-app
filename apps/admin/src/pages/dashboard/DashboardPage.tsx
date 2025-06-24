@@ -21,7 +21,7 @@ const DashboardPage = () => {
           return;
         }
       } catch (error) {
-        console.log('Token verification failed:', error);
+
       }
       
       // 検証に失敗した場合はLocalStorageから取得
@@ -51,7 +51,6 @@ const DashboardPage = () => {
   }, []);
 
   // デバッグ用ログ
-  console.log("Current store data:", currentStore);
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -76,7 +75,7 @@ const DashboardPage = () => {
       setGenerating(true);
       const updatedStore = await generateStoreCode();
       setCurrentStore(updatedStore);
-      console.log("店舗コードが生成されました:", updatedStore.storeCode);
+
     } catch (error) {
       console.error('店舗コードの生成に失敗しました:', error);
       alert('店舗コードの生成に失敗しました');

@@ -364,8 +364,6 @@ const StaffPage = () => {
       setError(null);
       
       // デバッグ用: 認証情報を確認
-      console.log('認証トークン:', localStorage.getItem('accorto_auth_token'));
-      console.log('ストア情報:', localStorage.getItem('accorto_store_data'));
       const createData = {
         name: addFormData.name.trim(),
         loginId: addFormData.loginId.trim(),
@@ -376,13 +374,9 @@ const StaffPage = () => {
         active: addFormData.active
       };
 
-      console.log('送信データ:', createData);
       const result = await createStaffMember(createData);
-      console.log('APIレスポンス:', result);
-      console.log('success:', result.success);
-      console.log('error:', result.error);
-      console.log('data:', result.data);
-      
+
+
       if (result.success) {
         await fetchStaff();
         setAddFormData({

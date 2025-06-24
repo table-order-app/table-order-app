@@ -410,8 +410,7 @@ const MenuPage = () => {
   };
   
   const handleAddItem = async () => {
-    console.log('handleAddItem called with data:', addFormData);
-    
+
     // バリデーション
     if (!addFormData.name.trim()) {
       setError('メニュー名を入力してください');
@@ -458,11 +457,9 @@ const MenuPage = () => {
         available: addFormData.available,
         image: imageUrl || undefined
       };
-      
-      console.log('Sending data to API:', createData);
+
       const result = await createMenuItem(createData);
-      console.log('API result:', result);
-      
+
       if (result.success) {
         // データを再取得してリストを更新
         await fetchMenuItems();

@@ -17,12 +17,7 @@ const StoreLoginPage: React.FC = () => {
   useEffect(() => {
     const existingStoreCode = localStorage.getItem("accorto_store_code");
     const existingTableNumber = localStorage.getItem("accorto_table_number");
-    
-    console.log('Initial localStorage values:', { 
-      existingStoreCode, 
-      existingTableNumber 
-    });
-    
+
     // 既存の値があれば初期値として設定（オプション）
     // if (existingStoreCode) setStoreCode(existingStoreCode);
     // if (existingTableNumber) setTableNumber(existingTableNumber);
@@ -52,7 +47,6 @@ const StoreLoginPage: React.FC = () => {
       }
 
       // テーブルの存在確認
-      console.log('Validating table:', { storeCode: storeCode.toUpperCase(), tableNumber: numericTableNumber });
       const validationResult = await validateTable(storeCode.toUpperCase(), numericTableNumber);
       
       if (!validationResult.success || !validationResult.exists) {
@@ -60,10 +54,7 @@ const StoreLoginPage: React.FC = () => {
         return;
       }
 
-      console.log('Table validation successful:', validationResult.data);
-
       // LocalStorageに店舗情報を保存
-      console.log('Saving to localStorage:', { storeCode: storeCode.toUpperCase(), tableNumber });
       localStorage.setItem("accorto_store_code", storeCode.toUpperCase());
       localStorage.setItem("accorto_table_number", tableNumber);
       localStorage.setItem("accorto_login_time", new Date().toISOString());
@@ -85,9 +76,7 @@ const StoreLoginPage: React.FC = () => {
       // デフォルト値でスキップ（テスト用: STORE001）
       const defaultStoreCode = "STORE001";
       const defaultTableNumber = 1;
-      
-      console.log('Validating default values:', { storeCode: defaultStoreCode, tableNumber: defaultTableNumber });
-      
+
       // テーブルの存在確認
       const validationResult = await validateTable(defaultStoreCode, defaultTableNumber);
       
@@ -95,10 +84,8 @@ const StoreLoginPage: React.FC = () => {
         setError(`デフォルト設定でログインできません: ${validationResult.error}`);
         return;
       }
-      
-      console.log('Default table validation successful:', validationResult.data);
-      console.log('Setting default values:', { storeCode: defaultStoreCode, tableNumber: defaultTableNumber });
-      
+
+
       localStorage.setItem("accorto_store_code", defaultStoreCode);
       localStorage.setItem("accorto_table_number", defaultTableNumber.toString());
       localStorage.setItem("accorto_login_time", new Date().toISOString());
@@ -174,7 +161,7 @@ const StoreLoginPage: React.FC = () => {
                 value={tableNumber}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
-                  console.log('Table number input change:', value);
+
                   setTableNumber(value);
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 bg-white text-center text-lg font-medium"

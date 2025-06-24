@@ -121,7 +121,7 @@ const DashboardPage = () => {
         setLoading(true);
         setError(null);
         if (isInitialFetch) {
-          console.log("Fetching orders from API...");
+
         }
         
         // 注文データと会計要請テーブルを並行取得
@@ -131,13 +131,13 @@ const DashboardPage = () => {
         ]);
         
         if (isInitialFetch) {
-          console.log("Orders API Response:", ordersResponse);
-          console.log("Checkout Tables API Response:", checkoutTablesResponse);
+
+
         }
 
         if (ordersResponse.success && ordersResponse.data) {
           if (isInitialFetch) {
-            console.log("Orders data received:", ordersResponse.data);
+
           }
           const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
           

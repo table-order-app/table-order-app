@@ -9,16 +9,13 @@ import { generateStoreCode } from '../utils/storeCode'
 import { logError } from '../utils/logger-simple'
 
 async function addStoreCodes() {
-  // console.log('既存店舗に店舗コードを追加中...')
-  
+
   try {
     // 店舗コードが未設定の店舗を取得
     const storesWithoutCode = await db.query.stores.findMany({
       where: eq(stores.storeCode, null)
     })
-    
-    // console.log(`店舗コード未設定の店舗: ${storesWithoutCode.length}件`)
-    
+
     for (const store of storesWithoutCode) {
       // 店舗コード生成（重複チェック付き）
       let storeCode: string
@@ -42,11 +39,8 @@ async function addStoreCodes() {
         .set({ storeCode })
         .where(eq(stores.id, store.id))
       
-      // console.log(`店舗 "${store.name}" (ID: ${store.id}) に店舗コード "${storeCode}" を設定`)
     }
-    
-    // console.log('店舗コードの追加が完了しました！')
-    
+
   } catch (error) {
     logError('エラーが発生しました:', error)
   }

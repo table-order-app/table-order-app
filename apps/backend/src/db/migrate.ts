@@ -16,13 +16,11 @@ const pool = new Pool({
 
 // Run migrations
 const main = async () => {
-  // console.log('Running migrations...');
   
   const db = drizzle(pool);
   
   await migrate(db, { migrationsFolder: './src/db/migrations' });
   
-  // console.log('Migrations completed successfully');
   
   await pool.end();
 };

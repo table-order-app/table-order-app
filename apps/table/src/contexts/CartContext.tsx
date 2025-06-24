@@ -52,7 +52,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const storeCode = localStorage.getItem('accorto_store_code') || 'default';
     const tableNumber = localStorage.getItem('accorto_table_number') || '1';
     const key = `accorto_cart_${storeCode}_table_${tableNumber}`;
-    console.log('Cart storage key:', key);
+
     return key;
   }, []);
 
@@ -222,19 +222,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const storeCode = localStorage.getItem('accorto_store_code');
       const tableNumberStr = localStorage.getItem('accorto_table_number') || '1';
       const tableNumber = parseInt(tableNumberStr) || 1;
-      
-      console.log('=== Order Submission Debug ===');
-      console.log('Store code from localStorage:', storeCode);
-      console.log('Table number from localStorage:', tableNumberStr);
-      console.log('Parsed table number:', tableNumber);
-      console.log('Cart items count:', cartItems.length);
+
 
       const response = await createOrder(tableNumber, cartItems);
 
-      console.log("API Response:", response);
-
       if (response.success) {
-        console.log('Order submitted successfully:', response.data);
+
         clearCart();
         // 注文データを状態として渡して注文成功画面に遷移
         navigate(getPath.orderSuccess(), { 

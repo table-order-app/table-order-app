@@ -27,7 +27,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
       // 基本認証チェック
       if (!isAuthenticated()) {
-        console.log('🔒 未認証のためログインページにリダイレクトします');
+
         navigate('/login', { 
           replace: true,
           state: { from: location.pathname }
@@ -40,7 +40,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
       try {
         const store = await verifyToken();
         if (!store) {
-          console.log('🔒 トークンが無効のためログインページにリダイレクトします');
+
           navigate('/login', { 
             replace: true,
             state: { from: location.pathname }
@@ -60,7 +60,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
       // 認証済みでログインページにいる場合はダッシュボードにリダイレクト
       if (publicPaths.includes(location.pathname) && isAuthenticated()) {
-        console.log('✅ 認証済みのためダッシュボードにリダイレクトします');
+
         navigate('/', { replace: true });
         setIsLoading(false);
         return;

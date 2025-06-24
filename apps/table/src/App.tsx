@@ -85,7 +85,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const updateTableNumber = () => {
       const tableNumber = localStorage.getItem('accorto_table_number') || '1';
-      console.log('Updating table number from localStorage:', tableNumber);
+
       setCurrentTableNumber(tableNumber);
     };
 

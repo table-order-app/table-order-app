@@ -67,7 +67,7 @@ const ProgressPage = () => {
     // 定期的に進捗データを更新
     const intervalId = setInterval(() => {
       // 実際の実装ではここでAPIを呼び出す
-      console.log("進捗データを更新中...");
+
     }, 10000);
 
     return () => clearInterval(intervalId);

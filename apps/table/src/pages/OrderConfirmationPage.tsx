@@ -52,10 +52,7 @@ const OrderConfirmationPage: React.FC = () => {
       try {
         setLoading(true);
         const tableNumber = getTableNumber();
-        
-        console.log('Fetching orders for table number:', tableNumber);
-        console.log('Store code:', localStorage.getItem('accorto_store_code'));
-        console.log('Table number from storage:', localStorage.getItem('accorto_table_number'));
+
         
         // テーブル番号を直接使用（新しいAPI設計）
         const response = await getTableOrders(tableNumber);

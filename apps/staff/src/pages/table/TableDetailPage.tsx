@@ -66,9 +66,7 @@ const TableDetailPage = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log("Fetching data for tableId:", tableId);
-        
+
         // tableIdは実際にはtableNumberとして扱う
         // そのテーブル番号の注文一覧を取得
         const ordersResponse = await getTableOrders(Number(tableId));
@@ -76,25 +74,21 @@ const TableDetailPage = () => {
           setError(ordersResponse.error || "注文情報の取得に失敗しました");
           return;
         }
-        
-        console.log("Orders response:", ordersResponse);
-        console.log("Orders data array:", ordersResponse.data);
-        console.log("Orders data length:", ordersResponse.data?.length);
-        
+
+
         // テーブルの全注文を取得
         if (ordersResponse.data && ordersResponse.data.length > 0) {
-          console.log("Processing orders, total count:", ordersResponse.data.length);
-          
+
           try {
             const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
-            console.log("Transformed orders:", transformedOrders);
+
             setOrders(transformedOrders);
           } catch (transformError) {
             console.error("Error transforming orders:", transformError);
             setError("注文データの変換中にエラーが発生しました");
           }
         } else {
-          console.log("No orders found for this table");
+
           setOrders([]);
         }
       } catch (error) {
@@ -156,8 +150,7 @@ const TableDetailPage = () => {
     try {
       // 注文データからテーブルIDを取得（最初の注文から）
       const actualTableId = Number(orders[0].table.id);
-      console.log("Using table ID for checkout:", actualTableId);
-      
+
       const response = await checkoutTable(actualTableId);
       
       if (response.success) {

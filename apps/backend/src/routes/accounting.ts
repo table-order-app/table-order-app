@@ -193,9 +193,7 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
   try {
     const storeId = c.get('auth').storeId
     const { date } = c.req.valid('json')
-    
-    // console.log('🧮 Daily sales calculation started:', { storeId, date })
-    
+
     // 会計設定を取得
     const settings = await db
       .select()
@@ -208,9 +206,7 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     
     const targetDate = date || getCurrentAccountingDate(dayClosingTime)
     const { start, end } = getAccountingPeriod(targetDate, dayClosingTime)
-    
-    // console.log('📅 Calculation period:', { targetDate, start, end, dayClosingTime })
-    
+
     // アーカイブ済み注文から集計
     const archivedSales = await db
       .select({
@@ -248,9 +244,7 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     const totalOrders = (archivedSales[0]?.totalOrders || 0) + (activeSales[0]?.totalOrders || 0)
     const totalItems = (archivedSales[0]?.totalItems || 0) + (activeSales[0]?.totalItems || 0)
     const subtotalAmount = parseFloat(archivedSales[0]?.totalAmount || '0') + parseFloat(activeSales[0]?.totalAmount || '0')
-    
-    // console.log('📊 Sales aggregation:', { archivedSales: archivedSales[0], activeSales: activeSales[0], totalOrders, totalItems, subtotalAmount })
-    
+
     const { taxAmount, totalAmount } = calculateTax(subtotalAmount, taxRate)
     
     // 既存の集計データを確認

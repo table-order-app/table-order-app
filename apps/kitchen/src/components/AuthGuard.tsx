@@ -23,7 +23,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
       // ログインしていない場合はログインページにリダイレクト
       if (!isLoggedIn()) {
-        console.log('🔒 未ログインのため店舗ログインページにリダイレクトします');
+
         navigate('/store-login', { 
           replace: true,
           state: { from: location.pathname } // 元のページを記録
@@ -33,7 +33,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
       // ログイン済みでログインページにいる場合はホームにリダイレクト
       if (location.pathname === '/store-login' && isLoggedIn()) {
-        console.log('✅ ログイン済みのためダッシュボードにリダイレクトします');
+
         navigate('/', { replace: true });
         return;
       }

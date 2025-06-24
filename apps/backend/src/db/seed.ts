@@ -13,7 +13,6 @@ import {
 } from './schema';
 
 const seed = async () => {
-  // console.log('Seeding database...');
   
   // 店舗データの作成
   const storeData = await db.insert(stores).values({
@@ -344,7 +343,6 @@ const seed = async () => {
     }),
   });
   
-  // console.log('Seeding completed successfully');
 };
 
 seed()

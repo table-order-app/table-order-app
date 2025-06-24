@@ -73,16 +73,16 @@ const DashboardPage = () => {
         setLoading(true);
         setError(null);
         if (isInitialFetch) {
-          console.log("Fetching orders from API...");
+
         }
         const response = await getOrders();
         if (isInitialFetch) {
-          console.log("API Response:", response);
+
         }
 
         if (response.success && response.data) {
           if (isInitialFetch) {
-            console.log("Orders data received:", response.data);
+
           }
           const transformedOrders = response.data.map(transformApiOrderToOrder);
           setOrders(transformedOrders);

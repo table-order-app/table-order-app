@@ -43,7 +43,6 @@ export async function createOrder(tableNumber: number, cartItems: CartItem[]) {
     items: orderItems
   };
 
-  console.log('Sending to API:', JSON.stringify(payload, null, 2));
 
   return post<any>("/order", payload);
 }
