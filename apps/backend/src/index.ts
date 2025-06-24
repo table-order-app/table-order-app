@@ -24,10 +24,14 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 // 開発環境用のデフォルトオリジン（フォールバック）
 const DEFAULT_DEV_ORIGINS = [
-  'http://localhost:5173', // table app
-  'http://localhost:5174', // admin app  
-  'http://localhost:5175', // kitchen app
-  'http://localhost:5176'  // staff app
+  'http://localhost:3001', // table app
+  'http://localhost:3002', // admin app  
+  'http://localhost:3003', // kitchen app
+  'http://localhost:3004', // staff app
+  'http://localhost:5173', // Legacy Vite ports
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176'
 ]
 
 // 環境変数からオリジンを取得
@@ -105,24 +109,16 @@ app.onError((err, c) => {
 app.use('/uploads/*', serveStatic({ root: './public' }))
 logInfo('Static file serving enabled')
 
-// ヘルスチェックエンドポイント
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
-// CORS動作確認用のデバッグエンドポイント
-app.options('*', (c) => {
-  return c.text('OK', 200)
-})
-
-// CORS動作テスト用エンドポイント
-app.get('/cors-test', (c) => {
-  return c.json({ 
-    message: 'CORS is working',
-    origin: c.req.header('Origin'),
-    timestamp: new Date().toISOString()
+// 開発環境でのCORSテスト用エンドポイント（本番では無効）
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/cors-test', (c) => {
+    return c.json({ 
+      message: 'CORS is working',
+      origin: c.req.header('Origin'),
+      timestamp: new Date().toISOString()
+    })
   })
-})
+}
 
 // Routes
 app.route('/api/auth', authRoutes)
@@ -182,6 +178,7 @@ function validateEnvironment() {
       console.warn('⚠️  Missing environment variables in development:', missingVars)
       // 開発環境ではデフォルト値を設定
       if (!process.env.DATABASE_URL) {
+        console.warn('DATABASE_URL not set, using default local database')
         process.env.DATABASE_URL = 'postgres://itouharuki@localhost:5432/accorto'
       }
     } else {
@@ -213,8 +210,6 @@ logInfo('Starting Accorto API Server', {
 serve({
   fetch: app.fetch,
   port: Number(port),
-  // リクエストサイズ制限を緩和
-  maxRequestBodySize: 50 * 1024 * 1024, // 50MB
-  headersTimeout: 60000, // 60秒
-  requestTimeout: 120000 // 120秒
+  // Node.jsサーバー用の設定
+  hostname: process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'
 })
