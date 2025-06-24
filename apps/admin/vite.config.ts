@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   // 開発環境では.env、本番環境では環境変数から値を取得
-  const port = parseInt(env.VITE_PORT_ADMIN || "5174");
+  const port = parseInt(env.VITE_PORT_ADMIN || "3002");
 
   return {
     plugins: [react()],
