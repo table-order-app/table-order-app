@@ -5,6 +5,7 @@ import { db } from '../db'
 import { categories, menuItems, options, toppings, allergens, tables, staffMembers, stores } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth'
+import { logError } from '../utils/logger-simple'
 import bcrypt from 'bcryptjs'
 
 export const adminRoutes = new Hono()
@@ -25,7 +26,7 @@ adminRoutes.get('/categories', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    logError('Error fetching categories:', error)
     return c.json({ success: false, error: 'カテゴリの取得に失敗しました' }, 500)
   }
 })
@@ -47,7 +48,7 @@ adminRoutes.post('/categories', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating category:', error)
+    logError('Error creating category:', error)
     return c.json({ success: false, error: 'カテゴリの作成に失敗しました' }, 500)
   }
 })
@@ -66,7 +67,7 @@ adminRoutes.get('/menu-items', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching menu items:', error)
+    logError('Error fetching menu items:', error)
     return c.json({ success: false, error: 'メニューの取得に失敗しました' }, 500)
   }
 })
@@ -100,7 +101,7 @@ adminRoutes.post('/menu-items', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating menu item:', error)
+    logError('Error creating menu item:', error)
     return c.json({ success: false, error: 'メニューの作成に失敗しました' }, 500)
   }
 })
@@ -118,7 +119,7 @@ adminRoutes.get('/tables', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching tables:', error)
+    logError('Error fetching tables:', error)
     return c.json({ success: false, error: 'テーブルの取得に失敗しました' }, 500)
   }
 })
@@ -149,7 +150,7 @@ adminRoutes.post('/tables', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating table:', error)
+    logError('Error creating table:', error)
     return c.json({ success: false, error: 'テーブルの作成に失敗しました' }, 500)
   }
 })
@@ -177,7 +178,7 @@ adminRoutes.put('/store', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating store:', error)
+    logError('Error updating store:', error)
     return c.json({ success: false, error: '店舗情報の更新に失敗しました' }, 500)
   }
 })
@@ -198,7 +199,7 @@ adminRoutes.get('/staff', async (c) => {
     
     return c.json({ success: true, data: staffData })
   } catch (error) {
-    console.error('Error fetching staff:', error)
+    logError('Error fetching staff:', error)
     return c.json({ success: false, error: 'スタッフの取得に失敗しました' }, 500)
   }
 })
@@ -266,7 +267,7 @@ adminRoutes.post('/staff', zValidator('json', z.object({
     
     return c.json({ success: true, data: staffData }, 201)
   } catch (error: any) {
-    console.error('Error creating staff:', error)
+    logError('Error creating staff:', error)
     
     // 特定のエラーに対する詳細なメッセージ
     if (error.code === '23505') {
@@ -301,7 +302,7 @@ adminRoutes.get('/staff/:id', async (c) => {
     
     return c.json({ success: true, data: staffData })
   } catch (error) {
-    console.error('Error fetching staff member:', error)
+    logError('Error fetching staff member:', error)
     return c.json({ success: false, error: 'スタッフの取得に失敗しました' }, 500)
   }
 })
@@ -371,7 +372,7 @@ adminRoutes.put('/staff/:id', zValidator('json', z.object({
     
     return c.json({ success: true, data: staffData })
   } catch (error: any) {
-    console.error('Error updating staff member:', error)
+    logError('Error updating staff member:', error)
     
     // 特定のエラーに対する詳細なメッセージ
     if (error.code === '23505') {
@@ -406,7 +407,7 @@ adminRoutes.delete('/staff/:id', async (c) => {
     
     return c.json({ success: true, data: staffData })
   } catch (error) {
-    console.error('Error deleting staff member:', error)
+    logError('Error deleting staff member:', error)
     return c.json({ success: false, error: 'スタッフの削除に失敗しました' }, 500)
   }
 })

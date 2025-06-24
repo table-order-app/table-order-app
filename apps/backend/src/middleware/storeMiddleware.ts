@@ -2,6 +2,7 @@ import { Context, Next } from 'hono'
 import { db } from '../db'
 import { stores } from '../db/schema'
 import { eq } from 'drizzle-orm'
+import { logError } from '../utils/logger-simple'
 
 /**
  * 店舗ID必須化ミドルウェア
@@ -57,7 +58,7 @@ export const requireStoreId = async (c: Context, next: Next) => {
     
     await next()
   } catch (error) {
-    console.error('Store validation error:', error)
+    logError('Store validation error:', error)
     return c.json({
       success: false,
       error: '店舗情報の確認中にエラーが発生しました。'
@@ -113,7 +114,7 @@ export const autoStoreId = async (c: Context, next: Next) => {
     
     await next()
   } catch (error) {
-    console.error('Auto store selection error:', error)
+    logError('Auto store selection error:', error)
     return c.json({
       success: false,
       error: '店舗情報の取得中にエラーが発生しました。'

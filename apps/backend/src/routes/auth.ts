@@ -197,7 +197,7 @@ authRoutes.get('/verify', async (c) => {
     })
     
   } catch (error) {
-    console.error('Error verifying token:', error)
+    logError('Error verifying token:', error)
     return c.json({ success: false, error: '無効なトークンです' }, 401)
   }
 })

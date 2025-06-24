@@ -5,6 +5,7 @@ import 'dotenv/config'
 import pkg from 'pg'
 const { Client } = pkg
 import { generateStoreCode } from '../utils/storeCode'
+import { logError } from '../utils/logger-simple'
 
 async function updateStores() {
   const client = new Client({
@@ -17,7 +18,7 @@ async function updateStores() {
 
   try {
     await client.connect()
-    console.log('データベースに接続しました')
+    // console.log('データベースに接続しました')
 
     // 1. store_codeカラムが存在するかチェック
     const columnCheck = await client.query(`
@@ -27,16 +28,16 @@ async function updateStores() {
     `)
 
     if (columnCheck.rows.length === 0) {
-      console.log('store_codeカラムを追加中...')
+      // console.log('store_codeカラムを追加中...')
       
       // 2. store_codeカラムを追加
       await client.query(`
         ALTER TABLE stores 
         ADD COLUMN store_code varchar(8) UNIQUE
       `)
-      console.log('store_codeカラムを追加しました')
+      // console.log('store_codeカラムを追加しました')
     } else {
-      console.log('store_codeカラムは既に存在します')
+      // console.log('store_codeカラムは既に存在します')
     }
 
     // 3. store_codeが未設定の店舗を取得
@@ -46,7 +47,7 @@ async function updateStores() {
       WHERE store_code IS NULL
     `)
 
-    console.log(`店舗コード未設定の店舗: ${storesResult.rows.length}件`)
+    // console.log(`店舗コード未設定の店舗: ${storesResult.rows.length}件`)
 
     // 4. 各店舗に店舗コードを設定
     for (const store of storesResult.rows) {
@@ -67,7 +68,7 @@ async function updateStores() {
       } while (attempts < 10)
 
       if (attempts >= 10) {
-        console.error(`店舗ID ${store.id} の店舗コード生成に失敗`)
+        logError('店舗ID ${store.id} の店舗コード生成に失敗', new Error('店舗ID ${store.id} の店舗コード生成に失敗'))
         continue
       }
 
@@ -77,13 +78,13 @@ async function updateStores() {
         [storeCode, store.id]
       )
 
-      console.log(`店舗 "${store.name}" (ID: ${store.id}) に店舗コード "${storeCode}" を設定`)
+      // console.log(`店舗 "${store.name}" (ID: ${store.id}) に店舗コード "${storeCode}" を設定`)
     }
 
-    console.log('✅ 店舗コードの設定が完了しました！')
+    // console.log('✅ 店舗コードの設定が完了しました！')
 
   } catch (error) {
-    console.error('❌ エラーが発生しました:', error)
+    logError('❌ エラーが発生しました:', error)
   } finally {
     await client.end()
   }

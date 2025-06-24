@@ -5,6 +5,7 @@ import { db } from '../db'
 import { stores } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { authMiddleware } from '../middleware/auth'
+import { logError } from '../utils/logger-simple'
 
 // 店舗コード生成関数
 const generateStoreCode = (): string => {
@@ -34,7 +35,7 @@ storeRoutes.get('/', async (c) => {
     })
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching stores:', error)
+    logError('Error fetching stores:', error)
     return c.json({ success: false, error: '店舗の取得に失敗しました' }, 500)
   }
 })
@@ -52,7 +53,7 @@ storeRoutes.post('/', zValidator('json', z.object({
     const result = await db.insert(stores).values(data).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating store:', error)
+    logError('Error creating store:', error)
     return c.json({ success: false, error: '店舗の作成に失敗しました' }, 500)
   }
 })
@@ -71,7 +72,7 @@ storeRoutes.get('/:id', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching store:', error)
+    logError('Error fetching store:', error)
     return c.json({ success: false, error: '店舗の取得に失敗しました' }, 500)
   }
 })
@@ -99,7 +100,7 @@ storeRoutes.put('/:id', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating store:', error)
+    logError('Error updating store:', error)
     return c.json({ success: false, error: '店舗の更新に失敗しました' }, 500)
   }
 })
@@ -120,7 +121,7 @@ storeRoutes.delete('/:id', async (c) => {
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error deleting store:', error)
+    logError('Error deleting store:', error)
     return c.json({ success: false, error: '店舗の削除に失敗しました' }, 500)
   }
 })
@@ -159,7 +160,7 @@ storeRoutes.post('/:id/generate-code', authMiddleware, async (c) => {
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error generating store code:', error)
+    logError('Error generating store code:', error)
     return c.json({ success: false, error: '店舗コードの生成に失敗しました' }, 500)
   }
 })

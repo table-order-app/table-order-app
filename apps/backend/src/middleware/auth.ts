@@ -4,6 +4,7 @@ import { db } from '../db'
 import { stores } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { JWT_SECRET } from '../config/jwt'
+import { logError } from '../utils/logger-simple'
 
 export interface AuthContext {
   storeId: number
@@ -62,7 +63,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     await next()
     
   } catch (error) {
-    console.error('Auth middleware error:', error)
+    logError('Auth middleware error:', error)
     return c.json({ success: false, error: '認証に失敗しました' }, 401)
   }
 }
@@ -104,7 +105,7 @@ export const tableAuthMiddleware = async (c: Context, next: Next) => {
     await next()
     
   } catch (error) {
-    console.error('Table auth middleware error:', error)
+    logError('Table auth middleware error:', error)
     return c.json({ success: false, error: '認証に失敗しました' }, 401)
   }
 }
@@ -169,7 +170,7 @@ export const flexibleAuthMiddleware = async (c: Context, next: Next) => {
     return c.json({ success: false, error: '認証が必要です' }, 401)
     
   } catch (error) {
-    console.error('Flexible auth middleware error:', error)
+    logError('Flexible auth middleware error:', error)
     return c.json({ success: false, error: '認証に失敗しました' }, 401)
   }
 }
@@ -209,7 +210,7 @@ export const optionalAuthMiddleware = async (c: Context, next: Next) => {
     await next()
     
   } catch (error) {
-    console.error('Optional auth middleware error:', error)
+    logError('Optional auth middleware error:', error)
     // オプショナル認証なのでエラーでも続行
     await next()
   }

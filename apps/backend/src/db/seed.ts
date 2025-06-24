@@ -1,4 +1,5 @@
 import { db } from './index';
+import { logError } from '../utils/logger-simple'
 import { 
   stores,
   categories, 
@@ -12,7 +13,7 @@ import {
 } from './schema';
 
 const seed = async () => {
-  console.log('Seeding database...');
+  // console.log('Seeding database...');
   
   // 店舗データの作成
   const storeData = await db.insert(stores).values({
@@ -343,9 +344,12 @@ const seed = async () => {
     }),
   });
   
-  console.log('Seeding completed successfully');
+  // console.log('Seeding completed successfully');
 };
 
 seed()
-  .catch(console.error)
+  .catch((error) => {
+    logError('Database seeding failed', error);
+    process.exit(1);
+  })
   .finally(() => process.exit());

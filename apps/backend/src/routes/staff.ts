@@ -5,6 +5,7 @@ import { db } from '../db'
 import { staffMembers } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
+import { logError } from '../utils/logger-simple'
 
 export const staffRoutes = new Hono()
 
@@ -40,7 +41,7 @@ staffRoutes.get('/roles', async (c) => {
     ]
     return c.json({ success: true, data: roles })
   } catch (error) {
-    console.error('Error fetching roles:', error)
+    logError('Error fetching roles:', error)
     return c.json({ success: false, error: '役割の取得に失敗しました' }, 500)
   }
 })
@@ -56,7 +57,7 @@ staffRoutes.get('/', flexibleAuthMiddleware, async (c) => {
     })
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching staff members:', error)
+    logError('Error fetching staff members:', error)
     return c.json({ success: false, error: 'スタッフの取得に失敗しました' }, 500)
   }
 })
@@ -93,7 +94,7 @@ staffRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating staff member:', error)
+    logError('Error creating staff member:', error)
     return c.json({ success: false, error: 'スタッフの作成に失敗しました' }, 500)
   }
 })
@@ -113,7 +114,7 @@ staffRoutes.get('/:id', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching staff member:', error)
+    logError('Error fetching staff member:', error)
     return c.json({ success: false, error: 'スタッフの取得に失敗しました' }, 500)
   }
 })
@@ -158,7 +159,7 @@ staffRoutes.put('/:id', flexibleAuthMiddleware, zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating staff member:', error)
+    logError('Error updating staff member:', error)
     return c.json({ success: false, error: 'スタッフの更新に失敗しました' }, 500)
   }
 })
@@ -179,7 +180,7 @@ staffRoutes.delete('/:id', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error deleting staff member:', error)
+    logError('Error deleting staff member:', error)
     return c.json({ success: false, error: 'スタッフの削除に失敗しました' }, 500)
   }
 })

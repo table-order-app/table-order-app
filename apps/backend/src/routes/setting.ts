@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '../db'
 import { settings, storeInfo } from '../db/schema'
 import { eq } from 'drizzle-orm'
+import { logError } from '../utils/logger-simple'
 
 export const settingRoutes = new Hono()
 
@@ -13,7 +14,7 @@ settingRoutes.get('/', async (c) => {
     const result = await db.query.settings.findMany()
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching settings:', error)
+    logError('Error fetching settings:', error)
     return c.json({ success: false, error: '設定の取得に失敗しました' }, 500)
   }
 })
@@ -49,7 +50,7 @@ settingRoutes.put('/:key', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating setting:', error)
+    logError('Error updating setting:', error)
     return c.json({ success: false, error: '設定の更新に失敗しました' }, 500)
   }
 })
@@ -68,7 +69,7 @@ settingRoutes.get('/:key', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching setting:', error)
+    logError('Error fetching setting:', error)
     return c.json({ success: false, error: '設定の取得に失敗しました' }, 500)
   }
 })
@@ -88,7 +89,7 @@ settingRoutes.delete('/:key', async (c) => {
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error deleting setting:', error)
+    logError('Error deleting setting:', error)
     return c.json({ success: false, error: '設定の削除に失敗しました' }, 500)
   }
 })
@@ -104,7 +105,7 @@ settingRoutes.get('/store/info', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching store info:', error)
+    logError('Error fetching store info:', error)
     return c.json({ success: false, error: '店舗情報の取得に失敗しました' }, 500)
   }
 })
@@ -141,7 +142,7 @@ settingRoutes.put('/store/info', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating store info:', error)
+    logError('Error updating store info:', error)
     return c.json({ success: false, error: '店舗情報の更新に失敗しました' }, 500)
   }
 })

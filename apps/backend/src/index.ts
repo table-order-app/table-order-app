@@ -39,16 +39,21 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : (isProduction ? [] : DEFAULT_DEV_ORIGINS)
 
-console.log('🔧 CORS Configuration:')
-console.log('  Environment:', process.env.NODE_ENV || 'development')
-console.log('  Production mode:', isProduction)
-console.log('  ALLOWED_ORIGINS env:', process.env.ALLOWED_ORIGINS || 'not set')
-console.log('  Final allowed origins:', allowedOrigins)
+// 開発環境でのCORS設定ログ
+if (!isProduction) {
+  logInfo('CORS Configuration', {
+    environment: process.env.NODE_ENV || 'development',
+    productionMode: isProduction,
+    allowedOriginsEnv: process.env.ALLOWED_ORIGINS || 'not set',
+    finalAllowedOrigins: allowedOrigins
+  })
+}
 
 // 本番環境で環境変数が設定されていない場合の警告
 if (isProduction && !process.env.ALLOWED_ORIGINS) {
-  console.error('❌ SECURITY WARNING: ALLOWED_ORIGINS not set in production!')
-  console.error('   This will block all cross-origin requests.')
+  logError('SECURITY WARNING: ALLOWED_ORIGINS not set in production', new Error('Missing CORS configuration'), {
+    message: 'This will block all cross-origin requests'
+  })
 }
 
 // Middleware
@@ -175,10 +180,10 @@ function validateEnvironment() {
   
   if (missingVars.length > 0) {
     if (isDevelopment) {
-      console.warn('⚠️  Missing environment variables in development:', missingVars)
+      logInfo('Missing environment variables in development', { missingVariables: missingVars })
       // 開発環境ではデフォルト値を設定
       if (!process.env.DATABASE_URL) {
-        console.warn('DATABASE_URL not set, using default local database')
+        logInfo('Using default local database', { reason: 'DATABASE_URL not set' })
         process.env.DATABASE_URL = 'postgres://itouharuki@localhost:5432/accorto'
       }
     } else {

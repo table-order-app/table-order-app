@@ -35,7 +35,7 @@ menuRoutes.get('/categories', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    logError('Error fetching categories:', error)
     return c.json({ success: false, error: 'カテゴリの取得に失敗しました' }, 500)
   }
 })
@@ -55,7 +55,7 @@ menuRoutes.post('/categories', flexibleAuthMiddleware, zValidator('json', z.obje
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating category:', error)
+    logError('Error creating category:', error)
     return c.json({ success: false, error: 'カテゴリの作成に失敗しました' }, 500)
   }
 })
@@ -75,7 +75,7 @@ menuRoutes.get('/items', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching menu items:', error)
+    logError('Error fetching menu items:', error)
     return c.json({ success: false, error: 'メニューアイテムの取得に失敗しました' }, 500)
   }
 })
@@ -116,7 +116,7 @@ menuRoutes.post('/items', flexibleAuthMiddleware, zValidator('json', z.object({
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating menu item:', error)
+    logError('Error creating menu item:', error)
     return c.json({ success: false, error: 'メニューアイテムの作成に失敗しました' }, 500)
   }
 })
@@ -192,7 +192,7 @@ menuRoutes.post('/items-with-file', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating menu item with file:', error)
+    logError('Error creating menu item with file:', error)
     return c.json({ success: false, error: 'メニューアイテムの作成に失敗しました' }, 500)
   }
 })
@@ -216,7 +216,7 @@ menuRoutes.get('/items/:id', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching menu item:', error)
+    logError('Error fetching menu item:', error)
     return c.json({ success: false, error: 'メニューアイテムの取得に失敗しました' }, 500)
   }
 })
@@ -265,7 +265,7 @@ menuRoutes.put('/items/:id', flexibleAuthMiddleware, zValidator('json', z.object
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating menu item:', error)
+    logError('Error updating menu item:', error)
     return c.json({ success: false, error: 'メニューアイテムの更新に失敗しました' }, 500)
   }
 })
@@ -319,7 +319,7 @@ menuRoutes.delete('/items/:id', async (c) => {
     logInfo('Menu item deleted', { id, storeId, name: menuItem.name })
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error deleting menu item:', error)
+    logError('Error deleting menu item:', error)
     return c.json({ success: false, error: 'メニューアイテムの削除に失敗しました' }, 500)
   }
 })

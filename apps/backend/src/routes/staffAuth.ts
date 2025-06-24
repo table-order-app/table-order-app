@@ -7,6 +7,7 @@ import { staffMembers, stores } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { JWT_SECRET, JWT_EXPIRY } from '../config/jwt'
+import { logError } from '../utils/logger-simple'
 
 export const staffAuthRoutes = new Hono()
 
@@ -94,7 +95,7 @@ staffAuthRoutes.post('/login', zValidator('json', z.object({
     })
     
   } catch (error) {
-    console.error('Error during staff login:', error)
+    logError('Error during staff login:', error)
     return c.json({ success: false, error: 'ログインに失敗しました' }, 500)
   }
 })
@@ -143,7 +144,7 @@ staffAuthRoutes.get('/verify', async (c) => {
     })
     
   } catch (error) {
-    console.error('Error verifying staff token:', error)
+    logError('Error verifying staff token:', error)
     return c.json({ success: false, error: '無効なトークンです' }, 401)
   }
 })

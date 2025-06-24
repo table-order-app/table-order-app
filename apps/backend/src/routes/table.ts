@@ -5,6 +5,7 @@ import { db } from '../db'
 import { tables, stores, orders, orderItems, orderItemOptions, orderItemToppings, salesCycles, archivedOrders, archivedOrderItems, archivedOrderItemOptions, archivedOrderItemToppings, menuItems } from '../db/schema'
 import { eq, and, sql, desc } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
+import { logError } from '../utils/logger-simple'
 
 export const tableRoutes = new Hono()
 
@@ -61,7 +62,7 @@ tableRoutes.get('/validate/:storeCode/:tableNumber', async (c) => {
     })
     
   } catch (error) {
-    console.error('Error validating table:', error)
+    logError('Error validating table:', error)
     return c.json({ 
       success: false, 
       error: 'テーブル確認中にエラーが発生しました',
@@ -91,7 +92,7 @@ tableRoutes.get('/', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching tables:', error)
+    logError('Error fetching tables:', error)
     return c.json({ success: false, error: 'テーブルの取得に失敗しました' }, 500)
   }
 })
@@ -124,7 +125,7 @@ tableRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
-    console.error('Error creating table:', error)
+    logError('Error creating table:', error)
     return c.json({ success: false, error: 'テーブルの作成に失敗しました' }, 500)
   }
 })
@@ -150,7 +151,7 @@ tableRoutes.get('/number/:number', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching table by number:', error)
+    logError('Error fetching table by number:', error)
     return c.json({ success: false, error: 'テーブルの取得に失敗しました' }, 500)
   }
 })
@@ -170,7 +171,7 @@ tableRoutes.get('/:id', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching table:', error)
+    logError('Error fetching table:', error)
     return c.json({ success: false, error: 'テーブルの取得に失敗しました' }, 500)
   }
 })
@@ -215,7 +216,7 @@ tableRoutes.put('/:id', flexibleAuthMiddleware, zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating table:', error)
+    logError('Error updating table:', error)
     return c.json({ success: false, error: 'テーブルの更新に失敗しました' }, 500)
   }
 })
@@ -236,7 +237,7 @@ tableRoutes.delete('/:id', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error deleting table:', error)
+    logError('Error deleting table:', error)
     return c.json({ success: false, error: 'テーブルの削除に失敗しました' }, 500)
   }
 })
@@ -279,7 +280,7 @@ tableRoutes.post('/:number/request-checkout', async (c) => {
       }
     })
   } catch (error) {
-    console.error('Error requesting checkout:', error)
+    logError('Error requesting checkout:', error)
     return c.json({ success: false, error: '会計要請中にエラーが発生しました' }, 500)
   }
 })
@@ -480,7 +481,7 @@ tableRoutes.post('/:id/checkout', async (c) => {
       }
     })
   } catch (error) {
-    console.error('Error processing table checkout:', error)
+    logError('Error processing table checkout:', error)
     return c.json({ success: false, error: '会計処理中にエラーが発生しました' }, 500)
   }
 })

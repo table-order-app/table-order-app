@@ -5,6 +5,7 @@ import { db } from '../db'
 import { orders, orderItems, orderItemOptions, orderItemToppings, stores, tables, menuItems } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
+import { logError } from '../utils/logger-simple'
 
 export const orderRoutes = new Hono()
 
@@ -23,7 +24,7 @@ orderRoutes.get('/', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching orders:', error)
+    logError('Error fetching orders:', error)
     return c.json({ success: false, error: '注文の取得に失敗しました' }, 500)
   }
 })
@@ -156,7 +157,7 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
     
     return c.json({ success: true, data: result }, 201)
   } catch (error) {
-    console.error('Error creating order:', error)
+    logError('Error creating order:', error)
     return c.json({ success: false, error: '注文の作成に失敗しました' }, 500)
   }
 })
@@ -184,7 +185,7 @@ orderRoutes.get('/:id', async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching order:', error)
+    logError('Error fetching order:', error)
     return c.json({ success: false, error: '注文の取得に失敗しました' }, 500)
   }
 })
@@ -208,7 +209,7 @@ orderRoutes.patch('/:id/status', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating order status:', error)
+    logError('Error updating order status:', error)
     return c.json({ success: false, error: '注文ステータスの更新に失敗しました' }, 500)
   }
 })
@@ -232,7 +233,7 @@ orderRoutes.patch('/items/:itemId/status', zValidator('json', z.object({
     
     return c.json({ success: true, data: result[0] })
   } catch (error) {
-    console.error('Error updating order item status:', error)
+    logError('Error updating order item status:', error)
     return c.json({ success: false, error: '注文アイテムステータスの更新に失敗しました' }, 500)
   }
 })
@@ -269,7 +270,7 @@ orderRoutes.get('/table/:tableNumber', flexibleAuthMiddleware, async (c) => {
     
     return c.json({ success: true, data: result })
   } catch (error) {
-    console.error('Error fetching orders by table:', error)
+    logError('Error fetching orders by table:', error)
     return c.json({ success: false, error: 'テーブルごとの注文の取得に失敗しました' }, 500)
   }
 })

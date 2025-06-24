@@ -6,9 +6,10 @@ import { db } from './index'
 import { stores } from './schema'
 import { eq } from 'drizzle-orm'
 import { generateStoreCode } from '../utils/storeCode'
+import { logError } from '../utils/logger-simple'
 
 async function addStoreCodes() {
-  console.log('既存店舗に店舗コードを追加中...')
+  // console.log('既存店舗に店舗コードを追加中...')
   
   try {
     // 店舗コードが未設定の店舗を取得
@@ -16,7 +17,7 @@ async function addStoreCodes() {
       where: eq(stores.storeCode, null)
     })
     
-    console.log(`店舗コード未設定の店舗: ${storesWithoutCode.length}件`)
+    // console.log(`店舗コード未設定の店舗: ${storesWithoutCode.length}件`)
     
     for (const store of storesWithoutCode) {
       // 店舗コード生成（重複チェック付き）
@@ -32,7 +33,7 @@ async function addStoreCodes() {
       } while (attempts < 10)
       
       if (attempts >= 10) {
-        console.error(`店舗ID ${store.id} の店舗コード生成に失敗`)
+        logError('店舗ID ${store.id} の店舗コード生成に失敗', new Error('店舗ID ${store.id} の店舗コード生成に失敗'))
         continue
       }
       
@@ -41,13 +42,13 @@ async function addStoreCodes() {
         .set({ storeCode })
         .where(eq(stores.id, store.id))
       
-      console.log(`店舗 "${store.name}" (ID: ${store.id}) に店舗コード "${storeCode}" を設定`)
+      // console.log(`店舗 "${store.name}" (ID: ${store.id}) に店舗コード "${storeCode}" を設定`)
     }
     
-    console.log('店舗コードの追加が完了しました！')
+    // console.log('店舗コードの追加が完了しました！')
     
   } catch (error) {
-    console.error('エラーが発生しました:', error)
+    logError('エラーが発生しました:', error)
   }
   
   process.exit(0)
