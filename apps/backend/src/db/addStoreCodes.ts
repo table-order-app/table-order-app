@@ -4,7 +4,7 @@
 import 'dotenv/config'
 import { db } from './index'
 import { stores } from './schema'
-import { eq } from 'drizzle-orm'
+import { eq, isNull } from 'drizzle-orm'
 import { generateStoreCode } from '../utils/storeCode'
 import { logError } from '../utils/logger-simple'
 
@@ -13,7 +13,7 @@ async function addStoreCodes() {
   try {
     // 店舗コードが未設定の店舗を取得
     const storesWithoutCode = await db.query.stores.findMany({
-      where: eq(stores.storeCode, null)
+      where: isNull(stores.storeCode)
     })
 
     for (const store of storesWithoutCode) {

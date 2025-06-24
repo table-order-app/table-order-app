@@ -18,9 +18,8 @@ export interface AuthContext {
 }
 
 declare module 'hono' {
-  interface Context {
-    get(key: 'auth'): AuthContext
-    set(key: 'auth', value: AuthContext): void
+  interface ContextVariableMap {
+    auth: AuthContext
   }
 }
 

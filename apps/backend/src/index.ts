@@ -83,7 +83,7 @@ app.use('*', async (c, next) => {
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, x-store-code, x-table-number')
   
   if (c.req.method === 'OPTIONS') {
-    return c.text('OK', 204)
+    return new Response(null, { status: 204 })
   }
   
   await next()
@@ -143,8 +143,8 @@ app.get('/', (c) => c.json({ status: 'ok', message: 'Accorto API Server' }))
 app.get('/health', async (c) => {
   try {
     // データベース接続確認
-    const { db } = await import('./db')
-    const { stores } = await import('./db/schema')
+    const { db } = await import('./db/index.js')
+    const { stores } = await import('./db/schema/index.js')
     await db.select().from(stores).limit(1)
     
     return c.json({ 

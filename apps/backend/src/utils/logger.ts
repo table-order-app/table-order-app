@@ -58,7 +58,7 @@ if (process.env.NODE_ENV !== 'production') {
       format: winston.format.json()
     }))
   } catch (error) {
-    console.warn('Could not create log files:', error.message)
+    console.warn('Could not create log files:', error instanceof Error ? error.message : 'Unknown error')
   }
 }
 

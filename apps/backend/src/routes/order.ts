@@ -78,7 +78,7 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
           throw new Error(`メニューアイテムが見つかりません: ${item.menuItemId}`)
         }
         
-        const unitPrice = parseFloat(menuItem.price)
+        const unitPrice = parseFloat(menuItem.price.toString())
         const totalPrice = unitPrice * item.quantity
         subtotalAmount += totalPrice
         
@@ -123,7 +123,7 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
             item.options.map(option => ({
               orderItemId: orderItem.id,
               name: option.name,
-              price: option.price,
+              price: option.price.toString(),
             }))
           )
         }
@@ -134,7 +134,7 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
             item.toppings.map(topping => ({
               orderItemId: orderItem.id,
               name: topping.name,
-              price: topping.price,
+              price: topping.price.toString(),
             }))
           )
         }

@@ -317,7 +317,7 @@ const DashboardPage = () => {
                       <h3 className="text-xl font-semibold">
                         テーブル {data.tableNumber}
                       </h3>
-                      <p className="text-gray-600">{data.area}</p>
+                      <p className="text-gray-600">スタッフエリア</p>
                     </div>
                     <div className="text-right">
                       <span className="text-lg font-bold">

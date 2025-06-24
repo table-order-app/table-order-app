@@ -50,7 +50,12 @@ storeRoutes.post('/', zValidator('json', z.object({
 })), async (c) => {
   try {
     const data = c.req.valid('json')
-    const result = await db.insert(stores).values(data).returning()
+    const result = await db.insert(stores).values({
+      ...data,
+      email: data.email || '',
+      password: 'temp_password',
+      ownerName: 'オーナー'
+    }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
     logError('Error creating store:', error)

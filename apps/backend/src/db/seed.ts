@@ -321,9 +321,30 @@ const seed = async () => {
   
   // スタッフデータの作成
   await db.insert(staffMembers).values([
-    { name: '管理者', email: 'admin@example.com', role: 'admin' },
-    { name: 'スタッフ1', email: 'staff1@example.com', role: 'staff' },
-    { name: 'キッチン1', email: 'kitchen1@example.com', role: 'kitchen' },
+    { 
+      storeId,
+      name: '管理者', 
+      email: 'admin@example.com', 
+      loginId: 'admin',
+      password: 'hashed_password_123',
+      role: 'admin' as const
+    },
+    { 
+      storeId,
+      name: 'スタッフ1', 
+      email: 'staff1@example.com', 
+      loginId: 'staff1',
+      password: 'hashed_password_123',
+      role: 'staff' as const
+    },
+    { 
+      storeId,
+      name: 'キッチン1', 
+      email: 'kitchen1@example.com', 
+      loginId: 'kitchen1',
+      password: 'hashed_password_123',
+      role: 'kitchen' as const
+    },
   ]);
   
   // 店舗情報の作成

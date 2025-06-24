@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
 import { tables, stores, orders, orderItems, orderItemOptions, orderItemToppings, salesCycles, archivedOrders, archivedOrderItems, archivedOrderItemOptions, archivedOrderItemToppings, menuItems } from '../db/schema'
-import { eq, and, sql, desc } from 'drizzle-orm'
+import { eq, and, sql, desc, SQL } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
 import { logError } from '../utils/logger-simple'
 
@@ -78,11 +78,14 @@ tableRoutes.get('/', flexibleAuthMiddleware, async (c) => {
     const checkoutRequested = c.req.query('checkoutRequested')
     
     // 認証された店舗のテーブルのみを取得
-    let whereCondition = eq(tables.storeId, auth.storeId)
+    let whereCondition: SQL<unknown> = eq(tables.storeId, auth.storeId)
     
     // 会計要請されたテーブルのみを取得する場合
     if (checkoutRequested === 'true') {
-      whereCondition = and(eq(tables.storeId, auth.storeId), eq(tables.checkoutRequested, true))
+      const checkoutCondition = and(whereCondition, eq(tables.checkoutRequested, true))
+      if (checkoutCondition) {
+        whereCondition = checkoutCondition
+      }
     }
     
     const result = await db.query.tables.findMany({

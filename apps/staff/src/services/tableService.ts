@@ -1,4 +1,4 @@
-import { get, put } from "../utils/api";
+import { get } from "../utils/api";
 import { getCurrentStore } from "./authService";
 
 /**

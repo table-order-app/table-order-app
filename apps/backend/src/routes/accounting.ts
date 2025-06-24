@@ -106,7 +106,7 @@ accountingRoutes.put('/settings', zValidator('json', z.object({
         .values({
           storeId,
           ...updateData,
-          taxRate: updateData.taxRate.toString()
+          taxRate: updateData.taxRate?.toString() || '0.1'
         })
         .returning()
       
@@ -243,7 +243,7 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     // 合計を計算
     const totalOrders = (archivedSales[0]?.totalOrders || 0) + (activeSales[0]?.totalOrders || 0)
     const totalItems = (archivedSales[0]?.totalItems || 0) + (activeSales[0]?.totalItems || 0)
-    const subtotalAmount = parseFloat(archivedSales[0]?.totalAmount || '0') + parseFloat(activeSales[0]?.totalAmount || '0')
+    const subtotalAmount = parseFloat((archivedSales[0]?.totalAmount || 0).toString()) + parseFloat((activeSales[0]?.totalAmount || 0).toString())
 
     const { taxAmount, totalAmount } = calculateTax(subtotalAmount, taxRate)
     

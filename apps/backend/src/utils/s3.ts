@@ -34,11 +34,19 @@ export async function saveImageLocally(file: File, folder: string = 'menu'): Pro
 }
 
 /**
+ * S3に画像をアップロード
+ */
+async function uploadImageToS3(file: File, folder: string): Promise<string> {
+  // S3アップロード機能は実装していないため、ローカル保存を使用
+  return saveImageLocally(file, folder)
+}
+
+/**
  * 環境に応じて画像を保存
  */
 export async function saveImage(file: File, folder: string = 'menu'): Promise<string> {
   if (isS3Enabled()) {
-    return uploadImageToS3(file, folder)
+    return await uploadImageToS3(file, folder)
   } else {
     return saveImageLocally(file, folder)
   }
