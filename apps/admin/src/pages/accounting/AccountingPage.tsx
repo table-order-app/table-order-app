@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { format, parseISO, subDays } from 'date-fns'
+import React, { useState, useEffect, useCallback } from 'react'
+import { format, parseISO } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { API_CONFIG } from '../../config'
 import { useToast } from '../../components/ui/ToastContainer'
@@ -22,25 +22,15 @@ interface DailySales {
   updatedAt: string
 }
 
-interface SalesSummary {
-  period: string
-  totalOrders: number
-  totalItems: number
-  totalAmount: string
-  taxAmount: string
-  avgOrderAmount: string
-}
 
 const AccountingPage = () => {
   const [dailySales, setDailySales] = useState<DailySales[]>([])
-  const [summary, setSummary] = useState<SalesSummary[]>([])
   // 検索用の日付範囲（初期表示は今日）
   const [displayStartDate, setDisplayStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [displayEndDate, setDisplayEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [isLoading, setIsLoading] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
   const [searchDate, setSearchDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   
   const { addToast } = useToast()
 
@@ -73,34 +63,9 @@ const AccountingPage = () => {
     }
   }
 
-  // 売上サマリーの取得
-  const fetchSummary = async () => {
-    try {
-      const token = localStorage.getItem('accorto_auth_token')
-      const params = new URLSearchParams({
-        startDate: displayStartDate,
-        endDate: displayEndDate,
-        groupBy: 'day'
-      })
-      
-      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/sales-summary?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSummary(data.data)
-      }
-    } catch (error) {
-      console.error('売上サマリーの取得に失敗しました:', error)
-    }
-  }
 
   // 日次売上の集計実行
-  const calculateDailySales = async (date: string) => {
+  const calculateDailySales = useCallback(async (date: string) => {
     try {
       setIsLoading(true)
       const token = localStorage.getItem('accorto_auth_token')
@@ -127,7 +92,7 @@ const AccountingPage = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [addToast])
 
   // 指定日の売上を検索・集計
   const searchDailySales = async () => {
@@ -196,14 +161,6 @@ const AccountingPage = () => {
     }
   }
 
-  // 過去30日間の表示に戻す
-  const resetToDefault = () => {
-    const start = format(subDays(new Date(), 30), 'yyyy-MM-dd')
-    const end = format(new Date(), 'yyyy-MM-dd')
-    setDisplayStartDate(start)
-    setDisplayEndDate(end)
-    fetchDailySales()
-  }
 
   // 売上の確定
   const finalizeSales = async (date: string) => {
@@ -266,7 +223,7 @@ const AccountingPage = () => {
     }
     
     initializeData()
-  }, [])
+  }, [calculateDailySales])
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount

@@ -11,6 +11,16 @@ interface StoreData {
   phone?: string;
 }
 
+interface BusinessHours {
+  monday: { open: string; close: string; isOpen: boolean };
+  tuesday: { open: string; close: string; isOpen: boolean };
+  wednesday: { open: string; close: string; isOpen: boolean };
+  thursday: { open: string; close: string; isOpen: boolean };
+  friday: { open: string; close: string; isOpen: boolean };
+  saturday: { open: string; close: string; isOpen: boolean };
+  sunday: { open: string; close: string; isOpen: boolean };
+}
+
 const StoresPage = () => {
   const [store, setStore] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,6 +28,7 @@ const StoresPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingHours, setIsEditingHours] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -25,6 +36,16 @@ const StoresPage = () => {
     email: '',
     address: '',
     phone: ''
+  });
+
+  const [businessHours, setBusinessHours] = useState<BusinessHours>({
+    monday: { open: '09:00', close: '17:00', isOpen: true },
+    tuesday: { open: '09:00', close: '17:00', isOpen: true },
+    wednesday: { open: '09:00', close: '17:00', isOpen: true },
+    thursday: { open: '09:00', close: '17:00', isOpen: true },
+    friday: { open: '09:00', close: '17:00', isOpen: true },
+    saturday: { open: '10:00', close: '16:00', isOpen: true },
+    sunday: { open: '10:00', close: '16:00', isOpen: false },
   });
 
   useEffect(() => {
@@ -44,6 +65,12 @@ const StoresPage = () => {
           address: currentStore.address || '',
           phone: currentStore.phone || ''
         });
+      }
+      
+      // 営業時間をローカルストレージから復元
+      const savedHours = localStorage.getItem('businessHours');
+      if (savedHours) {
+        setBusinessHours(JSON.parse(savedHours));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '店舗情報の取得に失敗しました');
@@ -99,6 +126,44 @@ const StoresPage = () => {
     }
     setIsEditing(false);
     setError(null);
+  };
+
+  const handleBusinessHoursChange = (day: keyof BusinessHours, field: 'open' | 'close' | 'isOpen', value: string | boolean) => {
+    setBusinessHours(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveBusinessHours = () => {
+    // ここで営業時間をサーバーに保存する処理を追加
+    // 現在はローカルストレージに保存
+    localStorage.setItem('businessHours', JSON.stringify(businessHours));
+    setSuccess('営業時間を更新しました');
+    setIsEditingHours(false);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleCancelBusinessHours = () => {
+    // ローカルストレージから営業時間を復元
+    const saved = localStorage.getItem('businessHours');
+    if (saved) {
+      setBusinessHours(JSON.parse(saved));
+    }
+    setIsEditingHours(false);
+  };
+
+  const dayLabels = {
+    monday: '月曜日',
+    tuesday: '火曜日',
+    wednesday: '水曜日',
+    thursday: '木曜日',
+    friday: '金曜日',
+    saturday: '土曜日',
+    sunday: '日曜日',
   };
 
   if (loading) {
@@ -247,6 +312,100 @@ const StoresPage = () => {
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                 )}
                 {saving ? '保存中...' : '保存'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 営業時間設定 */}
+      {store && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-medium text-gray-900">営業時間設定</h2>
+            {!isEditingHours && (
+              <button
+                onClick={() => setIsEditingHours(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                編集
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {Object.entries(dayLabels).map(([day, label]) => {
+              const dayData = businessHours[day as keyof BusinessHours];
+              return (
+                <div key={day} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-20 text-sm font-medium text-gray-700">
+                    {label}
+                  </div>
+                  
+                  {isEditingHours ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={dayData.isOpen}
+                          onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'isOpen', e.target.checked)}
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-600">営業</span>
+                      </div>
+                      
+                      {dayData.isOpen && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="time"
+                            value={dayData.open}
+                            onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'open', e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                          <span className="text-gray-500">〜</span>
+                          <input
+                            type="time"
+                            value={dayData.close}
+                            onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'close', e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                      )}
+                      
+                      {!dayData.isOpen && (
+                        <span className="text-gray-500 text-sm">定休日</span>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center">
+                      {dayData.isOpen ? (
+                        <span className="text-sm text-gray-700">
+                          {dayData.open} 〜 {dayData.close}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">定休日</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 営業時間編集時のボタン */}
+          {isEditingHours && (
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={handleCancelBusinessHours}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleSaveBusinessHours}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                保存
               </button>
             </div>
           )}
