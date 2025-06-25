@@ -104,6 +104,7 @@ tableRoutes.get('/', flexibleAuthMiddleware, async (c) => {
 tableRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
   number: z.number().int().positive(),
   capacity: z.number().int().positive(),
+  area: z.string().optional().default('一般エリア'),
 })), async (c) => {
   try {
     const auth = c.get('auth')
@@ -125,6 +126,7 @@ tableRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
       storeId: auth.storeId,
       number: data.number,
       capacity: data.capacity,
+      area: data.area || '一般エリア',
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
@@ -183,6 +185,7 @@ tableRoutes.get('/:id', flexibleAuthMiddleware, async (c) => {
 tableRoutes.put('/:id', flexibleAuthMiddleware, zValidator('json', z.object({
   number: z.number().int().positive().optional(),
   capacity: z.number().int().positive().optional(),
+  area: z.string().optional(),
 })), async (c) => {
   try {
     const auth = c.get('auth')

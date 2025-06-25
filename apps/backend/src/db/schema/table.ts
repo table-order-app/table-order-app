@@ -9,6 +9,7 @@ export const tables = pgTable('tables', {
   storeId: integer('store_id').references(() => stores.id).notNull(),
   number: integer('number').notNull(),
   capacity: integer('capacity').notNull(),
+  area: varchar('area', { length: 100 }).notNull().default('一般エリア'),
   checkoutRequested: boolean('checkout_requested').default(false).notNull(),
   checkoutRequestedAt: timestamp('checkout_requested_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
