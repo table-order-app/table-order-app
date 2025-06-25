@@ -1,15 +1,10 @@
 import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getPath } from "../routes";
 
-interface OrderSuccessPageProps {}
-
-const OrderSuccessPage: React.FC<OrderSuccessPageProps> = () => {
+const OrderSuccessPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   
-  // URLパラメータから注文データを取得（オプション）
-  const orderData = location.state?.orderData;
 
   useEffect(() => {
     // 3秒後に自動で注文履歴ページに遷移
@@ -113,7 +108,7 @@ const OrderSuccessPage: React.FC<OrderSuccessPageProps> = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }

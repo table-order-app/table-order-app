@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTableOrders, requestCheckout } from "../services/orderService";
 import { getPath } from "../routes";
-import { UI_CONFIG } from "../config";
 import { getImageUrlWithFallback } from "../utils/imageUtils";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -80,39 +79,6 @@ const OrderConfirmationPage: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  const getStatusColor = (status: Order["status"]) => {
-    switch (status) {
-      case "new":
-        return "bg-yellow-100 text-yellow-800";
-      case "in-progress":
-        return "bg-blue-100 text-blue-800";
-      case "ready":
-        return "bg-green-100 text-green-800";
-      case "delivered":
-        return "bg-gray-100 text-gray-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusText = (status: Order["status"]) => {
-    switch (status) {
-      case "new":
-        return "受付済み";
-      case "in-progress":
-        return "調理中";
-      case "ready":
-        return "お渡し準備完了";
-      case "delivered":
-        return "お渡し済み";
-      case "cancelled":
-        return "キャンセル";
-      default:
-        return status;
-    }
-  };
 
   const calculateTotalAmount = (orders: Order[]) => {
     return orders.reduce((total, order) => {
@@ -175,16 +141,6 @@ const OrderConfirmationPage: React.FC = () => {
   // 全ての注文が提供済みかチェック
   const allOrdersDelivered = orders.length > 0 && orders.every(order => order.status === "delivered");
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
 
   if (loading) {
     return (

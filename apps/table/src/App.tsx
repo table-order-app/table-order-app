@@ -3,7 +3,6 @@ import {
   Routes,
   Route,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import "./App.css";
 import React, { useState, useEffect } from "react";
@@ -13,7 +12,6 @@ import AuthGuard from "./components/AuthGuard";
 import { CartProvider, useCart } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { routeConfig } from "./routes";
-import { UI_CONFIG } from "./config";
 
 // CartコンポーネントのラッパーContainer
 const CartContainer: React.FC = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { validateTable } from "../services/tableService";
 
@@ -13,15 +13,6 @@ const StoreLoginPage: React.FC = () => {
   // リダイレクト元のページを取得
   const from = (location.state as any)?.from || "/";
 
-  // ページ読み込み時にLocalStorageの値を確認
-  useEffect(() => {
-    const existingStoreCode = localStorage.getItem("accorto_store_code");
-    const existingTableNumber = localStorage.getItem("accorto_table_number");
-
-    // 既存の値があれば初期値として設定（オプション）
-    // if (existingStoreCode) setStoreCode(existingStoreCode);
-    // if (existingTableNumber) setTableNumber(existingTableNumber);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

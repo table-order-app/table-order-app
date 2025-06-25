@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartItem, MenuItem, Option, Topping } from "../types";
-import { BUSINESS_CONFIG, UI_CONFIG } from "../config";
+import { BUSINESS_CONFIG } from "../config";
 import { useToast } from "./ToastContext";
 import { getPath } from "../routes";
 
@@ -219,7 +219,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     try {
       const { createOrder } = await import("../services/orderService");
       // テーブル番号をLocalStorageから動的に取得
-      const storeCode = localStorage.getItem('accorto_store_code');
       const tableNumberStr = localStorage.getItem('accorto_table_number') || '1';
       const tableNumber = parseInt(tableNumberStr) || 1;
 
