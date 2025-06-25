@@ -6,7 +6,7 @@ import {
   updateOrderItemStatus,
   ApiOrder,
 } from "../../services/orderService";
-import { formatTimeJST, getElapsedMinutesJST } from "../../utils/dateUtils";
+import { formatTimeJST } from "../../utils/dateUtils";
 
 // API data transformation functions
 const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {

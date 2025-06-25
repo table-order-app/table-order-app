@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Order, OrderStatus, ProgressData } from "../../types/order";
 import { getPath } from "../../routes";
-import { formatTimeJST, formatDateTimeJSTJST } from "../../utils/dateUtils";
+import { formatTimeJST, formatDateTimeJST } from "../../utils/dateUtils";
 
 // サンプルデータ（実際はAPIから取得）
 const sampleOrders: Order[] = [
