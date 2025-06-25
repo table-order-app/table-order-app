@@ -44,12 +44,6 @@ const StoreLoginPage = () => {
     }
   };
 
-  const handleSkip = () => {
-    // デフォルト値でスキップ
-    localStorage.setItem("accorto_admin_store_id", "1");
-    localStorage.setItem("accorto_admin_login_time", new Date().toISOString());
-    navigate(from, { replace: true });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4">
@@ -111,22 +105,9 @@ const StoreLoginPage = () => {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="w-full py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                デフォルト設定でスキップ (店舗1)
-              </button>
             </div>
           </form>
 
-          {/* 開発用情報 */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
-              試験用機能 - セキュリティは重視していません
-            </p>
-          </div>
         </div>
       </div>
     </div>
