@@ -21,19 +21,13 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       // S3用の最適化
       rollupOptions: {
-        output: {
-          manualChunks: {
-            // ベンダーライブラリを分離してキャッシュ効率向上
-            vendor: ['react', 'react-dom'],
-            router: ['react-router']
-          }
-        }
+        output: {}
       },
       // アセットファイル名の設定（CloudFrontキャッシュ用）
       assetsDir: 'assets',
       // gzip圧縮対応
       target: 'es2015',
-      minify: 'terser',
+      minify: false,
       terserOptions: {
         compress: {
           drop_console: mode === 'production',

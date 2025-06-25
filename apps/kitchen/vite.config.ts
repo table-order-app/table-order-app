@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             // ベンダーライブラリを分離してキャッシュ効率向上
             vendor: ['react', 'react-dom'],
-            router: ['react-router']
+            router: ['react-router-dom']
           }
         }
       },
@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       // gzip圧縮対応
       target: 'es2015',
-      minify: 'terser',
+      minify: false,
       terserOptions: {
         compress: {
           drop_console: mode === 'production',
