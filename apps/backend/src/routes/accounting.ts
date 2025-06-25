@@ -245,7 +245,9 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     const totalItems = (archivedSales[0]?.totalItems || 0) + (activeSales[0]?.totalItems || 0)
     const subtotalAmount = parseFloat((archivedSales[0]?.totalAmount || 0).toString()) + parseFloat((activeSales[0]?.totalAmount || 0).toString())
 
-    const { taxAmount, totalAmount } = calculateTax(subtotalAmount, taxRate)
+    // 税抜き金額をそのまま使用
+    const taxAmount = 0
+    const totalAmount = subtotalAmount
     
     // 既存の集計データを確認
     const existingSales = await db

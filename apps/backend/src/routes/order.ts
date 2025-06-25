@@ -89,9 +89,9 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
         })
       }
       
-      // 税額計算（10%）
-      const taxAmount = Math.floor(subtotalAmount * 0.1)
-      const totalAmount = subtotalAmount + taxAmount
+      // 税抜き金額をそのまま使用
+      const taxAmount = 0
+      const totalAmount = subtotalAmount
       
       // 注文を作成（価格情報込み）
       const [order] = await tx.insert(orders).values({
