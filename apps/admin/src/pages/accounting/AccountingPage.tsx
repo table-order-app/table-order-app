@@ -407,12 +407,6 @@ const AccountingPage = () => {
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         売上金額
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        状態
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        操作
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -437,36 +431,6 @@ const AccountingPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-gray-900">{formatCurrency(sales.totalAmount)}</div>
                           <div className="text-xs text-gray-500">税抜</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            sales.isFinalized
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${
-                              sales.isFinalized ? 'bg-green-400' : 'bg-yellow-400'
-                            }`}></span>
-                            {sales.isFinalized ? '確定済み' : '未確定'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => calculateDailySales(sales.accountingDate)}
-                            disabled={isLoading || isCalculating}
-                            className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
-                          >
-                            再集計
-                          </button>
-                          {!sales.isFinalized && (
-                            <button
-                              onClick={() => finalizeSales(sales.accountingDate)}
-                              disabled={isLoading || isCalculating}
-                              className="text-green-600 hover:text-green-800 disabled:text-gray-400 transition-colors"
-                            >
-                              確定
-                            </button>
-                          )}
                         </td>
                       </tr>
                     ))}
