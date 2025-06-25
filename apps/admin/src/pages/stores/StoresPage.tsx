@@ -12,13 +12,8 @@ interface StoreData {
 }
 
 interface BusinessHours {
-  monday: { open: string; close: string; isOpen: boolean };
-  tuesday: { open: string; close: string; isOpen: boolean };
-  wednesday: { open: string; close: string; isOpen: boolean };
-  thursday: { open: string; close: string; isOpen: boolean };
-  friday: { open: string; close: string; isOpen: boolean };
-  saturday: { open: string; close: string; isOpen: boolean };
-  sunday: { open: string; close: string; isOpen: boolean };
+  open: string;
+  close: string;
 }
 
 const StoresPage = () => {
@@ -39,13 +34,8 @@ const StoresPage = () => {
   });
 
   const [businessHours, setBusinessHours] = useState<BusinessHours>({
-    monday: { open: '09:00', close: '17:00', isOpen: true },
-    tuesday: { open: '09:00', close: '17:00', isOpen: true },
-    wednesday: { open: '09:00', close: '17:00', isOpen: true },
-    thursday: { open: '09:00', close: '17:00', isOpen: true },
-    friday: { open: '09:00', close: '17:00', isOpen: true },
-    saturday: { open: '10:00', close: '16:00', isOpen: true },
-    sunday: { open: '10:00', close: '16:00', isOpen: false },
+    open: '09:00',
+    close: '17:00'
   });
 
   useEffect(() => {
@@ -128,13 +118,10 @@ const StoresPage = () => {
     setError(null);
   };
 
-  const handleBusinessHoursChange = (day: keyof BusinessHours, field: 'open' | 'close' | 'isOpen', value: string | boolean) => {
+  const handleBusinessHoursChange = (field: 'open' | 'close', value: string) => {
     setBusinessHours(prev => ({
       ...prev,
-      [day]: {
-        ...prev[day],
-        [field]: value
-      }
+      [field]: value
     }));
   };
 
@@ -156,15 +143,6 @@ const StoresPage = () => {
     setIsEditingHours(false);
   };
 
-  const dayLabels = {
-    monday: '月曜日',
-    tuesday: '火曜日',
-    wednesday: '水曜日',
-    thursday: '木曜日',
-    friday: '金曜日',
-    saturday: '土曜日',
-    sunday: '日曜日',
-  };
 
   if (loading) {
     return (
@@ -334,62 +312,35 @@ const StoresPage = () => {
           </div>
 
           <div className="space-y-4">
-            {Object.entries(dayLabels).map(([day, label]) => {
-              const dayData = businessHours[day as keyof BusinessHours];
-              return (
-                <div key={day} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-20 text-sm font-medium text-gray-700">
-                    {label}
-                  </div>
-                  
-                  {isEditingHours ? (
-                    <>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={dayData.isOpen}
-                          onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'isOpen', e.target.checked)}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-600">営業</span>
-                      </div>
-                      
-                      {dayData.isOpen && (
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="time"
-                            value={dayData.open}
-                            onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'open', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                          <span className="text-gray-500">〜</span>
-                          <input
-                            type="time"
-                            value={dayData.close}
-                            onChange={(e) => handleBusinessHoursChange(day as keyof BusinessHours, 'close', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                      )}
-                      
-                      {!dayData.isOpen && (
-                        <span className="text-gray-500 text-sm">定休日</span>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center">
-                      {dayData.isOpen ? (
-                        <span className="text-sm text-gray-700">
-                          {dayData.open} 〜 {dayData.close}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-500">定休日</span>
-                      )}
-                    </div>
-                  )}
+            <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+              <div className="w-20 text-sm font-medium text-gray-700">
+                営業時間
+              </div>
+              
+              {isEditingHours ? (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="time"
+                    value={businessHours.open}
+                    onChange={(e) => handleBusinessHoursChange('open', e.target.value)}
+                    className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <span className="text-gray-500">〜</span>
+                  <input
+                    type="time"
+                    value={businessHours.close}
+                    onChange={(e) => handleBusinessHoursChange('close', e.target.value)}
+                    className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
                 </div>
-              );
-            })}
+              ) : (
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-700">
+                    {businessHours.open} 〜 {businessHours.close}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 営業時間編集時のボタン */}
