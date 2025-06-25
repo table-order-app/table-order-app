@@ -7,6 +7,7 @@ import { eq, and, sql } from 'drizzle-orm'
 import { authMiddleware, optionalAuthMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
 import { saveImage, isS3Enabled } from '../utils/s3'
 import { logError, logInfo, logDebug } from '../utils/logger-simple'
+import { createJSTTimestamp } from '../utils/accounting'
 
 export const menuRoutes = new Hono()
 
@@ -255,7 +256,7 @@ menuRoutes.put('/items/:id', flexibleAuthMiddleware, zValidator('json', z.object
     }
     
     const result = await db.update(menuItems)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: createJSTTimestamp() })
       .where(and(eq(menuItems.id, id), eq(menuItems.storeId, auth.storeId)))
       .returning()
     

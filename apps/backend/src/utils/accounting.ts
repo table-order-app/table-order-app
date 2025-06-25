@@ -14,6 +14,14 @@ export function getJSTDate(): Date {
 }
 
 /**
+ * データベース保存用のJSTタイムスタンプを生成
+ * @returns データベースに保存するためのJST Dateオブジェクト
+ */
+export function createJSTTimestamp(): Date {
+  return getJSTDate()
+}
+
+/**
  * 日本時間基準で日の切り替え時間を考慮した会計日を取得
  * @param date 対象の日時（JST）
  * @param dayClosingTime 日の切り替え時間 (HH:MM:SS形式, JST)
