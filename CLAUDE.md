@@ -150,3 +150,41 @@ Test with curl: `curl http://localhost:3000/api/menu/categories`
 - If database errors occur, run migrations: `cd apps/backend && pnpm db:migrate`
 - For TypeScript errors in frontend, check that types are imported from `../types`
 - Table number configuration: Set via `VITE_TABLE_NUMBER` or defaults to "test"
+
+## Development Workflow
+
+### Code Changes and Deployment Flow
+
+**IMPORTANT**: Always follow this workflow when making changes to the codebase:
+
+1. **Make changes locally**
+   - Edit files in local development environment
+   - Test changes locally if possible
+
+2. **Commit changes locally**
+   ```bash
+   git add [modified-files]
+   git commit -m "Descriptive commit message"
+   ```
+
+3. **Push to remote repository**
+   ```bash
+   git push origin develop
+   ```
+
+4. **Deploy to EC2 server**
+   ```bash
+   ssh -i "accorto-simple-key.pem" ec2-user@35.72.96.45 "cd /home/ec2-user/tableorder && git pull && [build-and-restart-commands]"
+   ```
+
+**Example EC2 deployment commands:**
+- Backend: `cd apps/backend && npm run build && pm2 restart backend`
+- Frontend apps: `cd apps/[app-name] && npm run build && pm2 restart [app-name]`
+- All apps: Run build and restart for each modified app
+
+**Never:**
+- Make direct changes on EC2 server
+- Skip version control (git)
+- Deploy without testing locally first
+
+This workflow ensures proper version control, traceability, and safe deployment practices.
