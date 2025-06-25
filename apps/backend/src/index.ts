@@ -1,4 +1,7 @@
 import 'dotenv/config'
+
+// 日本時間（JST）をデフォルトタイムゾーンに設定
+process.env.TZ = 'Asia/Tokyo'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'

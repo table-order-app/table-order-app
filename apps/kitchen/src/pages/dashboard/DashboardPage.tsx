@@ -6,6 +6,7 @@ import {
   updateOrderItemStatus,
   ApiOrder,
 } from "../../services/orderService";
+import { formatTimeJST, getElapsedMinutesJST } from "../../utils/dateUtils";
 
 // API data transformation functions
 const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {
@@ -367,10 +368,7 @@ const DashboardPage = () => {
                               {totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0}%
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              {new Date(order.createdAt).toLocaleTimeString("ja-JP", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {formatTimeJST(order.createdAt)}
                             </p>
                           </div>
                         </div>

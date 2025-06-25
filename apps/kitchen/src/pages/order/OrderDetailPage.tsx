@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Order, OrderStatus, ProgressData } from "../../types/order";
 import { getPath } from "../../routes";
+import { formatTimeJST, formatDateTimeJSTJST } from "../../utils/dateUtils";
 
 // サンプルデータ（実際はAPIから取得）
 const sampleOrders: Order[] = [
@@ -192,16 +193,6 @@ const OrderDetailPage = () => {
     navigate(getPath.dashboard());
   };
 
-  // 日時のフォーマット
-  const formatDateTime = (date: Date): string => {
-    return new Date(date).toLocaleString("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   // 経過時間の計算
   const calculateElapsedTime = (date: Date): string => {
@@ -329,7 +320,7 @@ const OrderDetailPage = () => {
                 <div>
                   <p className="text-sm text-gray-600">注文日時:</p>
                   <p className="font-medium">
-                    {formatDateTime(order.createdAt)}
+                    {formatDateTimeJST(order.createdAt)}
                   </p>
                   <p className="text-xs text-gray-500">
                     ({calculateElapsedTime(order.createdAt)}前)
@@ -338,7 +329,7 @@ const OrderDetailPage = () => {
                 <div>
                   <p className="text-sm text-gray-600">最終更新:</p>
                   <p className="font-medium">
-                    {formatDateTime(order.updatedAt)}
+                    {formatDateTimeJST(order.updatedAt)}
                   </p>
                   <p className="text-xs text-gray-500">
                     ({calculateElapsedTime(order.updatedAt)}前)
@@ -395,7 +386,7 @@ const OrderDetailPage = () => {
                             </span>
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                            {formatDateTime(item.updatedAt)}
+                            {formatDateTimeJST(item.updatedAt)}
                           </td>
                         </tr>
                       ))}
@@ -425,14 +416,7 @@ const OrderDetailPage = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-gray-500 text-xs">
-                      開始時間:{" "}
-                      {new Date(tableProgress.startTime).toLocaleTimeString(
-                        "ja-JP",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
+                      開始時間: {formatTimeJST(tableProgress.startTime)}
                     </p>
                   </div>
                 </div>

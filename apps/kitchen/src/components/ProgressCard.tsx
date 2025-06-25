@@ -1,6 +1,7 @@
 import React from "react";
 import { ProgressData } from "../types/order";
 import ProgressBar from "./ProgressBar";
+import { formatTimeJST } from "../utils/dateUtils";
 
 interface ProgressCardProps {
   progressData: ProgressData;
@@ -33,13 +34,6 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ progressData }) => {
     }
   };
 
-  // 開始時間をフォーマット
-  const formatTime = (date: Date): string => {
-    return new Date(date).toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   // 進捗率を計算
   const calculateProgress = (): number => {
@@ -59,7 +53,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ progressData }) => {
             進捗: {calculateProgress()}%
           </span>
           <p className="text-gray-500 text-xs">
-            開始: {formatTime(startTime)} ({calculateElapsedTime(startTime)})
+            開始: {formatTimeJST(startTime)} ({calculateElapsedTime(startTime)})
           </p>
         </div>
       </div>

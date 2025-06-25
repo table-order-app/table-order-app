@@ -1,11 +1,22 @@
 /**
  * 会計関連のユーティリティ関数
+ * 全ての時刻処理は日本時間（JST, UTC+9）基準で行われます
  */
 
 /**
- * 日の切り替え時間を考慮した会計日を取得
- * @param date 対象の日時
- * @param dayClosingTime 日の切り替え時間 (HH:MM:SS形式)
+ * 現在の日本時間（JST）を取得
+ * @returns 日本時間のDateオブジェクト
+ */
+export function getJSTDate(): Date {
+  // NodeJSプロセスのタイムゾーンがAsia/Tokyoに設定されているため、
+  // new Date()は自動的にJSTを返します
+  return new Date()
+}
+
+/**
+ * 日本時間基準で日の切り替え時間を考慮した会計日を取得
+ * @param date 対象の日時（JST）
+ * @param dayClosingTime 日の切り替え時間 (HH:MM:SS形式, JST)
  * @returns 会計日 (YYYY-MM-DD形式)
  */
 export function getAccountingDate(date: Date, dayClosingTime: string): string {
@@ -48,12 +59,32 @@ export function getAccountingPeriod(accountingDate: string, dayClosingTime: stri
 }
 
 /**
- * 現在の会計日を取得
- * @param dayClosingTime 日の切り替え時間 (HH:MM:SS形式)
+ * 現在の会計日を取得（JST基準）
+ * @param dayClosingTime 日の切り替え時間 (HH:MM:SS形式, JST)
  * @returns 現在の会計日 (YYYY-MM-DD形式)
  */
 export function getCurrentAccountingDate(dayClosingTime: string = '05:00:00'): string {
-  return getAccountingDate(new Date(), dayClosingTime)
+  return getAccountingDate(getJSTDate(), dayClosingTime)
+}
+
+/**
+ * 日本時間で現在時刻の文字列を取得
+ * @param format 'date' | 'time' | 'datetime'
+ * @returns フォーマットされた時刻文字列
+ */
+export function getJSTString(format: 'date' | 'time' | 'datetime' = 'datetime'): string {
+  const now = getJSTDate()
+  
+  switch (format) {
+    case 'date':
+      return now.toISOString().split('T')[0] // YYYY-MM-DD
+    case 'time':
+      return now.toTimeString().split(' ')[0] // HH:MM:SS
+    case 'datetime':
+      return now.toISOString().replace('T', ' ').substring(0, 19) // YYYY-MM-DD HH:MM:SS
+    default:
+      return now.toISOString()
+  }
 }
 
 /**

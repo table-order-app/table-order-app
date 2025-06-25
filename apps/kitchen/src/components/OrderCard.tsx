@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order, OrderStatus } from "../types/order";
 import { getPath } from "../routes";
+import { formatTimeJST, getElapsedMinutesJST } from "../utils/dateUtils";
 
 interface OrderCardProps {
   order: Order;
@@ -46,22 +47,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // 新しい注文から経過時間を計算
+  // 新しい注文から経過時間を計算（JST基準）
   const calculateElapsedTime = (date: Date) => {
-    const now = new Date();
-    const orderDate = new Date(date);
-    const diffMs = now.getTime() - orderDate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
+    const elapsedMinutes = getElapsedMinutesJST(date);
 
-    if (diffMins < 1) return "今";
-    return `${diffMins}分前`;
+    if (elapsedMinutes < 1) return "今";
+    return `${elapsedMinutes}分前`;
   };
 
   return (
@@ -82,7 +73,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             {statusLabels[order.status]}
           </span>
           <span className="text-gray-500 text-xs mt-1">
-            {formatTime(order.createdAt)} (
+            {formatTimeJST(order.createdAt)} (
             {calculateElapsedTime(order.createdAt)})
           </span>
         </div>
