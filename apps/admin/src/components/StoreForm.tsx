@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createStore, updateStore, Store, CreateStoreData, UpdateStoreData } from '../services/storeService';
+import { updateStore, Store, CreateStoreData, UpdateStoreData } from '../services/storeService';
 import { Modal } from './Modal';
 
 interface StoreFormProps {

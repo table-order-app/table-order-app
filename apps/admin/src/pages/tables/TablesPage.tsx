@@ -37,7 +37,6 @@ const TablesPage = () => {
     id: 0,
     number: 0,
     capacity: 0,
-    area: "",
     status: "available",
   });
   
