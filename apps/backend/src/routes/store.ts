@@ -2,10 +2,12 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { stores } from '../db/schema'
+import { stores, storeInfo, accountingSettings } from '../db/schema'
 import { eq } from 'drizzle-orm'
-import { authMiddleware } from '../middleware/auth'
-import { logError } from '../utils/logger-simple'
+import { authMiddleware, flexibleAuthMiddleware } from '../middleware/auth'
+import { logError, logInfo } from '../utils/logger-simple'
+import { createJSTTimestamp } from '../utils/accounting'
+import { createBusinessHours, BusinessHoursInput } from '../types/business-hours'
 
 // 店舗コード生成関数
 const generateStoreCode = (): string => {
@@ -167,5 +169,118 @@ storeRoutes.post('/:id/generate-code', authMiddleware, async (c) => {
   } catch (error) {
     logError('Error generating store code:', error)
     return c.json({ success: false, error: '店舗コードの生成に失敗しました' }, 500)
+  }
+})
+
+// 営業時間設定を取得
+storeRoutes.get('/business-hours', flexibleAuthMiddleware, async (c) => {
+  try {
+    const auth = c.get('auth')
+    
+    // 店舗情報から営業時間を取得
+    const store = await db.query.storeInfo.findFirst({
+      where: eq(storeInfo.id, auth.storeId)
+    })
+    
+    if (!store || !store.businessHours) {
+      // デフォルト営業時間を返す
+      const defaultHours = createBusinessHours({
+        openTime: '09:00',
+        closeTime: '17:00'
+      })
+      return c.json({ success: true, data: defaultHours })
+    }
+    
+    return c.json({ success: true, data: store.businessHours })
+  } catch (error) {
+    logError('Error fetching business hours:', error)
+    return c.json({ success: false, error: '営業時間の取得に失敗しました' }, 500)
+  }
+})
+
+// 営業時間設定を更新
+storeRoutes.put('/business-hours', flexibleAuthMiddleware, zValidator('json', z.object({
+  openTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, '営業開始時間の形式が正しくありません'),
+  closeTime: z.string().regex(/^([01]?[0-9]|2[0-6]):[0-5][0-9]$/, '営業終了時間の形式が正しくありません (26:00まで可能)'),
+})), async (c) => {
+  try {
+    const auth = c.get('auth')
+    const input: BusinessHoursInput = c.req.valid('json')
+    
+    // 営業時間オブジェクトを作成
+    const businessHours = createBusinessHours(input)
+    const now = createJSTTimestamp()
+    
+    // トランザクションで営業時間と会計設定を同期更新
+    await db.transaction(async (tx) => {
+      // 1. 店舗情報テーブルの営業時間を更新
+      const existingStoreInfo = await tx.query.storeInfo.findFirst({
+        where: eq(storeInfo.id, auth.storeId)
+      })
+      
+      if (existingStoreInfo) {
+        // 既存レコードを更新
+        await tx.update(storeInfo)
+          .set({
+            businessHours: businessHours,
+            updatedAt: now
+          })
+          .where(eq(storeInfo.id, auth.storeId))
+      } else {
+        // 新規レコードを作成
+        const store = await tx.query.stores.findFirst({
+          where: eq(stores.id, auth.storeId)
+        })
+        
+        if (store) {
+          await tx.insert(storeInfo).values({
+            name: store.name,
+            email: store.email,
+            businessHours: businessHours,
+            createdAt: now,
+            updatedAt: now
+          })
+        }
+      }
+      
+      // 2. 会計設定の日の切り替え時間を同期更新
+      const existingAccountingSetting = await tx.query.accountingSettings.findFirst({
+        where: eq(accountingSettings.storeId, auth.storeId)
+      })
+      
+      if (existingAccountingSetting) {
+        // 営業開始時間を会計日の切り替え時間として設定
+        await tx.update(accountingSettings)
+          .set({
+            dayClosingTime: `${businessHours.openTime}:00`,
+            updatedAt: now
+          })
+          .where(eq(accountingSettings.storeId, auth.storeId))
+      } else {
+        // 新規会計設定を作成
+        await tx.insert(accountingSettings).values({
+          storeId: auth.storeId,
+          dayClosingTime: `${businessHours.openTime}:00`,
+          taxRate: '0.00', // 税抜き運用
+          displayCurrency: 'JPY',
+          createdAt: now,
+          updatedAt: now
+        })
+      }
+    })
+    
+    logInfo('Business hours updated', {
+      storeId: auth.storeId,
+      businessHours: businessHours
+    })
+    
+    return c.json({
+      success: true,
+      data: businessHours,
+      message: '営業時間を更新しました。会計日の計算も自動で調整されます。'
+    })
+  } catch (error) {
+    logError('Error updating business hours:', error)
+    return c.json({ success: false, error: '営業時間の更新に失敗しました' }, 500)
   }
 })

@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getCurrentStore } from '../../services/authService';
 import { updateStore } from '../../services/storeService';
+import { 
+  getBusinessHours, 
+  updateBusinessHours, 
+  formatBusinessHours,
+  validateTimeInput,
+  isNextDayOperation,
+  normalizeTimeDisplay,
+  BusinessHours,
+  BusinessHoursInput 
+} from '../../services/businessHoursService';
 
 interface StoreData {
   id: number;
@@ -11,10 +21,7 @@ interface StoreData {
   phone?: string;
 }
 
-interface BusinessHours {
-  open: string;
-  close: string;
-}
+// BusinessHours型はserviceからインポートされるので削除
 
 const StoresPage = () => {
   const [store, setStore] = useState<StoreData | null>(null);
@@ -33,13 +40,16 @@ const StoresPage = () => {
     phone: ''
   });
 
-  const [businessHours, setBusinessHours] = useState<BusinessHours>({
-    open: '09:00',
-    close: '17:00'
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
+  const [businessHoursInput, setBusinessHoursInput] = useState<BusinessHoursInput>({
+    openTime: '09:00',
+    closeTime: '17:00'
   });
+  const [businessHoursLoading, setBusinessHoursLoading] = useState(false);
 
   useEffect(() => {
     loadCurrentStore();
+    loadBusinessHours();
   }, []);
 
   const loadCurrentStore = async () => {
@@ -56,16 +66,27 @@ const StoresPage = () => {
           phone: currentStore.phone || ''
         });
       }
-      
-      // 営業時間をローカルストレージから復元
-      const savedHours = localStorage.getItem('businessHours');
-      if (savedHours) {
-        setBusinessHours(JSON.parse(savedHours));
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '店舗情報の取得に失敗しました');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBusinessHours = async () => {
+    try {
+      setBusinessHoursLoading(true);
+      const hours = await getBusinessHours();
+      setBusinessHours(hours);
+      setBusinessHoursInput({
+        openTime: hours.openTime,
+        closeTime: hours.closeTime
+      });
+    } catch (err) {
+      console.warn('営業時間の取得に失敗しました:', err);
+      // エラーの場合はデフォルト値を使用
+    } finally {
+      setBusinessHoursLoading(false);
     }
   };
 
@@ -118,29 +139,54 @@ const StoresPage = () => {
     setError(null);
   };
 
-  const handleBusinessHoursChange = (field: 'open' | 'close', value: string) => {
-    setBusinessHours(prev => ({
+  const handleBusinessHoursInputChange = (field: 'openTime' | 'closeTime', value: string) => {
+    if (!validateTimeInput(value)) {
+      return; // 無効な時刻は入力させない
+    }
+    
+    setBusinessHoursInput(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleSaveBusinessHours = () => {
-    // ここで営業時間をサーバーに保存する処理を追加
-    // 現在はローカルストレージに保存
-    localStorage.setItem('businessHours', JSON.stringify(businessHours));
-    setSuccess('営業時間を更新しました');
-    setIsEditingHours(false);
-    setTimeout(() => setSuccess(null), 3000);
+  const handleSaveBusinessHours = async () => {
+    try {
+      setBusinessHoursLoading(true);
+      setError(null);
+      
+      // バリデーション
+      if (!validateTimeInput(businessHoursInput.openTime) || !validateTimeInput(businessHoursInput.closeTime)) {
+        setError('営業時間の形式が正しくありません（HH:MM形式、26:00まで可能）');
+        return;
+      }
+      
+      // サーバーに営業時間を保存
+      const updatedHours = await updateBusinessHours(businessHoursInput);
+      setBusinessHours(updatedHours);
+      
+      setSuccess('営業時間を更新しました。会計日の計算も自動で調整されます。');
+      setIsEditingHours(false);
+      
+      // 成功メッセージを5秒後に消す
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '営業時間の更新に失敗しました');
+    } finally {
+      setBusinessHoursLoading(false);
+    }
   };
 
   const handleCancelBusinessHours = () => {
-    // ローカルストレージから営業時間を復元
-    const saved = localStorage.getItem('businessHours');
-    if (saved) {
-      setBusinessHours(JSON.parse(saved));
+    // 元の営業時間に戻す
+    if (businessHours) {
+      setBusinessHoursInput({
+        openTime: businessHours.openTime,
+        closeTime: businessHours.closeTime
+      });
     }
     setIsEditingHours(false);
+    setError(null);
   };
 
 
@@ -300,8 +346,13 @@ const StoresPage = () => {
       {store && (
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-medium text-gray-900">営業時間設定</h2>
-            {!isEditingHours && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">営業時間設定</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                営業時間を設定すると、会計日の計算が自動で調整されます
+              </p>
+            </div>
+            {!isEditingHours && !businessHoursLoading && (
               <button
                 onClick={() => setIsEditingHours(true)}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -311,52 +362,110 @@ const StoresPage = () => {
             )}
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-              <div className="w-20 text-sm font-medium text-gray-700">
-                営業時間
+          {businessHoursLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              <span className="ml-2 text-sm text-gray-600">営業時間を読み込み中...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* 営業時間表示/編集 */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    営業時間
+                  </div>
+                  {businessHours?.isNextDay && (
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                      跨日営業
+                    </span>
+                  )}
+                </div>
+                
+                {isEditingHours ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">営業開始</label>
+                        <input
+                          type="text"
+                          value={businessHoursInput.openTime}
+                          onChange={(e) => handleBusinessHoursInputChange('openTime', e.target.value)}
+                          placeholder="17:00"
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                      <span className="text-gray-500 mt-6">〜</span>
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-600 mb-1">営業終了</label>
+                        <input
+                          type="text"
+                          value={businessHoursInput.closeTime}
+                          onChange={(e) => handleBusinessHoursInputChange('closeTime', e.target.value)}
+                          placeholder="26:00"
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* プレビュー表示 */}
+                    {isNextDayOperation(businessHoursInput.openTime, businessHoursInput.closeTime) && (
+                      <div className="text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
+                        <strong>跨日営業:</strong> {normalizeTimeDisplay(businessHoursInput.openTime)} 〜 {normalizeTimeDisplay(businessHoursInput.closeTime)}
+                        <br />
+                        例: 6/12 {businessHoursInput.openTime} ～ 6/13 {businessHoursInput.closeTime.replace(/^([0-2][0-6]):/, (_, h) => (parseInt(h) >= 24 ? `${parseInt(h) - 24}`.padStart(2, '0') + ':' : h + ':'))} の注文は6/12の売上
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-gray-500">
+                      ※ 26:00まで入力可能（26:00 = 翌日2:00）
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg font-medium text-gray-900">
+                      {businessHours ? formatBusinessHours(businessHours) : '未設定'}
+                    </span>
+                    {businessHours?.isNextDay && (
+                      <div className="text-xs text-gray-600">
+                        <div>会計日: 営業開始 ～ 翌日営業開始</div>
+                        <div>例: {businessHours.openTime}の注文は同日、翌{businessHours.closeTime.replace(/^([0-2][0-6]):/, (_, h) => (parseInt(h) >= 24 ? `${parseInt(h) - 24}`.padStart(2, '0') + ':' : h + ':'))}の注文も同日扱い</div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
-              {isEditingHours ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="time"
-                    value={businessHours.open}
-                    onChange={(e) => handleBusinessHoursChange('open', e.target.value)}
-                    className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <span className="text-gray-500">〜</span>
-                  <input
-                    type="time"
-                    value={businessHours.close}
-                    onChange={(e) => handleBusinessHoursChange('close', e.target.value)}
-                    className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-700">
-                    {businessHours.open} 〜 {businessHours.close}
-                  </span>
+              {/* 会計日の説明 */}
+              {businessHours && !isEditingHours && (
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm text-blue-800">
+                    <strong>会計日の計算:</strong> 営業開始時刻（{businessHours.openTime}）から次の営業開始時刻までを1営業日として集計します
+                  </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
 
           {/* 営業時間編集時のボタン */}
           {isEditingHours && (
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={handleCancelBusinessHours}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={businessHoursLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleSaveBusinessHours}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                disabled={businessHoursLoading}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center"
               >
-                保存
+                {businessHoursLoading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                )}
+                {businessHoursLoading ? '保存中...' : '保存'}
               </button>
             </div>
           )}

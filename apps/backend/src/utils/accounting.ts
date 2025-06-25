@@ -3,6 +3,8 @@
  * 全ての時刻処理は日本時間（JST, UTC+9）基準で行われます
  */
 
+import { BusinessHours } from '../types/business-hours'
+
 /**
  * 現在の日本時間（JST）を取得
  * @returns 日本時間のDateオブジェクト
@@ -172,4 +174,128 @@ export function centToJpy(centAmount: number): number {
  */
 export function jpyToCent(jpyAmount: number): number {
   return Math.round(jpyAmount * 100)
+}
+
+/**
+ * 営業時間ベースの会計日を取得
+ * @param date 対象の日時（JST）
+ * @param businessHours 営業時間設定
+ * @returns 会計日 (YYYY-MM-DD形式)
+ * 
+ * 例: 営業時間 17:00-26:00の場合
+ * - 6/12 17:00 ～ 6/13 17:00 → 6/12の会計日
+ * - 6/13 0:13の注文 → 6/12の売上
+ */
+export function getBusinessAccountingDate(date: Date, businessHours: BusinessHours): string {
+  const [openHour, openMin] = businessHours.openTime.split(':').map(Number)
+  
+  // 営業開始時間をDateオブジェクトに変換
+  const businessStart = new Date(date)
+  businessStart.setHours(openHour, openMin, 0, 0)
+  
+  // 営業開始時間より前の場合は前日扱い
+  if (date < businessStart) {
+    const accountingDate = new Date(date)
+    accountingDate.setDate(accountingDate.getDate() - 1)
+    return accountingDate.toISOString().split('T')[0]
+  }
+  
+  return date.toISOString().split('T')[0]
+}
+
+/**
+ * 営業時間ベースの会計期間を取得
+ * @param accountingDate 会計日 (YYYY-MM-DD形式)
+ * @param businessHours 営業時間設定
+ * @returns 期間の開始・終了日時
+ * 
+ * 例: 6/12の会計日、営業時間 17:00-26:00の場合
+ * - 開始: 6/12 17:00:00
+ * - 終了: 6/13 17:00:00
+ */
+export function getBusinessAccountingPeriod(
+  accountingDate: string, 
+  businessHours: BusinessHours
+): {
+  start: Date
+  end: Date
+} {
+  const [openHour, openMin] = businessHours.openTime.split(':').map(Number)
+  
+  // 期間開始：会計日の営業開始時間
+  const start = new Date(`${accountingDate}T${businessHours.openTime}:00`)
+  
+  // 期間終了：翌日の営業開始時間
+  const end = new Date(start)
+  end.setDate(end.getDate() + 1)
+  
+  return { start, end }
+}
+
+/**
+ * 現在の営業ベース会計日を取得（JST基準）
+ * @param businessHours 営業時間設定
+ * @returns 現在の会計日 (YYYY-MM-DD形式)
+ */
+export function getCurrentBusinessAccountingDate(businessHours: BusinessHours): string {
+  return getBusinessAccountingDate(getJSTDate(), businessHours)
+}
+
+/**
+ * 指定時刻が営業時間内かどうかを判定
+ * @param time 判定する時刻（JST）
+ * @param businessHours 営業時間設定
+ * @returns 営業時間内の場合 true
+ */
+export function isWithinBusinessHours(time: Date, businessHours: BusinessHours): boolean {
+  const [openHour, openMin] = businessHours.openTime.split(':').map(Number)
+  const [closeHour, closeMin] = businessHours.closeTime.split(':').map(Number)
+  
+  // 営業開始時間
+  const businessStart = new Date(time)
+  businessStart.setHours(openHour, openMin, 0, 0)
+  
+  // 営業終了時間
+  let businessEnd = new Date(time)
+  if (businessHours.isNextDay) {
+    // 跨日営業の場合は翌日に設定
+    businessEnd.setDate(businessEnd.getDate() + 1)
+  }
+  
+  // 26:00表記の場合は時間を調整（26:00 → 翌日02:00）
+  const actualCloseHour = closeHour >= 24 ? closeHour - 24 : closeHour
+  businessEnd.setHours(actualCloseHour, closeMin, 0, 0)
+  
+  return time >= businessStart && time <= businessEnd
+}
+
+/**
+ * 注文時刻から営業日を特定
+ * @param orderTime 注文時刻（JST）
+ * @param businessHours 営業時間設定
+ * @returns 営業日の情報
+ * 
+ * 例: 6/13 0:13の注文、営業時間17:00-26:00
+ * → { accountingDate: "2025-06-12", businessDay: "6/12", isCurrentBusiness: true }
+ */
+export function identifyBusinessDay(orderTime: Date, businessHours: BusinessHours): {
+  accountingDate: string
+  businessDay: string
+  isCurrentBusiness: boolean
+  period: { start: Date; end: Date }
+} {
+  const accountingDate = getBusinessAccountingDate(orderTime, businessHours)
+  const period = getBusinessAccountingPeriod(accountingDate, businessHours)
+  const isCurrentBusiness = isWithinBusinessHours(orderTime, businessHours)
+  
+  // 営業日の表示用文字列（6/12形式）
+  const [year, month, day] = accountingDate.split('-')
+  const businessDay = `${month}/${day}`
+  
+  return {
+    accountingDate,
+    businessDay,
+    isCurrentBusiness,
+    period
+  }
 }
