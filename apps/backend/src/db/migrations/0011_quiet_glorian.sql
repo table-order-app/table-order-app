@@ -1,0 +1,1 @@
+-- マイグレーション 0011: Empty migration to resolve missing file issue
