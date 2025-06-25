@@ -18,7 +18,11 @@ export function getJSTDate(): Date {
  * @returns データベースに保存するためのJST Dateオブジェクト
  */
 export function createJSTTimestamp(): Date {
-  return getJSTDate()
+  // 明示的にJST（UTC+9）のDateオブジェクトを作成
+  const now = new Date()
+  const jstOffset = 9 * 60 * 60 * 1000 // 9時間をミリ秒で
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60 * 1000)
+  return new Date(utc + jstOffset)
 }
 
 /**

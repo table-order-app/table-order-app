@@ -6,7 +6,7 @@ import { orders, orderItems, orderItemOptions, orderItemToppings, stores, tables
 import { eq, and } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
 import { logError } from '../utils/logger-simple'
-import { getJSTDate } from '../utils/accounting'
+import { getJSTDate, createJSTTimestamp } from '../utils/accounting'
 
 export const orderRoutes = new Hono()
 
@@ -95,6 +95,7 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
       const totalAmount = subtotalAmount
       
       // 注文を作成（価格情報込み）
+      const now = createJSTTimestamp()
       const [order] = await tx.insert(orders).values({
         storeId: auth.storeId,
         tableId,
@@ -103,6 +104,8 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
         taxAmount: taxAmount.toString(),
         totalAmount: totalAmount.toString(),
         status: 'new',
+        createdAt: now,
+        updatedAt: now,
       }).returning()
       
       // 注文アイテムを作成（価格情報込み）
@@ -116,6 +119,8 @@ orderRoutes.post('/', flexibleAuthMiddleware, zValidator('json', z.object({
           totalPrice: item.totalPrice.toString(),
           notes: item.notes,
           status: 'new',
+          createdAt: now,
+          updatedAt: now,
         }).returning()
         
         // オプションを作成

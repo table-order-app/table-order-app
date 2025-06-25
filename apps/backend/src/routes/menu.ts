@@ -49,10 +49,13 @@ menuRoutes.post('/categories', flexibleAuthMiddleware, zValidator('json', z.obje
   try {
     const auth = c.get('auth')
     const { name, description } = c.req.valid('json')
+    const now = createJSTTimestamp()
     const result = await db.insert(categories).values({
       storeId: auth.storeId,
       name,
       description,
+      createdAt: now,
+      updatedAt: now,
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
@@ -106,6 +109,7 @@ menuRoutes.post('/items', flexibleAuthMiddleware, zValidator('json', z.object({
       }, 400)
     }
     
+    const now = createJSTTimestamp()
     const result = await db.insert(menuItems).values({
       storeId: auth.storeId,
       categoryId: data.categoryId || null,
@@ -114,6 +118,8 @@ menuRoutes.post('/items', flexibleAuthMiddleware, zValidator('json', z.object({
       price: data.price,
       image: data.image,
       available: data.available ?? true,
+      createdAt: now,
+      updatedAt: now,
     }).returning()
     return c.json({ success: true, data: result[0] }, 201)
   } catch (error) {
@@ -181,6 +187,7 @@ menuRoutes.post('/items-with-file', flexibleAuthMiddleware, async (c) => {
       logInfo('Image uploaded successfully', { imagePath, fileSize: imageFile.size, fileName: imageFile.name })
     }
     
+    const now = createJSTTimestamp()
     const result = await db.insert(menuItems).values({
       storeId: auth.storeId,
       categoryId,
@@ -189,6 +196,8 @@ menuRoutes.post('/items-with-file', flexibleAuthMiddleware, async (c) => {
       price,
       image: imagePath,
       available,
+      createdAt: now,
+      updatedAt: now,
     }).returning()
     
     return c.json({ success: true, data: result[0] }, 201)
