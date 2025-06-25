@@ -69,25 +69,8 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// CORSミドルウェア
-app.use('*', async (c, next) => {
-  const origin = c.req.header('Origin')
-  
-  // オリジンチェック
-  if (origin && (allowedOrigins.includes(origin) || allowedOrigins.includes('*'))) {
-    c.header('Access-Control-Allow-Origin', origin)
-  }
-  
-  c.header('Access-Control-Allow-Credentials', 'true')
-  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, x-store-code, x-table-number')
-  
-  if (c.req.method === 'OPTIONS') {
-    return new Response(null, { status: 204 })
-  }
-  
-  await next()
-})
+// CORSミドルウェア - 最もシンプルな設定
+app.use('*', cors())
 
 app.use('*', prettyJSON())
 
