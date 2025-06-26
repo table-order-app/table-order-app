@@ -1,0 +1,1 @@
+ALTER TABLE "store_business_hours" ALTER COLUMN "day_of_week" DROP DEFAULT;
