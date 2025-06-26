@@ -25,9 +25,9 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
         return;
       }
 
+
       // 基本認証チェック
       if (!isAuthenticated()) {
-
         navigate('/login', { 
           replace: true,
           state: { from: location.pathname }

@@ -30,21 +30,23 @@ interface OrderItem {
   subtotal: number
 }
 
-interface OrderDetail {
+interface SalesCycle {
   id: number
   tableId: number
-  status: string
+  tableNumber: number
+  totalAmount: number | string
   totalItems: number
-  totalAmount: number
+  status: string
   createdAt: string
-  updatedAt: string
-  items: OrderItem[]
+  completedAt: string
+  ordersCount: number
+  archivedOrders: any[]
 }
 
 
 const AccountingPage = () => {
   const [dailySales, setDailySales] = useState<DailySales[]>([])
-  const [orderDetails, setOrderDetails] = useState<OrderDetail[]>([])
+  const [salesCycles, setSalesCycles] = useState<SalesCycle[]>([])
   // 検索用の日付範囲（初期表示は今日）
   const [displayStartDate, setDisplayStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [displayEndDate, setDisplayEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
@@ -56,26 +58,44 @@ const AccountingPage = () => {
   const { addToast } = useToast()
 
 
-  // 注文詳細の取得
-  const fetchOrderDetails = async (date: string) => {
+  // 売上サイクル（完了した会計データ）の取得
+  const fetchSalesCycles = async (date: string) => {
     try {
       setIsOrdersLoading(true)
       const token = localStorage.getItem('accorto_auth_token')
+      console.log('売上サイクル取得開始:', { date, token: token ? 'あり' : 'なし' })
       const params = new URLSearchParams({ date })
       
-      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/orders?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      // JWTトークンが利用可能な場合はBearerトークンを使用、そうでなければ店舗コードを使用
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        headers['X-Store-Code'] = 'STORE001'
+      }
+      
+      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/sales-cycles?${params}`, {
+        headers
       })
       
       if (response.ok) {
         const data = await response.json()
-        setOrderDetails(data.data)
+        console.log('売上サイクル取得成功:', data)
+        setSalesCycles(data.data)
+      } else {
+        const errorData = await response.json().catch(() => null)
+        console.error('売上サイクル取得エラー:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+        setSalesCycles([]) // エラー時は空配列に設定
       }
     } catch (error) {
-      console.error('注文詳細の取得に失敗しました:', error)
+      console.error('売上サイクルの取得に失敗しました:', error)
     } finally {
       setIsOrdersLoading(false)
     }
@@ -91,11 +111,18 @@ const AccountingPage = () => {
         endDate: displayEndDate
       })
       
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        headers['X-Store-Code'] = 'STORE001'
+      }
+      
       const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/daily-sales?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers
       })
       
       if (response.ok) {
@@ -116,12 +143,19 @@ const AccountingPage = () => {
       setIsLoading(true)
       const token = localStorage.getItem('accorto_auth_token')
       
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        headers['X-Store-Code'] = 'STORE001'
+      }
+      
       const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/daily-sales/calculate`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ date })
       })
       
@@ -153,13 +187,20 @@ const AccountingPage = () => {
       
       const token = localStorage.getItem('accorto_auth_token')
       
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        headers['X-Store-Code'] = 'STORE001'
+      }
+      
       // 指定日の集計を実行
       const calculateResponse = await fetch(`${API_CONFIG.BASE_URL}/accounting/daily-sales/calculate`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ date: searchDate })
       })
       
@@ -171,18 +212,15 @@ const AccountingPage = () => {
         })
         
         const salesResponse = await fetch(`${API_CONFIG.BASE_URL}/accounting/daily-sales?${params}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers
         })
         
         if (salesResponse.ok) {
           const data = await salesResponse.json()
           setDailySales(data.data)
           
-          // 注文詳細も取得
-          await fetchOrderDetails(searchDate)
+          // 売上サイクルも取得
+          await fetchSalesCycles(searchDate)
           
           const dateStr = format(parseISO(searchDate), 'MM月dd日', { locale: ja })
           addToast({
@@ -223,12 +261,19 @@ const AccountingPage = () => {
       setIsLoading(true)
       const token = localStorage.getItem('accorto_auth_token')
       
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      } else {
+        headers['X-Store-Code'] = 'STORE001'
+      }
+      
       const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/daily-sales/finalize`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ date })
       })
       
@@ -270,6 +315,9 @@ const AccountingPage = () => {
       
       // 今日の集計を実行
       await calculateDailySales(today)
+      
+      // 売上サイクルも取得
+      await fetchSalesCycles(today)
     }
     
     initializeData()
@@ -283,20 +331,23 @@ const AccountingPage = () => {
     }).format(num)
   }
 
-  // 統計数値を計算（注文詳細ベース）
+  // 統計数値を計算（売上サイクルベース）
   const getStats = () => {
-    if (orderDetails.length === 0) return null
+    if (salesCycles.length === 0) return null
     
-    const totalRevenue = orderDetails.reduce((sum, order) => sum + order.totalAmount, 0)
-    const totalOrders = orderDetails.length
-    const totalItems = orderDetails.reduce((sum, order) => sum + order.totalItems, 0)
-    const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : '0'
+    const totalRevenue = salesCycles.reduce((sum, cycle) => {
+      const amount = typeof cycle.totalAmount === 'string' ? parseFloat(cycle.totalAmount) : cycle.totalAmount
+      return sum + (isNaN(amount) ? 0 : amount)
+    }, 0)
+    const totalSales = salesCycles.length // 会計回数
+    const totalItems = salesCycles.reduce((sum, cycle) => sum + cycle.totalItems, 0)
+    const avgSaleValue = totalSales > 0 ? (totalRevenue / totalSales).toFixed(0) : '0'
     
     return {
       totalRevenue: totalRevenue.toString(),
-      totalOrders,
+      totalSales,
       totalItems,
-      avgOrderValue
+      avgSaleValue
     }
   }
 
@@ -333,9 +384,9 @@ const AccountingPage = () => {
                 colorScheme="green"
               />
               <StatCard
-                title="注文数"
-                value={`${stats.totalOrders}件`}
-                subtitle="合計注文数"
+                title="会計数"
+                value={`${stats.totalSales}件`}
+                subtitle="合計会計回数"
                 icon={
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -356,8 +407,8 @@ const AccountingPage = () => {
               />
               <StatCard
                 title="平均単価"
-                value={formatCurrency(stats.avgOrderValue)}
-                subtitle="1注文あたり"
+                value={formatCurrency(stats.avgSaleValue)}
+                subtitle="1会計あたり"
                 icon={
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -414,15 +465,15 @@ const AccountingPage = () => {
           </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">注文詳細</h2>
-            <p className="text-sm text-gray-500 mt-1">選択した日付の各注文の詳細情報</p>
+            <h2 className="text-lg font-semibold text-gray-900">売上詳細</h2>
+            <p className="text-sm text-gray-500 mt-1">選択した日付の各会計の売上情報（テーブルごと）</p>
           </div>
           
           {isLoading ? (
             <div className="p-12 text-center">
               <LoadingSpinner size="lg" text="データを読み込んでいます..." />
             </div>
-          ) : orderDetails.length === 0 ? (
+          ) : salesCycles.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -431,7 +482,7 @@ const AccountingPage = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">売上データがありません</h3>
               <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                {format(parseISO(searchDate), 'yyyy年MM月dd日', { locale: ja })}の売上データが見つかりません。別の日付を選択するか、集計を実行してください。
+                {format(parseISO(searchDate), 'yyyy年MM月dd日', { locale: ja })}の売上データが見つかりません。会計が完了した取引のみ表示されます。
               </p>
               <button
                 onClick={searchDailySales}
@@ -448,65 +499,59 @@ const AccountingPage = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        注文番号
+                        会計番号
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         テーブル
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        注文時刻
+                        会計時刻
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         商品数
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        金額
+                        売上金額
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ステータス
+                        注文件数
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {orderDetails.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">#{order.id}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">テーブル {order.tableId}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {format(parseISO(order.createdAt), 'HH:mm', { locale: ja })}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {format(parseISO(order.createdAt), 'MM/dd', { locale: ja })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-gray-900">{order.totalItems}</div>
-                          <div className="text-xs text-gray-500">点</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-900">{formatCurrency(order.totalAmount)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                            order.status === 'ready' ? 'bg-blue-100 text-blue-800' :
-                            order.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {order.status === 'delivered' ? '完了' :
-                             order.status === 'ready' ? '準備完了' :
-                             order.status === 'in-progress' ? '調理中' :
-                             order.status === 'new' ? '新規' : 
-                             order.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {salesCycles.map((cycle) => {
+                      const amount = typeof cycle.totalAmount === 'string' ? parseFloat(cycle.totalAmount) : cycle.totalAmount
+                      return (
+                        <tr key={cycle.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">#{cycle.id}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">テーブル {cycle.tableNumber}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {format(parseISO(cycle.completedAt), 'HH:mm', { locale: ja })}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {format(parseISO(cycle.completedAt), 'MM/dd', { locale: ja })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-gray-900">{cycle.totalItems}</div>
+                            <div className="text-xs text-gray-500">点</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-gray-900">{formatCurrency(amount)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              {cycle.ordersCount}件完了
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
