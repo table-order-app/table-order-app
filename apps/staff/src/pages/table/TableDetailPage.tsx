@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { Order } from "../../types/order";
 import { getTableOrders, updateOrderItemStatus, checkoutTable } from "../../services/orderService";
+import { calculateTableBillingTotal, formatPriceBreakdown, ApiOrder } from "../../utils/billingUtils";
 
 // API status mapping function
 const mapApiStatusToOrderStatus = (apiStatus: string) => {
@@ -56,8 +57,10 @@ const TableDetailPage = () => {
   const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [apiOrders, setApiOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   useEffect(() => {
     const fetchTableData = async () => {
@@ -81,8 +84,8 @@ const TableDetailPage = () => {
 
           try {
             const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
-
             setOrders(transformedOrders);
+            setApiOrders(ordersResponse.data); // APIデータも保存（課金計算用）
           } catch (transformError) {
             console.error("Error transforming orders:", transformError);
             setError("注文データの変換中にエラーが発生しました");
@@ -90,6 +93,7 @@ const TableDetailPage = () => {
         } else {
 
           setOrders([]);
+          setApiOrders([]);
         }
       } catch (error) {
         console.error("Error fetching table data:", error);
@@ -143,11 +147,18 @@ const TableDetailPage = () => {
     }
   };
 
-  // 会計処理
-  const handleCheckout = async () => {
+  // 会計確認モーダルを開く
+  const handleCheckoutClick = () => {
+    setShowCheckoutModal(true);
+  };
+
+  // 会計処理を実行
+  const handleCheckoutConfirm = async () => {
     if (orders.length === 0) return;
     
     try {
+      setShowCheckoutModal(false);
+      
       // 注文データからテーブルIDを取得（最初の注文から）
       const actualTableId = Number(orders[0].table.id);
 
@@ -166,10 +177,19 @@ const TableDetailPage = () => {
     }
   };
 
+  // 会計をキャンセル
+  const handleCheckoutCancel = () => {
+    setShowCheckoutModal(false);
+  };
+
   // 全ての注文で全てのアイテムが提供済みかチェック
   const isTableReadyForCheckout = orders.length > 0 && orders.every(order => 
     order.items.every(item => item.status === "delivered")
   );
+
+  // 課金情報を計算
+  const billing = apiOrders.length > 0 ? calculateTableBillingTotal(apiOrders) : null;
+  const billingFormatted = billing ? formatPriceBreakdown(billing) : null;
 
   // 日時のフォーマット
   const formatDateTime = (date: Date): string => {
@@ -256,10 +276,21 @@ const TableDetailPage = () => {
                   <p className="text-gray-500 text-sm mt-1">
                     注文数: {orders.length}件
                   </p>
+                  {/* 課金情報を表示 */}
+                  {billing && (
+                    <div className="mt-2 bg-orange-50 p-3 rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-600">合計金額（税込）:</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {billingFormatted?.totalFormatted}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {isTableReadyForCheckout && (
                   <button
-                    onClick={handleCheckout}
+                    onClick={handleCheckoutClick}
                     className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     会計完了
@@ -482,6 +513,45 @@ const TableDetailPage = () => {
           </div>
         )}
       </div>
+
+      {/* 会計確認モーダル */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 bg-gray-300 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-100">
+            <h3 className="text-lg font-semibold mb-4">会計確認</h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                テーブル {orders[0]?.table.number} の会計を完了しますか？
+              </p>
+              
+              {billing && (
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">合計金額（税込）:</p>
+                  <p className="text-xl font-bold text-orange-600">
+                    {billingFormatted?.totalFormatted}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCheckoutCancel}
+                className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleCheckoutConfirm}
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                会計完了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

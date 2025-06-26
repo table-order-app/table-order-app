@@ -44,4 +44,9 @@ export interface ProgressData {
   readyItems: number; // 提供準備完了
   pendingItems: number; // 調理中・未着手
   startTime: Date;
+  // 課金関連情報
+  billing?: {
+    total: number;
+    orderCount: number;
+  };
 }

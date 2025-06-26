@@ -4,6 +4,7 @@ import PieChart from "../../components/ui/PieChart";
 import { useNavigate } from "react-router-dom";
 import { getPath } from "../../routes";
 import { getOrders, getCheckoutRequestedTables, checkoutTable } from "../../services/orderService";
+import { calculateTableBillingTotal, formatPrice, ApiOrder } from "../../utils/billingUtils";
 
 // API status mapping function
 const mapApiStatusToOrderStatus = (apiStatus: string) => {
@@ -59,11 +60,23 @@ const DashboardPage = () => {
   const [checkoutRequestedTables, setCheckoutRequestedTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<any>(null);
   const navigate = useNavigate();
 
-  // 注文データから進捗データを計算
-  const calculateProgressDataFromOrders = (ordersData: Order[]): ProgressData[] => {
+  // 注文データから進捗データを計算（課金情報を含む）
+  const calculateProgressDataFromOrders = (ordersData: Order[], apiOrdersData: ApiOrder[]): ProgressData[] => {
     const progressMap = new Map<string, ProgressData>();
+    const apiOrdersMap = new Map<string, ApiOrder[]>();
+
+    // APIデータをテーブル別にグループ化
+    apiOrdersData.forEach(apiOrder => {
+      const tableId = apiOrder.tableId.toString();
+      if (!apiOrdersMap.has(tableId)) {
+        apiOrdersMap.set(tableId, []);
+      }
+      apiOrdersMap.get(tableId)!.push(apiOrder);
+    });
 
     // アクティブな注文のみを表示（提供済み以外）
     // または、提供済みでも一部のアイテムがまだ未完了の注文を含む
@@ -77,6 +90,10 @@ const DashboardPage = () => {
     
     activeOrders.forEach((order) => {
       if (!progressMap.has(order.tableId)) {
+        // 課金情報を計算
+        const tableApiOrders = apiOrdersMap.get(order.tableId) || [];
+        const billing = calculateTableBillingTotal(tableApiOrders);
+        
         progressMap.set(order.tableId, {
           tableId: order.tableId,
           tableNumber: order.table.number,
@@ -85,6 +102,7 @@ const DashboardPage = () => {
           readyItems: 0,
           pendingItems: 0,
           startTime: order.createdAt,
+          billing: billing
         });
       }
 
@@ -141,8 +159,8 @@ const DashboardPage = () => {
           }
           const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
           
-          // 注文データから進捗データを計算
-          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
+          // 注文データから進捗データを計算（課金情報を含む）
+          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders, ordersResponse.data);
           setProgressData(calculatedProgressData);
         } else {
           if (isInitialFetch) {
@@ -187,10 +205,20 @@ const DashboardPage = () => {
     navigate(getPath.tableDetail(progress.tableNumber.toString()));
   };
 
-  // 会計要請テーブルの会計処理
-  const handleCheckoutRequestedTable = async (table: any) => {
+  // 会計確認モーダルを開く
+  const handleCheckoutClick = (table: any) => {
+    setSelectedTable(table);
+    setShowCheckoutModal(true);
+  };
+
+  // 会計処理を実行
+  const handleCheckoutConfirm = async () => {
+    if (!selectedTable) return;
+    
     try {
-      const response = await checkoutTable(table.id);
+      setShowCheckoutModal(false);
+      
+      const response = await checkoutTable(selectedTable.id);
       
       if (response.success) {
         // 成功時はリストから削除するため、データを再取得
@@ -203,7 +231,7 @@ const DashboardPage = () => {
         const ordersResponse = await getOrders();
         if (ordersResponse.success && ordersResponse.data) {
           const transformedOrders = ordersResponse.data.map(transformApiOrderToOrder);
-          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders);
+          const calculatedProgressData = calculateProgressDataFromOrders(transformedOrders, ordersResponse.data);
           setProgressData(calculatedProgressData);
         }
       } else {
@@ -213,7 +241,15 @@ const DashboardPage = () => {
     } catch (error) {
       console.error("Error during checkout:", error);
       setError("会計処理中にエラーが発生しました");
+    } finally {
+      setSelectedTable(null);
     }
+  };
+
+  // 会計をキャンセル
+  const handleCheckoutCancel = () => {
+    setShowCheckoutModal(false);
+    setSelectedTable(null);
   };
 
   if (loading) {
@@ -283,7 +319,7 @@ const DashboardPage = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => handleCheckoutRequestedTable(table)}
+                      onClick={() => handleCheckoutClick(table)}
                       className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
                     >
                       会計完了
@@ -318,6 +354,12 @@ const DashboardPage = () => {
                         テーブル {data.tableNumber}
                       </h3>
                       <p className="text-gray-600">スタッフエリア</p>
+                      {/* 課金情報を表示 */}
+                      {data.billing && (
+                        <p className="text-orange-600 font-bold text-lg mt-1">
+                          {formatPrice(data.billing.total)}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <span className="text-lg font-bold">
@@ -383,6 +425,48 @@ const DashboardPage = () => {
           )}
         </div>
       </div>
+
+      {/* 会計確認モーダル */}
+      {showCheckoutModal && selectedTable && (
+        <div className="fixed inset-0 bg-gray-300 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-100">
+            <h3 className="text-lg font-semibold mb-4">会計確認</h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                テーブル {selectedTable.number} の会計を完了しますか？
+              </p>
+              
+              <div className="bg-red-50 p-3 rounded-lg">
+                <p className="text-sm text-red-600 font-medium">
+                  お客様から会計を要請されています
+                </p>
+                <p className="text-xs text-red-500 mt-1">
+                  要請時刻: {new Date(selectedTable.checkoutRequestedAt).toLocaleTimeString("ja-JP", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCheckoutCancel}
+                className="px-5 py-2.5 text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleCheckoutConfirm}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+              >
+                会計完了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
