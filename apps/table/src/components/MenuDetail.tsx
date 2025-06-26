@@ -303,12 +303,23 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
             </span>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            className="w-full bg-orange-500 text-white py-3 rounded-md hover:bg-orange-600 transition-colors"
-          >
-            カートに追加
-          </button>
+          {menuItem.available ? (
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-orange-500 text-white py-3 rounded-md hover:bg-orange-600 transition-colors"
+            >
+              カートに追加
+            </button>
+          ) : (
+            <div className="w-full">
+              <div className="bg-gray-100 text-gray-600 py-3 rounded-md text-center mb-2">
+                <span className="font-medium">⚠️ 現在提供を停止しています</span>
+              </div>
+              <p className="text-sm text-gray-500 text-center">
+                申し訳ございませんが、こちらのメニューは現在ご注文いただけません。
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -11,14 +11,16 @@ export async function getCategories() {
 }
 
 /**
- * カテゴリIDに基づくメニュー一覧を取得
+ * カテゴリIDに基づくメニュー一覧を取得（提供中のみ）
  */
 export async function getMenuItemsByCategory(categoryId: number) {
   const response = await get<MenuItem[]>("/menu/items");
   if (response.success && response.data) {
     return {
       ...response,
-      data: response.data.filter(item => item.categoryId === categoryId)
+      data: response.data.filter(item => 
+        item.categoryId === categoryId && item.available === true
+      )
     };
   }
   return response;
