@@ -219,7 +219,7 @@ const TableDetailPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex items-center justify-between p-4 bg-white shadow z-10">
+      <div className="flex items-center justify-between p-5 bg-white shadow z-10">
         <div className="flex items-center">
           <button
             onClick={() => navigate(getPath.dashboard())}
@@ -265,23 +265,23 @@ const TableDetailPage = () => {
             </div>
           </div>
         ) : orders.length > 0 ? (
-          <div className="p-4">
+          <div className="p-5">
             {/* テーブル全体のヘッダー */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+            <div className="bg-white rounded-xl shadow-md p-5 mb-5">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-2xl font-bold">
                     テーブル {orders[0].table.number}
                   </h2>
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-gray-500 text-base mt-1">
                     注文数: {orders.length}件
                   </p>
                   {/* 課金情報を表示 */}
                   {billing && (
-                    <div className="mt-2 bg-orange-50 p-3 rounded-lg">
+                    <div className="mt-3 bg-orange-50 p-4 rounded-xl">
                       <div>
-                        <p className="text-sm text-gray-600">合計金額（税込）:</p>
-                        <p className="text-2xl font-bold text-orange-600">
+                        <p className="text-base text-gray-600">合計金額（税込）:</p>
+                        <p className="text-3xl font-bold text-orange-600 mt-1">
                           {billingFormatted?.totalFormatted}
                         </p>
                       </div>
@@ -291,7 +291,7 @@ const TableDetailPage = () => {
                 {isTableReadyForCheckout && (
                   <button
                     onClick={handleCheckoutClick}
-                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="px-8 py-4 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[140px]"
                   >
                     会計完了
                   </button>
@@ -301,7 +301,7 @@ const TableDetailPage = () => {
 
             {/* 注文ごとの詳細表示 */}
             {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <div key={order.id} className="bg-white rounded-xl shadow-md p-6 mb-6">
                 {/* 注文ヘッダー */}
                 <div className="flex justify-between items-center mb-4">
                   <div>
@@ -343,107 +343,90 @@ const TableDetailPage = () => {
                 </div>
 
                 {/* 注文アイテムリスト */}
-                <div className="mt-4">
-                  <h4 className="font-medium text-md mb-3">注文アイテム</h4>
-                  <div className="overflow-hidden rounded-lg border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            商品名
-                          </th>
-                          <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                            数量
-                          </th>
-                          <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                            状態
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {order.items.map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-3 py-3">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">
-                                  {item.name}
-                                </span>
-                                {item.notes && (
-                                  <span className="text-xs text-gray-500 mt-1 bg-gray-100 px-2 py-1 rounded">
-                                    {item.notes}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <span className="text-sm font-medium">
-                                {item.quantity}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <span
-                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  item.status === "new"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : item.status === "in-progress"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : item.status === "ready"
-                                        ? "bg-green-100 text-green-800"
-                                        : item.status === "completed"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : item.status === "delivered"
-                                            ? "bg-gray-100 text-gray-800"
-                                            : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {item.status === "new"
-                                  ? "未着手"
-                                  : item.status === "in-progress"
-                                    ? "調理中"
-                                    : item.status === "ready"
-                                      ? "提供待ち"
-                                      : item.status === "completed"
-                                        ? "調理完了"
-                                        : item.status === "delivered"
-                                          ? "提供済み"
-                                          : "キャンセル"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div className="mt-5">
+                  <h4 className="font-bold text-lg mb-4">注文アイテム</h4>
+                  <div className="space-y-3">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h5 className="font-semibold text-base text-gray-800">
+                              {item.name}
+                            </h5>
+                            {item.notes && (
+                              <p className="text-sm text-gray-600 mt-1 bg-white px-3 py-1 rounded-lg">
+                                {item.notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right ml-4">
+                            <span className="text-lg font-bold text-gray-700">
+                              ×{item.quantity}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <span
+                            className={`px-4 py-2 inline-flex text-sm font-bold rounded-xl ${
+                              item.status === "new"
+                                ? "bg-blue-100 text-blue-800"
+                                : item.status === "in-progress"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : item.status === "ready"
+                                    ? "bg-green-100 text-green-800"
+                                    : item.status === "completed"
+                                      ? "bg-purple-100 text-purple-800"
+                                      : item.status === "delivered"
+                                        ? "bg-gray-100 text-gray-800"
+                                        : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {item.status === "new"
+                              ? "未着手"
+                              : item.status === "in-progress"
+                                ? "調理中"
+                                : item.status === "ready"
+                                  ? "提供待ち"
+                                  : item.status === "completed"
+                                    ? "調理完了"
+                                    : item.status === "delivered"
+                                      ? "提供済み"
+                                      : "キャンセル"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* アクションボタン - 提供待ちアイテム用 */}
                 {order.items.some((item) => item.status === "ready" || item.status === "completed") && (
-                  <div className="mt-4">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">
-                      提供待ちアイテム操作
+                  <div className="mt-6">
+                    <h5 className="text-lg font-bold text-gray-700 mb-4">
+                      提供待ちアイテム
                     </h5>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {order.items
                         .filter((item) => item.status === "ready" || item.status === "completed")
                         .map((item) => (
                           <div
                             key={`action-${item.id}`}
-                            className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100"
+                            className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-200"
                           >
                             <div className="flex-1">
-                              <span className="text-sm font-medium">
+                              <span className="text-base font-semibold text-gray-800">
                                 {item.name}
                               </span>
-                              <span className="ml-2 text-xs bg-green-100 px-2 py-0.5 rounded-full text-green-800">
+                              <span className="ml-3 text-sm bg-green-100 px-3 py-1 rounded-full text-green-800 font-medium">
                                 ×{item.quantity}
                               </span>
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="ml-4">
                               <button
                                 onClick={() =>
                                   handleDeliverItem(order.id, item.id)
                                 }
-                                className="px-4 py-1.5 bg-green-500 text-white text-xs font-medium rounded-md hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                                className="px-6 py-3 bg-green-600 text-white text-base font-bold rounded-xl hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 min-w-[100px]"
                               >
                                 提供完了
                               </button>
@@ -456,32 +439,32 @@ const TableDetailPage = () => {
 
                 {/* 注文ステータスの概要 */}
                 <div className="mt-6 grid grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <h5 className="font-medium text-gray-700 text-sm mb-2">
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <h5 className="font-bold text-gray-700 text-base mb-3">
                       提供ステータス
                     </h5>
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center text-sm">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-base">
                         <span>提供済み:</span>
-                        <span className="font-semibold text-gray-600">
+                        <span className="font-bold text-gray-600">
                           {order.items
                             .filter((item) => item.status === "delivered")
                             .reduce((sum, item) => sum + item.quantity, 0)}
                           点
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-base">
                         <span>提供待ち:</span>
-                        <span className="font-semibold text-green-600">
+                        <span className="font-bold text-green-600">
                           {order.items
                             .filter((item) => item.status === "ready" || item.status === "completed")
                             .reduce((sum, item) => sum + item.quantity, 0)}
                           点
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-base">
                         <span>調理中:</span>
-                        <span className="font-semibold text-yellow-600">
+                        <span className="font-bold text-yellow-600">
                           {order.items
                             .filter(
                               (item) =>
@@ -494,12 +477,12 @@ const TableDetailPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <h5 className="font-medium text-gray-700 text-sm mb-2">
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <h5 className="font-bold text-gray-700 text-base mb-3">
                       合計
                     </h5>
-                    <div className="text-lg font-bold">{order.items.reduce((sum, item) => sum + item.quantity, 0)}点</div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <div className="text-xl font-bold">{order.items.reduce((sum, item) => sum + item.quantity, 0)}点</div>
+                    <p className="text-sm text-gray-500 mt-2">
                       最終更新: {formatDateTime(order.updatedAt).split(" ")[1]}
                     </p>
                   </div>

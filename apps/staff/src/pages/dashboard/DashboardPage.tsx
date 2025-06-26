@@ -255,7 +255,7 @@ const DashboardPage = () => {
   if (loading) {
     return (
       <div className="flex flex-col h-full w-full">
-        <div className="flex items-center p-4 bg-white shadow z-10">
+        <div className="flex items-center p-5 bg-white shadow z-10">
           <h1 className="text-2xl font-bold">スタッフモニター</h1>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -271,7 +271,7 @@ const DashboardPage = () => {
   if (error) {
     return (
       <div className="flex flex-col h-full w-full">
-        <div className="flex items-center p-4 bg-white shadow z-10">
+        <div className="flex items-center p-5 bg-white shadow z-10">
           <h1 className="text-2xl font-bold">スタッフモニター</h1>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -291,27 +291,27 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex items-center p-4 bg-white shadow z-10">
+      <div className="flex items-center p-5 bg-white shadow z-10">
         <h1 className="text-2xl font-bold">スタッフモニター</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
+        <div className="p-5">
           {/* 会計要請されたテーブル */}
           {checkoutRequestedTables.length > 0 && (
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-4 text-red-600">🔔 会計要請テーブル</h2>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-4">
                 {checkoutRequestedTables.map((table) => (
                   <div
                     key={table.id}
-                    className="bg-red-50 border border-red-200 rounded-lg p-4 flex justify-between items-center"
+                    className="bg-red-50 border border-red-200 rounded-xl p-5 flex justify-between items-center min-h-[80px]"
                   >
                     <div>
-                      <h3 className="text-lg font-semibold text-red-800">
+                      <h3 className="text-xl font-bold text-red-800">
                         テーブル {table.number}
                       </h3>
-                      <p className="text-red-600 text-sm">
+                      <p className="text-red-600 text-base">
                         要請時刻: {new Date(table.checkoutRequestedAt).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -320,7 +320,7 @@ const DashboardPage = () => {
                     </div>
                     <button
                       onClick={() => handleCheckoutClick(table)}
-                      className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                      className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 min-w-[100px] text-base"
                     >
                       会計完了
                     </button>
@@ -341,28 +341,28 @@ const DashboardPage = () => {
               <p className="text-gray-600">現在注文がありません</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {progressData.map((data) => (
                 <div
                   key={data.tableId}
-                  className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition-all active:scale-95 min-h-[280px]"
                   onClick={() => handleProgressSelect(data)}
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-semibold">
+                      <h3 className="text-2xl font-bold">
                         テーブル {data.tableNumber}
                       </h3>
-                      <p className="text-gray-600">スタッフエリア</p>
+                      <p className="text-gray-500 text-sm">スタッフエリア</p>
                       {/* 課金情報を表示 */}
                       {data.billing && (
-                        <p className="text-orange-600 font-bold text-lg mt-1">
+                        <p className="text-orange-600 font-bold text-xl mt-2">
                           {formatPrice(data.billing.total)}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="text-lg font-bold">
+                      <span className="text-2xl font-bold text-blue-600">
                         {Math.round(
                           ((data.completedItems + data.readyItems) /
                             data.totalItems) *
@@ -370,7 +370,7 @@ const DashboardPage = () => {
                         )}
                         %
                       </span>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-gray-500 text-sm mt-1">
                         開始:{" "}
                         {new Date(data.startTime).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
@@ -381,8 +381,8 @@ const DashboardPage = () => {
                   </div>
 
                   {/* 円グラフ */}
-                  <div className="flex justify-center my-3">
-                    <div className="relative w-28 h-28">
+                  <div className="flex justify-center my-4">
+                    <div className="relative">
                       <PieChart
                         completed={data.completedItems}
                         ready={data.readyItems}
@@ -390,33 +390,33 @@ const DashboardPage = () => {
                         total={data.totalItems}
                       />
                       {/* 中央の情報表示 */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-lg font-bold">
+                      <div className="absolute inset-0 w-32 h-32 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-xl font-bold">
                           {data.readyItems}/{data.totalItems}
                         </span>
-                        <span className="text-xs text-gray-500">提供待ち</span>
+                        <span className="text-sm text-gray-500">提供待ち</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-center text-sm mt-3">
-                    <div className="bg-blue-100 p-2 rounded">
-                      <span className="block text-blue-800 font-medium">
+                  <div className="grid grid-cols-3 gap-3 text-center mt-4">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <span className="block text-blue-800 font-bold text-lg">
                         {data.pendingItems}
                       </span>
-                      <span className="text-blue-600 text-xs">調理中</span>
+                      <span className="text-blue-600 text-sm">調理中</span>
                     </div>
-                    <div className="bg-green-100 p-2 rounded">
-                      <span className="block text-green-800 font-medium">
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <span className="block text-green-800 font-bold text-lg">
                         {data.readyItems}
                       </span>
-                      <span className="text-green-600 text-xs">提供待ち</span>
+                      <span className="text-green-600 text-sm">提供待ち</span>
                     </div>
-                    <div className="bg-gray-100 p-2 rounded">
-                      <span className="block text-gray-800 font-medium">
+                    <div className="bg-gray-100 p-3 rounded-lg">
+                      <span className="block text-gray-800 font-bold text-lg">
                         {data.completedItems}
                       </span>
-                      <span className="text-gray-600 text-xs">提供済み</span>
+                      <span className="text-gray-600 text-sm">提供済み</span>
                     </div>
                   </div>
                 </div>

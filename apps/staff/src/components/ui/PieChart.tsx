@@ -86,7 +86,7 @@ const PieChart: React.FC<PieChartProps> = ({
     ctx.fill();
   }, [completed, ready, pending, total]);
 
-  return <canvas ref={canvasRef} className="w-28 h-28"></canvas>;
+  return <canvas ref={canvasRef} className="w-32 h-32"></canvas>;
 };
 
 export default PieChart;
