@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { CartItem } from "../types";
-import { getImageUrlWithFallback } from "../utils/imageUtils";
 
 interface CartProps {
   cartItems: CartItem[];
@@ -163,13 +162,6 @@ const Cart: React.FC<CartProps> = ({
                   className="p-5 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-300 border-l-4 border-transparent hover:border-orange-400"
                 >
                   <div className="flex mb-4">
-                    <div className="mr-4 h-16 w-16 rounded-2xl shadow-md overflow-hidden">
-                      <img
-                        src={getImageUrlWithFallback(item.menuItem.image)}
-                        alt={item.menuItem.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
                     <div className="flex-grow">
                       <h3 className="font-bold text-gray-800 text-lg">
                         {item.menuItem.name}

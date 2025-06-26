@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTableOrders, requestCheckout } from "../services/orderService";
 import { getPath } from "../routes";
-import { getImageUrlWithFallback } from "../utils/imageUtils";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 interface OrderItem {
@@ -273,17 +272,6 @@ const OrderConfirmationPage: React.FC = () => {
                 return (
                   <div key={index} className="p-4 hover:bg-gray-25 transition-colors duration-200">
                     <div className="flex items-start space-x-4">
-                      {/* 商品画像 */}
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 rounded-lg shadow-sm overflow-hidden">
-                          <img
-                            src={getImageUrlWithFallback(item.menuItem?.image)}
-                            alt={item.menuItem?.name || item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </div>
-
                       {/* 商品情報 */}
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-2">
