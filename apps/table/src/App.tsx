@@ -145,7 +145,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           title={headerTitle || undefined}
         />
       )}
-      <main className={`flex-grow flex flex-col items-center justify-start p-4 fade-in ${
+      <main className={`flex-grow flex flex-col items-center justify-start px-4 py-6 fade-in ${
         location.pathname !== '/store-login' ? 'pt-20' : 'pt-0'
       }`}>
         {children}

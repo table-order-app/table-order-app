@@ -177,13 +177,15 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
     return <div className="p-4 text-center">メニューが見つかりません</div>;
   }
 
+  const hasImage = hasValidImage(menuItem.image) && !imageError;
+
   return (
-    <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden pt-16">
-      <div className="p-3">
-        {/* メニュー画像（画像がある場合のみ表示） */}
-        {hasValidImage(menuItem.image) && !imageError && (
-          <div className="flex justify-center mb-3">
-            <div className="w-56 h-36 rounded-lg overflow-hidden shadow-md">
+    <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl overflow-hidden pt-16 shadow-lg">
+      <div className={`${hasImage ? 'lg:flex lg:gap-8' : 'max-w-4xl mx-auto'} p-6`}>
+        {/* メニュー画像セクション（画像がある場合のみ表示） */}
+        {hasImage && (
+          <div className="lg:w-1/2 mb-6 lg:mb-0">
+            <div className="w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
               <img
                 src={getImageUrl(menuItem.image)!}
                 alt={menuItem.name}
@@ -194,132 +196,138 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
           </div>
         )}
 
-        {/* メニュー詳細情報 */}
-        <div className="mb-4">
-          <h3 className="text-xl font-bold mb-1 text-gray-800">
-            {menuItem.name}
-          </h3>
-          <p className="text-orange-500 font-semibold text-lg mb-2">
-            ¥{menuItem.price.toLocaleString()}
-          </p>
-          <p className="text-gray-600">{menuItem.description}</p>
+        {/* メニュー詳細情報セクション */}
+        <div className={`${hasImage ? 'lg:w-1/2' : 'w-full'} flex flex-col`}>
+          {/* メニュー基本情報 */}
+          <div className="mb-6">
+            <h3 className="text-3xl font-bold mb-3 text-gray-800">
+              {menuItem.name}
+            </h3>
+            <p className="text-orange-500 font-bold text-2xl mb-4">
+              ¥{menuItem.price.toLocaleString()}
+            </p>
+            <p className="text-gray-600 text-lg leading-relaxed">{menuItem.description}</p>
 
-          {/* アレルゲン情報 */}
-          {menuItem.allergens && menuItem.allergens.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs text-gray-500">
-                アレルゲン: {menuItem.allergens.join(", ")}
-              </p>
+            {/* アレルゲン情報 */}
+            {menuItem.allergens && menuItem.allergens.length > 0 && (
+              <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <span className="font-semibold">アレルゲン:</span> {menuItem.allergens.join(", ")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* オプション選択 */}
+          {menuItem.options && menuItem.options.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-bold text-xl text-gray-700 mb-4">オプション</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {menuItem.options.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => handleOptionClick(option.id)}
+                    className={`p-4 rounded-xl text-base font-medium transition-all border-2 text-left ${
+                      selectedOptions.includes(option.id)
+                        ? "bg-orange-500 text-white border-orange-500 shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-orange-50 hover:border-orange-200"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span>{option.name}</span>
+                      {option.price > 0 && (
+                        <span className="text-sm font-bold">{`+¥${option.price}`}</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* オプション選択 */}
-        {menuItem.options && menuItem.options.length > 0 && (
-          <div className="mb-4">
-            <h4 className="font-medium text-gray-700 mb-3">オプション</h4>
-            <div className="flex flex-wrap gap-2">
-              {menuItem.options.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => handleOptionClick(option.id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
-                    selectedOptions.includes(option.id)
-                      ? "bg-orange-500 text-white border-orange-500"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-orange-50"
-                  }`}
-                >
-                  {option.name}
-                  {option.price > 0 && (
-                    <span className="ml-1">{`+¥${option.price}`}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* トッピング選択 */}
-        {menuItem.toppings && menuItem.toppings.length > 0 && (
-          <div className="mb-4">
-            <h4 className="font-medium text-gray-700 mb-2">トッピング</h4>
-            <div className="space-y-2 pl-2">
-              {menuItem.toppings.map((topping) => (
-                <div key={topping.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`topping-${topping.id}`}
-                    value={topping.id}
-                    checked={selectedToppings.includes(topping.id)}
-                    onChange={handleToppingChange}
-                    className="mr-2"
-                  />
+          {/* トッピング選択 */}
+          {menuItem.toppings && menuItem.toppings.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-bold text-xl text-gray-700 mb-4">トッピング</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {menuItem.toppings.map((topping) => (
                   <label
+                    key={topping.id}
                     htmlFor={`topping-${topping.id}`}
-                    className="flex-grow"
+                    className="flex items-center p-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 cursor-pointer transition-all"
                   >
-                    {topping.name}
+                    <input
+                      type="checkbox"
+                      id={`topping-${topping.id}`}
+                      value={topping.id}
+                      checked={selectedToppings.includes(topping.id)}
+                      onChange={handleToppingChange}
+                      className="w-5 h-5 mr-3 accent-orange-500"
+                    />
+                    <div className="flex-grow">
+                      <span className="text-base font-medium">{topping.name}</span>
+                    </div>
+                    <span className="text-orange-500 font-bold text-base">{`+¥${topping.price}`}</span>
                   </label>
-                  <span className="text-gray-600 text-sm">{`+¥${topping.price}`}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
 
-        {/* 数量選択 */}
-        <div className="mb-4">
-          <div className="flex flex-col items-center">
-            <h4 className="font-medium text-gray-700 mb-3">数量</h4>
-            <div className="flex items-center">
+          {/* 数量選択 */}
+          <div className="mb-6">
+            <h4 className="font-bold text-xl text-gray-700 mb-4">数量</h4>
+            <div className="flex items-center justify-center">
               <button
                 onClick={() => handleQuantityChange(quantity - 1)}
-                className="w-10 h-10 bg-gray-200 rounded-l-md flex items-center justify-center"
+                className="w-14 h-14 bg-gray-100 rounded-l-xl flex items-center justify-center text-xl font-bold hover:bg-gray-200 transition-colors"
                 disabled={quantity <= 1}
               >
                 -
               </button>
-              <div className="w-12 h-10 bg-white border border-gray-300 flex items-center justify-center text-lg font-medium text-gray-800">
+              <div className="w-20 h-14 bg-white border-2 border-gray-300 flex items-center justify-center text-2xl font-bold text-gray-800">
                 {quantity}
               </div>
               <button
                 onClick={() => handleQuantityChange(quantity + 1)}
-                className="w-10 h-10 bg-gray-200 rounded-r-md flex items-center justify-center"
+                className="w-14 h-14 bg-gray-100 rounded-r-xl flex items-center justify-center text-xl font-bold hover:bg-gray-200 transition-colors"
                 disabled={quantity >= 10}
               >
                 +
               </button>
             </div>
           </div>
-        </div>
 
-        {/* 合計金額とカートに追加ボタン */}
-        <div className="mb-4 sticky bottom-0 bg-white pt-2">
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-medium">合計</span>
-            <span className="text-xl font-bold text-orange-500">
-              ¥{totalPrice.toLocaleString()}
-            </span>
-          </div>
-
-          {menuItem.available ? (
-            <button
-              onClick={handleAddToCart}
-              className="w-full bg-orange-500 text-white py-3 rounded-md hover:bg-orange-600 transition-colors"
-            >
-              カートに追加
-            </button>
-          ) : (
-            <div className="w-full">
-              <div className="bg-gray-100 text-gray-600 py-3 rounded-md text-center mb-2">
-                <span className="font-medium">⚠️ 現在提供を停止しています</span>
+          {/* 合計金額とカートに追加ボタン */}
+          <div className="mt-auto">
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-xl font-bold text-gray-700">合計</span>
+                <span className="text-3xl font-bold text-orange-500">
+                  ¥{totalPrice.toLocaleString()}
+                </span>
               </div>
-              <p className="text-sm text-gray-500 text-center">
-                申し訳ございませんが、こちらのメニューは現在ご注文いただけません。
-              </p>
             </div>
-          )}
+
+            {menuItem.available ? (
+              <button
+                onClick={handleAddToCart}
+                className="w-full bg-orange-500 text-white py-4 rounded-xl hover:bg-orange-600 transition-all text-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              >
+                カートに追加
+              </button>
+            ) : (
+              <div className="w-full">
+                <div className="bg-gray-100 text-gray-600 py-4 rounded-xl text-center mb-3">
+                  <span className="text-lg font-bold">⚠️ 現在提供を停止しています</span>
+                </div>
+                <p className="text-base text-gray-500 text-center">
+                  申し訳ございませんが、こちらのメニューは現在ご注文いただけません。
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

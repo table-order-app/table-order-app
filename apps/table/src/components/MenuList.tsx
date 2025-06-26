@@ -10,7 +10,7 @@ const MenuCard: React.FC<{
   children: React.ReactNode;
 }> = ({ className, children }) => {
   return (
-    <div className={`group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden ${className || ""}`}>
+    <div className={`group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 overflow-hidden transform hover:scale-105 ${className || ""}`}>
       {children}
     </div>
   );
@@ -24,31 +24,36 @@ const MenuItemCard: React.FC<{ item: MenuItem }> = ({ item }) => {
       to={getPath.menuDetail(item.id)}
       className="no-underline text-inherit"
     >
-      <MenuCard className="h-full">
-        {/* 画像がある場合のみ画像セクションを表示 */}
+      <MenuCard className="h-full flex flex-col">
+        {/* 画像セクション（画像がある場合のみ表示） */}
         {hasValidImage(item.image) && !imageError && (
-          <div className="relative pb-[60%] overflow-hidden">
+          <div className="relative pb-[50%] overflow-hidden">
             <img
               src={getImageUrl(item.image)!}
               alt={item.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               onError={() => setImageError(true)}
             />
           </div>
         )}
         
         {/* Content Section */}
-        <div className="p-4">
-          <h3 className="font-semibold text-lg text-gray-800 mb-2">
+        <div className={`flex-1 flex flex-col ${hasValidImage(item.image) && !imageError ? 'p-6' : 'p-8'}`}>
+          <h3 className={`font-bold text-gray-800 mb-4 ${hasValidImage(item.image) && !imageError ? 'text-2xl' : 'text-3xl'}`}>
             {item.name}
           </h3>
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+          <p className={`text-gray-600 mb-6 line-clamp-3 flex-1 leading-relaxed ${hasValidImage(item.image) && !imageError ? 'text-lg' : 'text-xl'}`}>
             {item.description}
           </p>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-orange-500">
+          <div className="flex items-center justify-between mt-auto">
+            <span className={`font-bold text-orange-500 ${hasValidImage(item.image) && !imageError ? 'text-3xl' : 'text-4xl'}`}>
               ¥{item.price.toLocaleString()}
             </span>
+            {!item.available && (
+              <span className="text-base bg-gray-100 text-gray-600 px-3 py-2 rounded-lg">
+                品切れ
+              </span>
+            )}
           </div>
         </div>
       </MenuCard>
@@ -68,7 +73,7 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
   
   // ページネーション
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 12; // 1ページあたりのアイテム数
+  const itemsPerPage = 12; // 1ページあたりのアイテム数（大きめカード向けに調整）
 
   // カテゴリが変更されたらメニューを更新
   useEffect(() => {
@@ -143,9 +148,9 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4">
+    <div className="w-full max-w-7xl mx-auto p-6">
       {/* メニューグリッド */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-10">
         {currentItems.map((item) => (
           <MenuItemCard key={item.id} item={item} />
         ))}
@@ -153,12 +158,12 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
 
       {/* ページネーション */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2">
+        <div className="flex items-center justify-center space-x-3">
           {/* 前のページボタン */}
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-3 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg"
           >
             ←
           </button>
@@ -168,9 +173,9 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
             <button
               key={page}
               onClick={() => handlePageChange(page)}
-              className={`px-3 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-3 rounded-xl transition-colors text-lg ${
                 currentPage === page
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-orange-500 text-white shadow-md'
                   : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -182,7 +187,7 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-3 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg"
           >
             →
           </button>
@@ -191,7 +196,7 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
 
       {/* ページ情報 */}
       {totalPages > 1 && (
-        <div className="text-center mt-4 text-sm text-gray-600">
+        <div className="text-center mt-6 text-base text-gray-600">
           {menuItems.length}件中 {startIndex + 1}-{Math.min(endIndex, menuItems.length)}件を表示
         </div>
       )}
