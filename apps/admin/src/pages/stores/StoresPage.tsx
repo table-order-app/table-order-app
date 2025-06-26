@@ -140,10 +140,13 @@ const StoresPage = () => {
   };
 
   const handleBusinessHoursInputChange = (field: 'openTime' | 'closeTime', value: string) => {
-    if (!validateTimeInput(value)) {
-      return; // 無効な時刻は入力させない
+    // 入力途中でも許可するため、基本的な文字チェックのみ行う
+    // 数字、コロン、空文字のみ許可
+    if (!/^[0-9:]*$/.test(value)) {
+      return;
     }
     
+    // 最終的なバリデーションは保存時に行う
     setBusinessHoursInput(prev => ({
       ...prev,
       [field]: value
@@ -156,8 +159,13 @@ const StoresPage = () => {
       setError(null);
       
       // バリデーション
-      if (!validateTimeInput(businessHoursInput.openTime) || !validateTimeInput(businessHoursInput.closeTime)) {
-        setError('営業時間の形式が正しくありません（HH:MM形式、26:00まで可能）');
+      if (!validateTimeInput(businessHoursInput.openTime)) {
+        setError(`営業開始時間の形式が正しくありません。HH:MM形式で入力してください（例：09:00、17:00）`);
+        return;
+      }
+      
+      if (!validateTimeInput(businessHoursInput.closeTime)) {
+        setError(`営業終了時間の形式が正しくありません。HH:MM形式で入力してください（例：17:00、30:00）`);
         return;
       }
       
@@ -391,7 +399,8 @@ const StoresPage = () => {
                           type="text"
                           value={businessHoursInput.openTime}
                           onChange={(e) => handleBusinessHoursInputChange('openTime', e.target.value)}
-                          placeholder="17:00"
+                          placeholder="09:00"
+                          pattern="^([0-9]{1,2}):[0-5][0-9]$"
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                       </div>
@@ -402,7 +411,8 @@ const StoresPage = () => {
                           type="text"
                           value={businessHoursInput.closeTime}
                           onChange={(e) => handleBusinessHoursInputChange('closeTime', e.target.value)}
-                          placeholder="26:00"
+                          placeholder="17:00"
+                          pattern="^([0-9]{1,2}):[0-5][0-9]$"
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         />
                       </div>
@@ -418,7 +428,7 @@ const StoresPage = () => {
                     )}
                     
                     <div className="text-xs text-gray-500">
-                      ※ 26:00まで入力可能（26:00 = 翌日2:00）
+                      ※ 例：30:00 = 翌日6:00
                     </div>
                   </div>
                 ) : (

@@ -17,17 +17,19 @@ export interface BusinessHoursInput {
  * 営業時間を取得
  */
 export async function getBusinessHours(): Promise<BusinessHours> {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('認証トークンが見つかりません');
+  const token = localStorage.getItem('accorto_auth_token');
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_CONFIG.BASE_URL}/store/business-hours`, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -47,17 +49,19 @@ export async function getBusinessHours(): Promise<BusinessHours> {
  * 営業時間を更新
  */
 export async function updateBusinessHours(businessHours: BusinessHoursInput): Promise<BusinessHours> {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('認証トークンが見つかりません');
+  const token = localStorage.getItem('accorto_auth_token');
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_CONFIG.BASE_URL}/store/business-hours`, {
     method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(businessHours),
   });
 
@@ -88,8 +92,8 @@ export function formatBusinessHours(hours: BusinessHours): string {
  * 時刻入力値が有効かチェック
  */
 export function validateTimeInput(time: string): boolean {
-  // HH:MM形式で、26:00まで許可
-  const timeRegex = /^([01]?[0-9]|2[0-6]):[0-5][0-9]$/;
+  // HH:MM形式（時間制限なし）
+  const timeRegex = /^([0-9]{1,2}):[0-5][0-9]$/;
   return timeRegex.test(time);
 }
 
