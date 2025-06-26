@@ -2,10 +2,90 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { tables, stores, orders, orderItems, orderItemOptions, orderItemToppings, salesCycles, archivedOrders, archivedOrderItems, archivedOrderItemOptions, archivedOrderItemToppings, menuItems } from '../db/schema'
-import { eq, and, sql, desc, SQL } from 'drizzle-orm'
+import { tables, stores, orders, orderItems, orderItemOptions, orderItemToppings, salesCycles, archivedOrders, archivedOrderItems, archivedOrderItemOptions, archivedOrderItemToppings, menuItems, storeBusinessHours } from '../db/schema'
+import { eq, and, sql, desc, SQL, gte, lt } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
 import { logError } from '../utils/logger-simple'
+import { getAccountingDate } from '../utils/accounting'
+
+/**
+ * 営業日ベースでテーブルの次のサイクル番号を取得
+ */
+async function getNextCycleNumberForBusinessDay(
+  tx: any,
+  storeId: number,
+  tableId: number,
+  accountingDate: string
+): Promise<number> {
+  try {
+    // 店舗の営業時間設定を取得
+    const businessHours = await tx
+      .select()
+      .from(storeBusinessHours)
+      .where(and(
+        eq(storeBusinessHours.storeId, storeId),
+        eq(storeBusinessHours.isActive, true)
+      ))
+      .limit(1)
+    
+    if (businessHours.length === 0) {
+      // 営業時間設定がない場合は従来のロジック
+      const result = await tx.select({
+        maxCycle: sql<number>`COALESCE(MAX(${salesCycles.cycleNumber}), 0) + 1`
+      })
+      .from(salesCycles)
+      .where(eq(salesCycles.tableId, tableId))
+      
+      return result[0].maxCycle
+    }
+
+    const { openTime, closeTime, isNextDay } = businessHours[0]
+    
+    // 営業日の期間を計算
+    const start = new Date(`${accountingDate}T${openTime}`)
+    let end: Date
+    
+    // closeTimeが24:00の場合は翌日の00:00として扱う
+    let actualCloseTime = closeTime
+    if (closeTime === '24:00') {
+      actualCloseTime = '00:00'
+    }
+    
+    if (isNextDay || closeTime === '24:00') {
+      // 翌日にまたがる場合（24:00の場合は必ず翌日）
+      end = new Date(`${accountingDate}T${actualCloseTime}`)
+      end.setDate(end.getDate() + 1)
+    } else {
+      // 同日の場合
+      end = new Date(`${accountingDate}T${actualCloseTime}`)
+    }
+    
+    // 指定営業日期間内のそのテーブルの最大サイクル数を取得
+    const result = await tx.select({
+      maxCycle: sql<number>`COALESCE(MAX(${salesCycles.cycleNumber}), 0) + 1`
+    })
+    .from(salesCycles)
+    .where(and(
+      eq(salesCycles.tableId, tableId),
+      eq(salesCycles.storeId, storeId),
+      gte(salesCycles.completedAt, start),
+      lt(salesCycles.completedAt, end)
+    ))
+    
+    return result[0].maxCycle
+    
+  } catch (error) {
+    logError('Error calculating next cycle number:', error)
+    // エラー時は従来のロジックにフォールバック
+    const result = await tx.select({
+      maxCycle: sql<number>`COALESCE(MAX(${salesCycles.cycleNumber}), 0) + 1`
+    })
+    .from(salesCycles)
+    .where(eq(salesCycles.tableId, tableId))
+    
+    return result[0].maxCycle
+  }
+}
 
 export const tableRoutes = new Hono()
 
@@ -338,17 +418,39 @@ tableRoutes.post('/:id/checkout', async (c) => {
       })
 
       if (!salesCycle) {
-        // 新しいサイクルを作成
-        const cycleNumber = await tx.select({
-          maxCycle: sql<number>`COALESCE(MAX(${salesCycles.cycleNumber}), 0) + 1`
-        })
-        .from(salesCycles)
-        .where(eq(salesCycles.tableId, tableId))
+        // 営業日ベースで新しいサイクル番号を計算
+        const currentTime = new Date()
+        
+        // 店舗の営業時間設定を取得して会計日を計算
+        const businessHours = await tx
+          .select()
+          .from(storeBusinessHours)
+          .where(and(
+            eq(storeBusinessHours.storeId, storeId),
+            eq(storeBusinessHours.isActive, true)
+          ))
+          .limit(1)
+        
+        let accountingDate: string
+        if (businessHours.length > 0) {
+          accountingDate = getAccountingDate(currentTime, businessHours[0].openTime)
+        } else {
+          // 営業時間設定がない場合はデフォルト（5:00基準）
+          accountingDate = getAccountingDate(currentTime, '05:00:00')
+        }
+        
+        // 営業日ベースでサイクル番号を取得
+        const cycleNumber = await getNextCycleNumberForBusinessDay(
+          tx,
+          storeId,
+          tableId,
+          accountingDate
+        )
 
         const [newSalesCycle] = await tx.insert(salesCycles).values({
           storeId,
           tableId,
-          cycleNumber: cycleNumber[0].maxCycle,
+          cycleNumber,
           totalAmount: '0',
           totalItems: 0,
           status: 'active'

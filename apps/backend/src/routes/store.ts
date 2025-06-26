@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
 import { stores, storeInfo, accountingSettings, storeBusinessHours } from '../db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and, isNull } from 'drizzle-orm'
 import { authMiddleware, flexibleAuthMiddleware, optionalAuthMiddleware } from '../middleware/auth'
 import { logError, logInfo } from '../utils/logger-simple'
 import { createJSTTimestamp } from '../utils/accounting'
@@ -75,9 +75,11 @@ storeRoutes.get('/business-hours', optionalAuthMiddleware, async (c) => {
     const businessHoursData = await db
       .select()
       .from(storeBusinessHours)
-      .where(eq(storeBusinessHours.storeId, storeId))
-      .where(eq(storeBusinessHours.isActive, true))
-      .where(sql`${storeBusinessHours.dayOfWeek} IS NULL`) // 全日共通
+      .where(and(
+        eq(storeBusinessHours.storeId, storeId),
+        eq(storeBusinessHours.isActive, true),
+        isNull(storeBusinessHours.dayOfWeek) // 全日共通
+      ))
       .limit(1)
     
     let businessHours
@@ -149,8 +151,10 @@ storeRoutes.put('/business-hours', optionalAuthMiddleware, zValidator('json', z.
     const existing = await db
       .select()
       .from(storeBusinessHours)
-      .where(eq(storeBusinessHours.storeId, storeId))
-      .where(sql`${storeBusinessHours.dayOfWeek} IS NULL`) // 全日共通
+      .where(and(
+        eq(storeBusinessHours.storeId, storeId),
+        isNull(storeBusinessHours.dayOfWeek) // 全日共通
+      ))
       .limit(1)
     
     let result

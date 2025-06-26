@@ -9,8 +9,10 @@ import {
   orderItems,
   archivedOrders,
   archivedOrderItems,
+  salesCycles,
   stores,
-  storeBusinessHours
+  storeBusinessHours,
+  tables
 } from '../db/schema'
 import { eq, and, gte, lt, sql, desc } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
@@ -24,6 +26,82 @@ import {
   centToJpy
 } from '../utils/accounting'
 import { logError, logInfo } from '../utils/logger'
+
+/**
+ * 店舗の営業時間設定を取得
+ */
+const getStoreBusinessHours = async (storeId: number) => {
+  try {
+    // アクティブな営業時間設定を取得
+    const businessHours = await db
+      .select()
+      .from(storeBusinessHours)
+      .where(and(
+        eq(storeBusinessHours.storeId, storeId),
+        eq(storeBusinessHours.isActive, true)
+      ))
+      .limit(1)
+    
+    if (businessHours.length > 0) {
+      return {
+        openTime: businessHours[0].openTime || '05:00:00',
+        closeTime: businessHours[0].closeTime || '05:00:00',
+        isNextDay: businessHours[0].isNextDay || false
+      }
+    }
+    
+    // 営業時間設定がない場合は従来のaccountingSettingsから取得
+    const settings = await db
+      .select()
+      .from(accountingSettings)
+      .where(eq(accountingSettings.storeId, storeId))
+      .limit(1)
+    
+    return {
+      openTime: settings[0]?.dayClosingTime || '05:00:00',
+      closeTime: settings[0]?.dayClosingTime || '05:00:00',
+      isNextDay: false
+    }
+  } catch (error) {
+    logError('Error fetching store business hours', error)
+    // エラー時はデフォルト値を返す
+    return {
+      openTime: '05:00:00',
+      closeTime: '05:00:00',
+      isNextDay: false
+    }
+  }
+}
+
+/**
+ * 営業時間に基づく会計期間を取得
+ */
+const getBusinessHoursAccountingPeriod = (accountingDate: string, businessHours: { openTime: string; closeTime: string; isNextDay: boolean }) => {
+  const { openTime, closeTime, isNextDay } = businessHours
+  
+  // 期間開始：会計日の営業開始時間
+  const start = new Date(`${accountingDate}T${openTime}`)
+  
+  // 期間終了：営業終了時間
+  let end: Date
+  
+  // closeTimeが24:00の場合は翌日の00:00として扱う
+  let actualCloseTime = closeTime
+  if (closeTime === '24:00') {
+    actualCloseTime = '00:00'
+  }
+  
+  if (isNextDay || closeTime === '24:00') {
+    // 翌日にまたがる場合（24:00の場合は必ず翌日）
+    end = new Date(`${accountingDate}T${actualCloseTime}`)
+    end.setDate(end.getDate() + 1)
+  } else {
+    // 同日の場合：同日の営業終了時間
+    end = new Date(`${accountingDate}T${actualCloseTime}`)
+  }
+  
+  return { start, end }
+}
 
 export const accountingRoutes = new Hono()
 
@@ -141,14 +219,8 @@ accountingRoutes.get('/daily-sales', zValidator('query', z.object({
     const storeId = c.get('auth').storeId
     const { date, startDate, endDate } = c.req.valid('query')
     
-    // 会計設定を取得
-    const settings = await db
-      .select()
-      .from(accountingSettings)
-      .where(eq(accountingSettings.storeId, storeId))
-      .limit(1)
-    
-    const dayClosingTime = settings[0]?.dayClosingTime || '05:00:00'
+    // 店舗の営業時間設定を取得
+    const businessHours = await getStoreBusinessHours(storeId)
     
     let targetDates: string[]
     
@@ -157,8 +229,8 @@ accountingRoutes.get('/daily-sales', zValidator('query', z.object({
     } else if (startDate && endDate) {
       targetDates = generateAccountingDateRange(startDate, endDate)
     } else {
-      // デフォルトは今日
-      targetDates = [getCurrentAccountingDate(dayClosingTime)]
+      // デフォルトは今日（営業開始時刻を基準）
+      targetDates = [getCurrentAccountingDate(businessHours.openTime)]
     }
     
     let whereConditions = [eq(dailySales.storeId, storeId)]
@@ -196,18 +268,20 @@ accountingRoutes.post('/daily-sales/calculate', zValidator('json', z.object({
     const storeId = c.get('auth').storeId
     const { date } = c.req.valid('json')
 
-    // 会計設定を取得
+    // 店舗の営業時間設定を取得
+    const businessHours = await getStoreBusinessHours(storeId)
+    
+    // 会計設定から税率を取得
     const settings = await db
       .select()
       .from(accountingSettings)
       .where(eq(accountingSettings.storeId, storeId))
       .limit(1)
     
-    const dayClosingTime = settings[0]?.dayClosingTime || '05:00:00'
     const taxRate = parseFloat(settings[0]?.taxRate || '0.10')
     
-    const targetDate = date || getCurrentAccountingDate(dayClosingTime)
-    const { start, end } = getAccountingPeriod(targetDate, dayClosingTime)
+    const targetDate = date || getCurrentAccountingDate(businessHours.openTime)
+    const { start, end } = getBusinessHoursAccountingPeriod(targetDate, businessHours)
 
     // アーカイブ済み注文から集計
     const archivedSales = await db
@@ -406,7 +480,80 @@ accountingRoutes.get('/sales-summary', zValidator('query', z.object({
   }
 })
 
-// 注文詳細の取得
+// 完了した会計データの取得（売上データ）
+accountingRoutes.get('/sales-cycles', zValidator('query', z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日付の形式が正しくありません (YYYY-MM-DD)')
+})), async (c) => {
+  try {
+    const { date } = c.req.valid('query')
+    const storeId = c.get('auth').storeId
+    
+    // 店舗の営業時間設定を取得
+    const businessHours = await getStoreBusinessHours(storeId)
+    
+    // 営業時間に基づく会計期間を取得
+    const { start, end } = getBusinessHoursAccountingPeriod(date, businessHours)
+    
+    // 該当期間の完了した売上サイクルを取得
+    const salesCyclesList = await db.query.salesCycles.findMany({
+      where: and(
+        eq(salesCycles.storeId, storeId),
+        eq(salesCycles.status, 'completed'), // 完了した会計のみ
+        gte(salesCycles.completedAt, start),
+        lt(salesCycles.completedAt, end)
+      ),
+      with: {
+        table: {
+          columns: {
+            number: true
+          }
+        }
+      },
+      orderBy: [desc(salesCycles.completedAt)]
+    })
+
+    // 各売上サイクルのアーカイブされた注文詳細を取得
+    const salesWithDetails = await Promise.all(
+      salesCyclesList.map(async (salesCycle) => {
+        const archivedOrdersList = await db
+          .select({
+            id: archivedOrders.id,
+            originalOrderId: archivedOrders.originalOrderId,
+            totalItems: archivedOrders.totalItems,
+            totalAmount: archivedOrders.totalAmount,
+            originalCreatedAt: archivedOrders.originalCreatedAt
+          })
+          .from(archivedOrders)
+          .where(eq(archivedOrders.salesCycleId, salesCycle.id))
+
+        return {
+          id: salesCycle.id,
+          tableId: salesCycle.tableId,
+          tableNumber: salesCycle.table.number,
+          cycleNumber: salesCycle.cycleNumber,
+          totalAmount: salesCycle.totalAmount,
+          totalItems: salesCycle.totalItems,
+          status: 'completed', // 完了済み
+          createdAt: salesCycle.startedAt,
+          completedAt: salesCycle.completedAt,
+          ordersCount: archivedOrdersList.length,
+          archivedOrders: archivedOrdersList
+        }
+      })
+    )
+    
+    return c.json({
+      success: true,
+      data: salesWithDetails
+    })
+    
+  } catch (error) {
+    logError('Error fetching sales cycles', error)
+    return c.json({ success: false, error: '売上データの取得に失敗しました' }, 500)
+  }
+})
+
+// 注文詳細の取得（未完了注文用 - 調理管理等で使用）
 accountingRoutes.get('/orders', zValidator('query', z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日付の形式が正しくありません (YYYY-MM-DD)')
 })), async (c) => {
@@ -414,17 +561,11 @@ accountingRoutes.get('/orders', zValidator('query', z.object({
     const { date } = c.req.valid('query')
     const storeId = c.get('auth').storeId
     
-    // 会計設定を取得
-    const settings = await db
-      .select()
-      .from(accountingSettings)
-      .where(eq(accountingSettings.storeId, storeId))
-      .limit(1)
+    // 店舗の営業時間設定を取得
+    const businessHours = await getStoreBusinessHours(storeId)
     
-    const dayClosingTime = settings[0]?.dayClosingTime || '05:00:00'
-    
-    // 会計期間を取得
-    const { start, end } = getAccountingPeriod(date, dayClosingTime)
+    // 営業時間に基づく会計期間を取得
+    const { start, end } = getBusinessHoursAccountingPeriod(date, businessHours)
     
     // 該当期間の注文を取得
     const ordersList = await db
@@ -455,8 +596,8 @@ accountingRoutes.get('/orders', zValidator('query', z.object({
             id: orderItems.id,
             name: orderItems.name,
             quantity: orderItems.quantity,
-            price: orderItems.price,
-            subtotal: sql<number>`${orderItems.quantity} * ${orderItems.price}`
+            price: orderItems.unitPrice,
+            subtotal: orderItems.totalPrice
           })
           .from(orderItems)
           .where(eq(orderItems.orderId, order.id))
