@@ -9,7 +9,8 @@ import {
   orderItems,
   archivedOrders,
   archivedOrderItems,
-  stores 
+  stores,
+  storeBusinessHours
 } from '../db/schema'
 import { eq, and, gte, lt, sql, desc } from 'drizzle-orm'
 import { flexibleAuthMiddleware } from '../middleware/auth'
@@ -402,5 +403,78 @@ accountingRoutes.get('/sales-summary', zValidator('query', z.object({
   } catch (error) {
     logError('Error fetching sales summary', error)
     return c.json({ success: false, error: '売上サマリーの取得に失敗しました' }, 500)
+  }
+})
+
+// 注文詳細の取得
+accountingRoutes.get('/orders', zValidator('query', z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日付の形式が正しくありません (YYYY-MM-DD)')
+})), async (c) => {
+  try {
+    const { date } = c.req.valid('query')
+    const storeId = c.get('auth').storeId
+    
+    // 会計設定を取得
+    const settings = await db
+      .select()
+      .from(accountingSettings)
+      .where(eq(accountingSettings.storeId, storeId))
+      .limit(1)
+    
+    const dayClosingTime = settings[0]?.dayClosingTime || '05:00:00'
+    
+    // 会計期間を取得
+    const { start, end } = getAccountingPeriod(date, dayClosingTime)
+    
+    // 該当期間の注文を取得
+    const ordersList = await db
+      .select({
+        id: orders.id,
+        tableId: orders.tableId,
+        status: orders.status,
+        totalItems: orders.totalItems,
+        totalAmount: orders.totalAmount,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt
+      })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.storeId, storeId),
+          gte(orders.createdAt, start),
+          lt(orders.createdAt, end)
+        )
+      )
+      .orderBy(desc(orders.createdAt))
+
+    // 各注文のアイテム詳細を取得
+    const ordersWithDetails = await Promise.all(
+      ordersList.map(async (order) => {
+        const items = await db
+          .select({
+            id: orderItems.id,
+            name: orderItems.name,
+            quantity: orderItems.quantity,
+            price: orderItems.price,
+            subtotal: sql<number>`${orderItems.quantity} * ${orderItems.price}`
+          })
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id))
+
+        return {
+          ...order,
+          items: items || []
+        }
+      })
+    )
+    
+    return c.json({
+      success: true,
+      data: ordersWithDetails
+    })
+    
+  } catch (error) {
+    logError('Error fetching order details', error)
+    return c.json({ success: false, error: '注文詳細の取得に失敗しました' }, 500)
   }
 })

@@ -22,18 +22,64 @@ interface DailySales {
   updatedAt: string
 }
 
+interface OrderItem {
+  id: number
+  name: string
+  quantity: number
+  price: number
+  subtotal: number
+}
+
+interface OrderDetail {
+  id: number
+  tableId: number
+  status: string
+  totalItems: number
+  totalAmount: number
+  createdAt: string
+  updatedAt: string
+  items: OrderItem[]
+}
+
 
 const AccountingPage = () => {
   const [dailySales, setDailySales] = useState<DailySales[]>([])
+  const [orderDetails, setOrderDetails] = useState<OrderDetail[]>([])
   // 検索用の日付範囲（初期表示は今日）
   const [displayStartDate, setDisplayStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [displayEndDate, setDisplayEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [isLoading, setIsLoading] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
   const [searchDate, setSearchDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
+  const [isOrdersLoading, setIsOrdersLoading] = useState(false)
   
   const { addToast } = useToast()
 
+
+  // 注文詳細の取得
+  const fetchOrderDetails = async (date: string) => {
+    try {
+      setIsOrdersLoading(true)
+      const token = localStorage.getItem('accorto_auth_token')
+      const params = new URLSearchParams({ date })
+      
+      const response = await fetch(`${API_CONFIG.BASE_URL}/accounting/orders?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setOrderDetails(data.data)
+      }
+    } catch (error) {
+      console.error('注文詳細の取得に失敗しました:', error)
+    } finally {
+      setIsOrdersLoading(false)
+    }
+  }
 
   // 日次売上の取得
   const fetchDailySales = async () => {
@@ -134,6 +180,10 @@ const AccountingPage = () => {
         if (salesResponse.ok) {
           const data = await salesResponse.json()
           setDailySales(data.data)
+          
+          // 注文詳細も取得
+          await fetchOrderDetails(searchDate)
+          
           const dateStr = format(parseISO(searchDate), 'MM月dd日', { locale: ja })
           addToast({
             type: 'success',
@@ -233,18 +283,20 @@ const AccountingPage = () => {
     }).format(num)
   }
 
-  // 統計数値を計算
+  // 統計数値を計算（注文詳細ベース）
   const getStats = () => {
-    if (dailySales.length === 0) return null
+    if (orderDetails.length === 0) return null
     
-    const currentSales = dailySales[0]
+    const totalRevenue = orderDetails.reduce((sum, order) => sum + order.totalAmount, 0)
+    const totalOrders = orderDetails.length
+    const totalItems = orderDetails.reduce((sum, order) => sum + order.totalItems, 0)
+    const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : '0'
+    
     return {
-      totalRevenue: currentSales.totalAmount,
-      totalOrders: currentSales.totalOrders,
-      totalItems: currentSales.totalItems,
-      avgOrderValue: currentSales.totalOrders > 0 
-        ? (parseFloat(currentSales.totalAmount) / currentSales.totalOrders).toFixed(0)
-        : '0'
+      totalRevenue: totalRevenue.toString(),
+      totalOrders,
+      totalItems,
+      avgOrderValue
     }
   }
 
@@ -362,15 +414,15 @@ const AccountingPage = () => {
           </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">売上データ</h2>
-            <p className="text-sm text-gray-500 mt-1">選択した日付の詳細な売上情報</p>
+            <h2 className="text-lg font-semibold text-gray-900">注文詳細</h2>
+            <p className="text-sm text-gray-500 mt-1">選択した日付の各注文の詳細情報</p>
           </div>
           
           {isLoading ? (
             <div className="p-12 text-center">
               <LoadingSpinner size="lg" text="データを読み込んでいます..." />
             </div>
-          ) : dailySales.length === 0 || (dailySales.length === 1 && dailySales[0].totalOrders === 0) ? (
+          ) : orderDetails.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,41 +448,62 @@ const AccountingPage = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        会計日
+                        注文番号
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        注文数
+                        テーブル
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        注文時刻
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         商品数
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        売上金額
+                        金額
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ステータス
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {dailySales.map((sales) => (
-                      <tr key={sales.id} className="hover:bg-gray-50 transition-colors">
+                    {orderDetails.map((order) => (
+                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {format(parseISO(sales.accountingDate), 'yyyy年MM月dd日', { locale: ja })}
+                          <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">テーブル {order.tableId}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {format(parseISO(order.createdAt), 'HH:mm', { locale: ja })}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {format(parseISO(sales.periodStart), 'HH:mm', { locale: ja })} - {format(parseISO(sales.periodEnd), 'HH:mm', { locale: ja })}
+                            {format(parseISO(order.createdAt), 'MM/dd', { locale: ja })}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-gray-900">{sales.totalOrders}</div>
-                          <div className="text-xs text-gray-500">件</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-gray-900">{sales.totalItems}</div>
+                          <div className="text-sm font-semibold text-gray-900">{order.totalItems}</div>
                           <div className="text-xs text-gray-500">点</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-900">{formatCurrency(sales.totalAmount)}</div>
-                          <div className="text-xs text-gray-500">税抜</div>
+                          <div className="text-sm font-bold text-gray-900">{formatCurrency(order.totalAmount)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                            order.status === 'ready' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {order.status === 'delivered' ? '完了' :
+                             order.status === 'ready' ? '準備完了' :
+                             order.status === 'in-progress' ? '調理中' :
+                             order.status === 'new' ? '新規' : 
+                             order.status}
+                          </span>
                         </td>
                       </tr>
                     ))}

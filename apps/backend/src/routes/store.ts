@@ -2,12 +2,12 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db'
-import { stores, storeInfo, accountingSettings } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { stores, storeInfo, accountingSettings, storeBusinessHours } from '../db/schema'
+import { eq, sql } from 'drizzle-orm'
 import { authMiddleware, flexibleAuthMiddleware, optionalAuthMiddleware } from '../middleware/auth'
 import { logError, logInfo } from '../utils/logger-simple'
 import { createJSTTimestamp } from '../utils/accounting'
-import { createBusinessHours, BusinessHoursInput } from '../types/business-hours'
+import { createBusinessHours, BusinessHoursInput, BusinessHours } from '../types/business-hours'
 
 // 店舗コード生成関数
 const generateStoreCode = (): string => {
@@ -69,15 +69,48 @@ storeRoutes.post('/', zValidator('json', z.object({
 storeRoutes.get('/business-hours', optionalAuthMiddleware, async (c) => {
   try {
     const auth = c.get('auth')
+    const storeId = auth?.storeId || 1 // デフォルトストアID
     
-    // 一時的に常にデフォルト営業時間を返す（テーブル設計修正が必要）
-    const defaultHours = createBusinessHours({
-      openTime: '09:00',
-      closeTime: '17:00'
-    })
+    // store_business_hoursテーブルから営業時間を取得（全日共通の設定）
+    const businessHoursData = await db
+      .select()
+      .from(storeBusinessHours)
+      .where(eq(storeBusinessHours.storeId, storeId))
+      .where(eq(storeBusinessHours.isActive, true))
+      .where(sql`${storeBusinessHours.dayOfWeek} IS NULL`) // 全日共通
+      .limit(1)
     
-    logInfo('Business hours requested', { storeId: auth?.storeId, defaultHours })
-    return c.json({ success: true, data: defaultHours })
+    let businessHours
+    if (businessHoursData.length > 0) {
+      const data = businessHoursData[0]
+      // 秒を除去してHH:MM形式にする
+      const formatTime = (timeStr: string) => timeStr.substring(0, 5)
+      
+      // is_next_dayがtrueの場合、closeTimeを元の26:00+形式に戻す
+      let openTime = formatTime(data.openTime)
+      let closeTime = formatTime(data.closeTime)
+      
+      if (data.isNextDay) {
+        // 03:00 → 27:00, 02:00 → 26:00 のように復元
+        const [hours, minutes] = closeTime.split(':').map(Number)
+        const originalHours = hours + 24
+        closeTime = `${originalHours}:${minutes.toString().padStart(2, '0')}`
+      }
+      
+      businessHours = createBusinessHours({
+        openTime: openTime,
+        closeTime: closeTime
+      })
+    } else {
+      // デフォルト営業時間
+      businessHours = createBusinessHours({
+        openTime: '09:00',
+        closeTime: '17:00'
+      })
+    }
+    
+    logInfo('Business hours requested', { storeId, businessHours })
+    return c.json({ success: true, data: businessHours })
     
   } catch (error) {
     logError('Error fetching business hours:', error)
@@ -92,22 +125,73 @@ storeRoutes.put('/business-hours', optionalAuthMiddleware, zValidator('json', z.
 })), async (c) => {
   try {
     const auth = c.get('auth')
+    const storeId = auth?.storeId || 1 // デフォルトストアID
     const input: BusinessHoursInput = c.req.valid('json')
     
     // 営業時間オブジェクトを作成
     const businessHours = createBusinessHours(input)
     
-    // 一時的にログのみ（実際のDB更新は後で実装）
-    logInfo('Business hours update requested', {
-      storeId: auth?.storeId,
-      input: input,
-      businessHours: businessHours
+    // 26:00形式を処理（PostgreSQLのTIME型は24時間制限のため）
+    const normalizeTime = (timeStr: string): string => {
+      const [hours, minutes] = timeStr.split(':').map(Number)
+      if (hours >= 24) {
+        // 26:00 → 02:00 に変換
+        const normalizedHours = hours - 24
+        return `${normalizedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+      }
+      return timeStr
+    }
+    
+    const normalizedOpenTime = normalizeTime(input.openTime)
+    const normalizedCloseTime = normalizeTime(input.closeTime)
+    
+    // 既存の全日共通営業時間設定を取得
+    const existing = await db
+      .select()
+      .from(storeBusinessHours)
+      .where(eq(storeBusinessHours.storeId, storeId))
+      .where(sql`${storeBusinessHours.dayOfWeek} IS NULL`) // 全日共通
+      .limit(1)
+    
+    let result
+    if (existing.length > 0) {
+      // 既存レコードを更新
+      result = await db
+        .update(storeBusinessHours)
+        .set({
+          openTime: normalizedOpenTime,
+          closeTime: normalizedCloseTime,
+          isNextDay: businessHours.isNextDay,
+          updatedAt: sql`now()`
+        })
+        .where(eq(storeBusinessHours.id, existing[0].id))
+        .returning()
+    } else {
+      // 新規レコードを作成
+      result = await db
+        .insert(storeBusinessHours)
+        .values({
+          storeId: storeId,
+          openTime: normalizedOpenTime,
+          closeTime: normalizedCloseTime,
+          isNextDay: businessHours.isNextDay,
+          dayOfWeek: null, // 全日共通
+          isActive: true
+        })
+        .returning()
+    }
+    
+    logInfo('Business hours updated successfully', {
+      storeId,
+      input,
+      businessHours,
+      operation: existing.length > 0 ? 'update' : 'insert'
     })
     
     return c.json({
       success: true,
       data: businessHours,
-      message: '営業時間を更新しました。（テスト実装中）'
+      message: '営業時間を更新しました'
     })
   } catch (error) {
     logError('Error updating business hours:', error)
