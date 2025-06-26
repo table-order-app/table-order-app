@@ -435,40 +435,42 @@ const MenuPage = () => {
       {/* Menu List */}
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">メニュー一覧</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                全メニュー - {menuItems.length}品 | カテゴリ - {categories.length}個
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  setError(null);
-                  setValidationErrors({});
-                  setIsCategoryModalOpen(true);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                カテゴリ追加
-              </button>
-              <button
-                onClick={() => {
-                  setError(null);
-                  setValidationErrors({});
-                  setIsAddModalOpen(true);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                メニュー追加
-              </button>
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 sm:mb-0">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">メニュー一覧</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  全メニュー - {menuItems.length}品 | カテゴリ - {categories.length}個
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <button
+                  onClick={() => {
+                    setError(null);
+                    setValidationErrors({});
+                    setIsCategoryModalOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full sm:w-auto"
+                >
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  カテゴリ追加
+                </button>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    setValidationErrors({});
+                    setIsAddModalOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full sm:w-auto"
+                >
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  メニュー追加
+                </button>
+              </div>
             </div>
           </div>
 
@@ -488,89 +490,161 @@ const MenuPage = () => {
               </p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table">
-                <thead className="table-header">
-                  <tr>
-                    <th className="table-header-cell">メニュー名</th>
-                    <th className="table-header-cell">カテゴリ</th>
-                    <th className="table-header-cell">価格</th>
-                    <th className="table-header-cell">状態</th>
-                    <th className="table-header-cell">登録日</th>
-                    <th className="relative px-6 py-3">
-                      <span className="sr-only">操作</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="table-body">
-                  {menuItems.map((item) => {
-                    return (
-                      <tr key={item.id} className="table-row">
-                        <td className="table-cell">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              {getImageUrl(item.image) ? (
-                                <img className="h-10 w-10 rounded-full object-cover" src={getImageUrlWithFallback(item.image)} alt={item.name} />
-                              ) : (
-                                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                                  </svg>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden lg:block">
+                <div className="table-container">
+                  <table className="table">
+                    <thead className="table-header">
+                      <tr>
+                        <th className="table-header-cell">メニュー名</th>
+                        <th className="table-header-cell">カテゴリ</th>
+                        <th className="table-header-cell">価格</th>
+                        <th className="table-header-cell">状態</th>
+                        <th className="table-header-cell">登録日</th>
+                        <th className="relative px-6 py-3">
+                          <span className="sr-only">操作</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="table-body">
+                      {menuItems.map((item) => {
+                        return (
+                          <tr key={item.id} className="table-row">
+                            <td className="table-cell">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  {getImageUrl(item.image) ? (
+                                    <img className="h-10 w-10 rounded-full object-cover" src={getImageUrlWithFallback(item.image)} alt={item.name} />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                      <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                                      </svg>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                  {item.description && (
+                                    <div className="text-sm text-gray-500">{item.description}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="table-cell">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {getCategoryName(item.categoryId)}
+                              </span>
+                            </td>
+                            <td className="table-cell">
+                              <div className="text-sm text-gray-900">¥{item.price?.toLocaleString()}</div>
+                            </td>
+                            <td className="table-cell">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                item.available 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {item.available ? '提供中' : '提供停止'}
+                              </span>
+                            </td>
+                            <td className="table-cell">
+                              <div className="text-sm text-gray-500">
+                                {item.createdAt ? new Date(item.createdAt).toLocaleDateString('ja-JP') : '-'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                <button 
+                                  className="text-indigo-600 hover:text-indigo-900 font-medium transition-colors duration-200"
+                                  onClick={() => handleOpenEditModal(item)}
+                                >
+                                  編集
+                                </button>
+                                <button 
+                                  className="text-red-600 hover:text-red-900 font-medium transition-colors duration-200"
+                                  onClick={() => handleOpenDeleteDialog(item)}
+                                >
+                                  削除
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {menuItems.map((item) => {
+                  return (
+                    <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0">
+                          {getImageUrl(item.image) ? (
+                            <img className="h-16 w-16 rounded-lg object-cover" src={getImageUrlWithFallback(item.image)} alt={item.name} />
+                          ) : (
+                            <div className="h-16 w-16 rounded-lg bg-gray-300 flex items-center justify-center">
+                              <svg className="h-8 w-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                              </svg>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="text-lg font-medium text-gray-900 truncate">{item.name}</h4>
                               {item.description && (
-                                <div className="text-sm text-gray-500">{item.description}</div>
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>
                               )}
                             </div>
+                            <div className="flex flex-col items-end space-y-2 ml-4">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                item.available 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {item.available ? '提供中' : '停止'}
+                              </span>
+                            </div>
                           </div>
-                        </td>
-                        <td className="table-cell">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {getCategoryName(item.categoryId)}
-                          </span>
-                        </td>
-                        <td className="table-cell">
-                          <div className="text-sm text-gray-900">¥{item.price?.toLocaleString()}</div>
-                        </td>
-                        <td className="table-cell">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            item.available 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {item.available ? '提供中' : '提供停止'}
-                          </span>
-                        </td>
-                        <td className="table-cell">
-                          <div className="text-sm text-gray-500">
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('ja-JP') : '-'}
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <span className="text-lg font-bold text-gray-900">¥{item.price?.toLocaleString()}</span>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {getCategoryName(item.categoryId)}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('ja-JP') : '-'}
+                            </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end space-x-2">
+                          <div className="mt-4 flex space-x-2">
                             <button 
-                              className="text-indigo-600 hover:text-indigo-900 font-medium transition-colors duration-200"
+                              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
                               onClick={() => handleOpenEditModal(item)}
                             >
                               編集
                             </button>
                             <button 
-                              className="text-red-600 hover:text-red-900 font-medium transition-colors duration-200"
+                              className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
                               onClick={() => handleOpenDeleteDialog(item)}
                             >
                               削除
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>
