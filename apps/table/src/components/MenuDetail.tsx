@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MenuItem, Option, Topping } from "../types";
 import { getMenuItem } from "../services/menuService";
-import { getImageUrlWithFallback } from "../utils/imageUtils";
+import { hasValidImage, getImageUrl } from "../utils/imageUtils";
 
 interface MenuDetailProps {
   menuId: number;
@@ -20,6 +20,7 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
   const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
   const [quantity, setQuantity] = useState<number>(1);
   const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [imageError, setImageError] = useState<boolean>(false);
 
 
   useEffect(() => {
@@ -47,6 +48,11 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
 
     fetchMenuItem();
   }, [menuId]);
+
+  // メニューが変更されたら画像エラー状態をリセット
+  useEffect(() => {
+    setImageError(false);
+  }, [menuItem]);
 
   // オプションの選択が変更されたとき
   const handleOptionClick = (optionId: number) => {
@@ -174,16 +180,19 @@ const MenuDetail: React.FC<MenuDetailProps> = ({ menuId, onAddToCart }) => {
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-lg overflow-hidden pt-16">
       <div className="p-3">
-        {/* メニュー画像 */}
-        <div className="flex justify-center mb-3">
-          <div className="w-56 h-36 rounded-lg overflow-hidden shadow-md">
-            <img
-              src={getImageUrlWithFallback(menuItem.image)}
-              alt={menuItem.name}
-              className="w-full h-full object-cover"
-            />
+        {/* メニュー画像（画像がある場合のみ表示） */}
+        {hasValidImage(menuItem.image) && !imageError && (
+          <div className="flex justify-center mb-3">
+            <div className="w-56 h-36 rounded-lg overflow-hidden shadow-md">
+              <img
+                src={getImageUrl(menuItem.image)!}
+                alt={menuItem.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* メニュー詳細情報 */}
         <div className="mb-4">

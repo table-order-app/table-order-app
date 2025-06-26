@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MenuItem } from "../types";
 import { getMenuItemsByCategory } from "../services/menuService";
 import { getPath } from "../routes";
-import { getImageUrlWithFallback } from "../utils/imageUtils";
+import { hasValidImage, getImageUrl } from "../utils/imageUtils";
 
 const MenuCard: React.FC<{
   className?: string;
@@ -13,6 +13,46 @@ const MenuCard: React.FC<{
     <div className={`group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden ${className || ""}`}>
       {children}
     </div>
+  );
+};
+
+const MenuItemCard: React.FC<{ item: MenuItem }> = ({ item }) => {
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  return (
+    <Link
+      to={getPath.menuDetail(item.id)}
+      className="no-underline text-inherit"
+    >
+      <MenuCard className="h-full">
+        {/* 画像がある場合のみ画像セクションを表示 */}
+        {hasValidImage(item.image) && !imageError && (
+          <div className="relative pb-[60%] overflow-hidden">
+            <img
+              src={getImageUrl(item.image)!}
+              alt={item.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          </div>
+        )}
+        
+        {/* Content Section */}
+        <div className="p-4">
+          <h3 className="font-semibold text-lg text-gray-800 mb-2">
+            {item.name}
+          </h3>
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            {item.description}
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-orange-500">
+              ¥{item.price.toLocaleString()}
+            </span>
+          </div>
+        </div>
+      </MenuCard>
+    </Link>
   );
 };
 
@@ -107,37 +147,7 @@ const MenuList: React.FC<MenuListProps> = ({ categoryId }) => {
       {/* メニューグリッド */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         {currentItems.map((item) => (
-          <Link
-            key={item.id}
-            to={getPath.menuDetail(item.id)}
-            className="no-underline text-inherit"
-          >
-            <MenuCard className="h-full">
-              {/* Image Section */}
-              <div className="relative pb-[60%] overflow-hidden">
-                <img
-                  src={getImageUrlWithFallback(item.image)}
-                  alt={item.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Content Section */}
-              <div className="p-4">
-                <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                  {item.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {item.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-orange-500">
-                    ¥{item.price.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </MenuCard>
-          </Link>
+          <MenuItemCard key={item.id} item={item} />
         ))}
       </div>
 

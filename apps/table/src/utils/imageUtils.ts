@@ -32,7 +32,7 @@ function getImageConfig(): ImageConfig {
  * ローカル保存とS3の両方に対応
  */
 export function getImageUrl(imagePath: string | null | undefined): string | null {
-  if (!imagePath) return null;
+  if (!imagePath || imagePath.trim() === '') return null;
   
   // base64データの場合はそのまま返す
   if (imagePath.startsWith('data:')) {
@@ -73,6 +73,18 @@ export function getDefaultImageUrl(): string {
  */
 export function getImageUrlWithFallback(imagePath: string | null | undefined): string {
   return getImageUrl(imagePath) || getDefaultImageUrl();
+}
+
+/**
+ * 有効な画像パスかどうかを判定
+ */
+export function hasValidImage(imagePath: string | null | undefined): boolean {
+  if (!imagePath || imagePath.trim() === '') return false;
+  
+  // 明らかに無効なパス
+  if (imagePath === 'null' || imagePath === 'undefined') return false;
+  
+  return true;
 }
 
 /**
