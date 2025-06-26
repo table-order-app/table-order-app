@@ -280,15 +280,15 @@ menuRoutes.put('/items/:id', flexibleAuthMiddleware, zValidator('json', z.object
   }
 })
 
-// メニューアイテムを削除
-menuRoutes.delete('/items/:id', async (c) => {
+// メニューアイテムを削除（統合認証）
+menuRoutes.delete('/items/:id', flexibleAuthMiddleware, async (c) => {
   try {
     const id = Number(c.req.param('id'))
-    const storeId = Number(c.req.query('storeId') || '1')
+    const auth = c.get('auth')
     
     // メニューアイテムの詳細を取得して提供状況をチェック
     const menuItem = await db.query.menuItems.findFirst({
-      where: and(eq(menuItems.id, id), eq(menuItems.storeId, storeId))
+      where: and(eq(menuItems.id, id), eq(menuItems.storeId, auth.storeId))
     })
     
     if (!menuItem) {
@@ -319,14 +319,14 @@ menuRoutes.delete('/items/:id', async (c) => {
     await deleteOldImage(menuItem.image)
     
     const result = await db.delete(menuItems)
-      .where(and(eq(menuItems.id, id), eq(menuItems.storeId, storeId)))
+      .where(and(eq(menuItems.id, id), eq(menuItems.storeId, auth.storeId)))
       .returning()
     
     if (result.length === 0) {
       return c.json({ success: false, error: 'メニューアイテムが見つかりません' }, 404)
     }
     
-    logInfo('Menu item deleted', { id, storeId, name: menuItem.name })
+    logInfo('Menu item deleted', { id, storeId: auth.storeId, name: menuItem.name })
     return c.json({ success: true, data: result[0] })
   } catch (error) {
     logError('Error deleting menu item:', error)
