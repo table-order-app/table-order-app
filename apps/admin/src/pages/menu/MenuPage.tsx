@@ -93,16 +93,16 @@ const MenuPage = () => {
       if (menuResponse.success && menuResponse.data) {
         setMenuItems(menuResponse.data);
       } else {
-        setError('メニューデータの取得に失敗しました');
+        setError(menuResponse.error || 'メニューデータの取得に失敗しました');
       }
       
       if (categoryResponse.success && categoryResponse.data) {
         setCategories(categoryResponse.data);
       } else {
-        setError('カテゴリデータの取得に失敗しました');
+        setError(categoryResponse.error || 'カテゴリデータの取得に失敗しました');
       }
     } catch (err) {
-      setError('データの取得中にエラーが発生しました');
+      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
@@ -268,7 +268,7 @@ const MenuPage = () => {
       }
     } catch (error) {
       console.error("メニューの更新に失敗しました", error);
-      setError('メニューの更新中にエラーが発生しました');
+      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
     }
   };
 
@@ -283,11 +283,12 @@ const MenuPage = () => {
         setIsDeleteDialogOpen(false);
         setSelectedItem(null);
       } else {
-        setError('メニューの削除に失敗しました');
+        // バックエンドからの具体的なエラーメッセージを表示
+        setError(result.error || 'メニューの削除に失敗しました');
       }
     } catch (error) {
       console.error("メニューの削除に失敗しました", error);
-      setError('メニューの削除中にエラーが発生しました');
+      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
     }
   };
   
@@ -346,7 +347,7 @@ const MenuPage = () => {
       }
     } catch (error) {
       console.error("メニューの追加に失敗しました", error);
-      setError('メニューの追加中にエラーが発生しました');
+      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
     }
   };
 
@@ -372,7 +373,7 @@ const MenuPage = () => {
       }
     } catch (error) {
       console.error("カテゴリの追加に失敗しました", error);
-      setError('カテゴリの追加中にエラーが発生しました');
+      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
     }
   };
 
