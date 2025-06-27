@@ -192,19 +192,20 @@ body {
 }
 
 .table-container {
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   border-radius: 0.5rem;
   max-width: 100%;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
-  max-width: 100%;
+  min-width: 800px;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .table-header {
@@ -231,12 +232,19 @@ body {
 
 .table-cell {
   padding: 1rem 1.5rem;
-  white-space: nowrap;
   font-size: 0.875rem;
   color: rgb(17 24 39);
+  vertical-align: top;
+}
+
+.table-cell-content {
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 0;
+}
+
+.table-cell-nowrap {
+  white-space: nowrap;
 }
 
 .badge {

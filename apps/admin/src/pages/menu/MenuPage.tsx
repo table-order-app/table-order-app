@@ -388,7 +388,7 @@ const MenuPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 overflow-hidden">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -502,12 +502,12 @@ const MenuPage = () => {
                   <table className="table">
                     <thead className="table-header">
                       <tr>
-                        <th className="table-header-cell">メニュー名</th>
-                        <th className="table-header-cell">カテゴリ</th>
-                        <th className="table-header-cell">価格</th>
-                        <th className="table-header-cell">状態</th>
-                        <th className="table-header-cell">登録日</th>
-                        <th className="relative px-6 py-3">
+                        <th className="table-header-cell" style={{ width: '35%' }}>メニュー名</th>
+                        <th className="table-header-cell" style={{ width: '15%' }}>カテゴリ</th>
+                        <th className="table-header-cell" style={{ width: '12%' }}>価格</th>
+                        <th className="table-header-cell" style={{ width: '12%' }}>状態</th>
+                        <th className="table-header-cell" style={{ width: '12%' }}>登録日</th>
+                        <th className="relative px-6 py-3" style={{ width: '14%' }}>
                           <span className="sr-only">操作</span>
                         </th>
                       </tr>
@@ -517,7 +517,7 @@ const MenuPage = () => {
                         return (
                           <tr key={item.id} className="table-row">
                             <td className="table-cell">
-                              <div className="flex items-center">
+                              <div className="flex items-center min-w-0">
                                 <div className="flex-shrink-0 h-10 w-10">
                                   {getImageUrl(item.image) ? (
                                     <img className="h-10 w-10 rounded-full object-cover" src={getImageUrlWithFallback(item.image)} alt={item.name} />
@@ -529,24 +529,24 @@ const MenuPage = () => {
                                     </div>
                                   )}
                                 </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                <div className="ml-4 min-w-0 flex-1">
+                                  <div className="text-sm font-medium text-gray-900 table-cell-content">{item.name}</div>
                                   {item.description && (
-                                    <div className="text-sm text-gray-500">{item.description}</div>
+                                    <div className="text-sm text-gray-500 table-cell-content">{item.description}</div>
                                   )}
                                 </div>
                               </div>
                             </td>
                             <td className="table-cell">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 table-cell-content">
                                 {getCategoryName(item.categoryId)}
                               </span>
                             </td>
                             <td className="table-cell">
-                              <div className="text-sm text-gray-900">¥{item.price?.toLocaleString()}</div>
+                              <div className="text-sm text-gray-900 table-cell-nowrap">¥{item.price?.toLocaleString()}</div>
                             </td>
                             <td className="table-cell">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium table-cell-nowrap ${
                                 item.available 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
@@ -555,11 +555,11 @@ const MenuPage = () => {
                               </span>
                             </td>
                             <td className="table-cell">
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-500 table-cell-nowrap">
                                 {item.createdAt ? new Date(item.createdAt).toLocaleDateString('ja-JP') : '-'}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-6 py-4 text-right text-sm font-medium table-cell-nowrap">
                               <div className="flex items-center justify-end space-x-2">
                                 <button 
                                   className="text-indigo-600 hover:text-indigo-900 font-medium transition-colors duration-200"
