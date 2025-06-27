@@ -10,6 +10,10 @@ body {
   background-color: rgb(249 250 251);
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #root {
@@ -46,6 +50,11 @@ body {
 
 .btn-primary:active {
   transform: none;
+}
+
+.btn-primary, .btn-secondary, .btn-danger {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn-secondary {
@@ -119,6 +128,8 @@ body {
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   font-size: 0.875rem;
   background-color: white;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .form-input::placeholder {
