@@ -39,7 +39,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "lg" }: ModalPr
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div className="flex min-h-full items-center justify-center p-4 text-center">
         {/* Backdrop */}
         <div
           className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
@@ -49,7 +49,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "lg" }: ModalPr
 
         {/* Modal panel */}
         <div
-          className={`relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full ${sizeClasses[size]} sm:p-6`}
+          className={`relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all my-8 w-full ${sizeClasses[size]} p-6`}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 pb-4">
