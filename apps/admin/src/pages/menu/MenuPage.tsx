@@ -126,6 +126,10 @@ const MenuPage = () => {
       errors.price = "価格は1円以上を入力してください";
     }
 
+    if (data.price && data.price > 999999) {
+      errors.price = "価格は999,999円以下を入力してください";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -742,6 +746,7 @@ const MenuPage = () => {
                   className={`form-input mt-1 ${validationErrors.price ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="500"
                   min="1"
+                  max="999999"
                   required
                 />
                 {validationErrors.price && (
@@ -951,6 +956,7 @@ const MenuPage = () => {
                   className={`form-input mt-1 ${validationErrors.price ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="500"
                   min="1"
+                  max="999999"
                   required
                 />
                 {validationErrors.price && (
