@@ -3,9 +3,7 @@
 /* Reset and base styles */
 html {
   height: 100%;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -14,21 +12,18 @@ body {
   background-color: rgb(249 250 251);
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+  overflow-x: hidden;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 #root {
   height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   position: relative;
   width: 100%;
 }
@@ -193,6 +188,7 @@ body {
 
 .table-container {
   overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   border-radius: 0.5rem;
   max-width: 100%;
