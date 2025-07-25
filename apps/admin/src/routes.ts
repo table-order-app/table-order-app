@@ -1,6 +1,7 @@
 // アプリケーションのルート定義
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import MenuPage from "./pages/menu/MenuPage";
+import CategoriesPage from "./pages/categories/CategoriesPage";
 import StaffPage from "./pages/staff/StaffPage";
 import TablesPage from "./pages/tables/TablesPage";
 import StoresPage from "./pages/stores/StoresPage";
@@ -31,6 +32,14 @@ export const ROUTES = {
   MENU: {
     path: "/menu",
     component: MenuPage,
+    layout: MainLayout,
+    exact: true,
+  } as RouteDefinition,
+
+  // カテゴリ管理ページ
+  CATEGORIES: {
+    path: "/categories",
+    component: CategoriesPage,
     layout: MainLayout,
     exact: true,
   } as RouteDefinition,
@@ -107,6 +116,7 @@ export const getPath = {
   // 静的ルート
   dashboard: () => ROUTES.DASHBOARD.path,
   menu: () => ROUTES.MENU.path,
+  categories: () => ROUTES.CATEGORIES.path,
   staff: () => ROUTES.STAFF.path,
   tables: () => ROUTES.TABLES.path,
   stores: () => ROUTES.STORES.path,

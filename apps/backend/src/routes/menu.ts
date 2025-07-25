@@ -64,6 +64,124 @@ menuRoutes.post('/categories', flexibleAuthMiddleware, zValidator('json', z.obje
   }
 })
 
+// カテゴリを更新（統合認証）
+menuRoutes.put('/categories/:id', flexibleAuthMiddleware, zValidator('json', z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+})), async (c) => {
+  try {
+    const auth = c.get('auth')
+    const id = Number(c.req.param('id'))
+    const { name, description } = c.req.valid('json')
+    
+    const result = await db.update(categories)
+      .set({ 
+        name, 
+        description, 
+        updatedAt: createJSTTimestamp() 
+      })
+      .where(and(eq(categories.id, id), eq(categories.storeId, auth.storeId)))
+      .returning()
+    
+    if (result.length === 0) {
+      return c.json({ success: false, error: 'カテゴリが見つかりません' }, 404)
+    }
+    
+    return c.json({ success: true, data: result[0] })
+  } catch (error) {
+    logError('Error updating category:', error)
+    return c.json({ success: false, error: 'カテゴリの更新に失敗しました' }, 500)
+  }
+})
+
+// カテゴリを削除（統合認証）
+menuRoutes.delete('/categories/:id', flexibleAuthMiddleware, async (c) => {
+  try {
+    const auth = c.get('auth')
+    const id = Number(c.req.param('id'))
+    
+    // カテゴリが存在するかチェック
+    const category = await db.query.categories.findFirst({
+      where: and(eq(categories.id, id), eq(categories.storeId, auth.storeId))
+    })
+    
+    if (!category) {
+      return c.json({ success: false, error: 'カテゴリが見つかりません' }, 404)
+    }
+    
+    // このカテゴリを使用しているメニューアイテムがあるかチェック
+    const menuItemsUsingCategory = await db.query.menuItems.findMany({
+      where: and(eq(menuItems.categoryId, id), eq(menuItems.storeId, auth.storeId))
+    })
+    
+    logInfo('Category deletion process started', { 
+      id, 
+      storeId: auth.storeId, 
+      name: category.name,
+      affectedMenuItems: menuItemsUsingCategory.length 
+    })
+    
+    // トランザクションを使用して安全に削除処理を実行
+    const result = await db.transaction(async (tx) => {
+      // カテゴリを使用しているメニューアイテムがある場合は、それらのcategoryIdをnullに設定
+      if (menuItemsUsingCategory.length > 0) {
+        logInfo('Updating menu items to remove category reference', { 
+          categoryId: id,
+          menuItemsCount: menuItemsUsingCategory.length 
+        })
+        
+        const updateResult = await tx.update(menuItems)
+          .set({ categoryId: null, updatedAt: createJSTTimestamp() })
+          .where(and(eq(menuItems.categoryId, id), eq(menuItems.storeId, auth.storeId)))
+          .returning({ id: menuItems.id })
+        
+        logInfo('Menu items updated successfully', { 
+          updatedCount: updateResult.length 
+        })
+      }
+      
+      // カテゴリを削除
+      logInfo('Deleting category', { categoryId: id })
+      const deleteResult = await tx.delete(categories)
+        .where(and(eq(categories.id, id), eq(categories.storeId, auth.storeId)))
+        .returning()
+      
+      if (deleteResult.length === 0) {
+        throw new Error('カテゴリの削除に失敗しました（削除対象が見つかりません）')
+      }
+      
+      return deleteResult[0]
+    })
+    
+    logInfo('Category deleted successfully', { 
+      id, 
+      storeId: auth.storeId, 
+      name: category.name,
+      affectedMenuItems: menuItemsUsingCategory.length 
+    })
+    
+    return c.json({ success: true, data: result })
+  } catch (error) {
+    logError('Error deleting category:', error)
+    
+    // より詳細なエラーメッセージを提供
+    let errorMessage = 'カテゴリの削除に失敗しました'
+    if (error instanceof Error) {
+      logError('Detailed error message:', { message: error.message, stack: error.stack })
+      if (error.message.includes('foreign key') || error.message.includes('violates foreign key constraint')) {
+        errorMessage = 'このカテゴリは他のデータで使用されているため削除できません'
+      } else if (error.message.includes('削除対象が見つかりません')) {
+        errorMessage = error.message
+      } else {
+        // 開発環境では詳細なエラーメッセージを表示
+        errorMessage = `カテゴリの削除に失敗しました: ${error.message}`
+      }
+    }
+    
+    return c.json({ success: false, error: errorMessage }, 500)
+  }
+})
+
 // メニュー一覧を取得（統合認証）
 menuRoutes.get('/items', flexibleAuthMiddleware, async (c) => {
   try {

@@ -87,12 +87,23 @@ const DashboardPage = () => {
   const dashboardCards = [
     {
       title: "メニュー管理",
-      description: "メニューの追加、編集、カテゴリの管理などを行います。",
+      description: "メニューの追加、編集、価格設定などを行います。",
       buttonLabel: "メニュー管理へ",
       path: getPath.menu(),
       icon: (
         <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      )
+    },
+    {
+      title: "カテゴリ管理",
+      description: "メニューカテゴリの作成、編集、削除を行います。",
+      buttonLabel: "カテゴリ管理へ",
+      path: getPath.categories(),
+      icon: (
+        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
         </svg>
       )
     },

@@ -10,7 +10,6 @@ import {
   deleteMenuItem, 
   createMenuItem,
   createMenuItemWithFile,
-  createCategory,
   MenuItem,
   Category
 } from "../../services/menuService";
@@ -28,7 +27,6 @@ const MenuPage = () => {
   // モーダル・ダイアログの状態
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
@@ -67,14 +65,6 @@ const MenuPage = () => {
     image: "",
     imageFile: null,
     available: true,
-  });
-
-  const [categoryFormData, setCategoryFormData] = useState<{
-    name: string;
-    description: string;
-  }>({
-    name: "",
-    description: "",
   });
 
   // バリデーションエラー
@@ -134,16 +124,6 @@ const MenuPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const validateCategoryForm = (data: {name: string}): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!data.name || data.name.trim().length === 0) {
-      errors.categoryName = "カテゴリ名を入力してください";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   // ダッシュボードに戻る
   const handleBack = () => {
@@ -229,20 +209,6 @@ const MenuPage = () => {
     }
   };
 
-  const handleCategoryInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCategoryFormData({
-      ...categoryFormData,
-      [name]: value,
-    });
-
-    // リアルタイムバリデーション
-    if (validationErrors[name]) {
-      const newErrors = { ...validationErrors };
-      delete newErrors[name];
-      setValidationErrors(newErrors);
-    }
-  };
 
   const handleEditMenuItem = async () => {
     if (!validateMenuForm(editFormData)) {
@@ -355,31 +321,6 @@ const MenuPage = () => {
     }
   };
 
-  const handleAddCategory = async () => {
-    if (!validateCategoryForm(categoryFormData)) {
-      return;
-    }
-
-    try {
-      setError(null);
-      const result = await createCategory(categoryFormData);
-      
-      if (result.success) {
-        await fetchData();
-        setCategoryFormData({
-          name: "",
-          description: "",
-        });
-        setIsCategoryModalOpen(false);
-        setValidationErrors({});
-      } else {
-        setError(result.error || 'カテゴリの追加に失敗しました');
-      }
-    } catch (error) {
-      console.error("カテゴリの追加に失敗しました", error);
-      setError('ネットワークエラーが発生しました。インターネット接続を確認してください。');
-    }
-  };
 
   const getCategoryName = (categoryId: number | null) => {
     if (!categoryId) return "未分類";
@@ -451,20 +392,7 @@ const MenuPage = () => {
                   全メニュー - {menuItems.length}品 | カテゴリ - {categories.length}個
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <button
-                  onClick={() => {
-                    setError(null);
-                    setValidationErrors({});
-                    setIsCategoryModalOpen(true);
-                  }}
-                  className="inline-flex items-center justify-center px-4 py-3 sm:py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full sm:w-auto"
-                >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  カテゴリ追加
-                </button>
+              <div className="flex-shrink-0">
                 <button
                   onClick={() => {
                     setError(null);
@@ -1068,102 +996,6 @@ const MenuPage = () => {
         </Modal>
       )}
 
-      {/* Add Category Modal */}
-      {isCategoryModalOpen && (
-        <Modal
-          isOpen={isCategoryModalOpen}
-          onClose={() => {
-            setIsCategoryModalOpen(false);
-            setValidationErrors({});
-            setError(null);
-          }}
-          title="新しいカテゴリの追加"
-          size="md"
-        >
-          {/* Modal Error Alert */}
-          {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">エラーが発生しました</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p className="whitespace-pre-line">{error}</p>
-                  </div>
-                </div>
-                <div className="ml-auto pl-3">
-                  <button
-                    type="button"
-                    className="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-red-50"
-                    onClick={() => setError(null)}
-                  >
-                    <span className="sr-only">Dismiss</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handleAddCategory(); }} className="space-y-6">
-            <div>
-              <label className="form-label">
-                カテゴリ名 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={categoryFormData.name || ""}
-                onChange={handleCategoryInputChange}
-                className={`form-input mt-1 ${validationErrors.categoryName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
-                placeholder="メイン料理"
-                required
-              />
-              {validationErrors.categoryName && (
-                <p className="form-error">{validationErrors.categoryName}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="form-label">説明</label>
-              <textarea
-                name="description"
-                value={categoryFormData.description || ""}
-                onChange={handleCategoryInputChange}
-                rows={3}
-                className="form-input mt-1"
-                placeholder="カテゴリの説明を入力してください"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  setValidationErrors({});
-                  setError(null);
-                }}
-              >
-                キャンセル
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                追加
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
 
       {/* Delete Confirmation Dialog */}
       {isDeleteDialogOpen && (
